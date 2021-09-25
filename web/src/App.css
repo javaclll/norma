@@ -1,0 +1,30 @@
+.board {
+  height: min(80vh, 80vw);
+  top: 50%;
+  left: 50%;
+  width: min(80vw, 80vh);
+  background-size: cover;
+  position: absolute;
+  margin: -40vh 0 0 -40vh;
+}
+
+.cell{
+  padding:0px;
+  width: 10vh;
+  height: 10vh;
+}
+
+.tableDiv {
+  margin-top:-10vh;
+  margin-left:-10vh;
+}
+
+.boardTable {
+  height: 100vh;
+  width: 100vh;
+}
+
+.item{
+  margin-left:auto;
+  margin-right:auto;
+}
