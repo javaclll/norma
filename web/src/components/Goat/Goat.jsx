@@ -1,10 +1,13 @@
 import goat from "../../statics/goat.svg";
 import "./styles/goat.css";
 import { ItemTypes } from "../../utils/config.jsx";
-import { useDrag } from "react-dnd";
+import { useDrag, DragPreviewImage } from "react-dnd";
 
-const Goat = () => {
-  const [{ isDragging }, drag] = useDrag(() => ({
+const Goat = ({ m, n }) => {
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
+    item: {
+      location: [m, n],
+    },
     type: ItemTypes.GOAT,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
@@ -16,11 +19,10 @@ const Goat = () => {
       ref={drag}
       style={{
         opacity: isDragging ? 0.5 : 1,
-        fontSize: 25,
-        fontWeight: "bold",
-        cursor: "move",
+        cursor: "grab",
       }}
     >
+      <DragPreviewImage connect={preview} src={null} />
       <img src={goat} />
     </div>
   );

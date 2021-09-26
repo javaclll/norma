@@ -28,3 +28,94 @@
   margin-left:auto;
   margin-right:auto;
 }
+
+
+
+.button-panel{
+  margin-top: 10px;
+  margin-left: 20px;
+}
+
+.detail-box{
+  margin-left: 20px;
+  color: #464655;
+}
+
+.backward{
+  background-color: white;
+  padding: 10px 10px;
+  border-radius:10px;
+  display: inline-block;
+  font-size: 16px;
+  height: 15px;
+  width: 25px;
+  transform: scale(-1, 1);
+  margin-right: 20px;
+}
+
+.move-number{
+  display: inline-block;
+  margin-right: 20px;
+  color: #464655;
+  font-weight: 700;
+}
+
+.forward{
+  background-color: white;
+  padding: 10px 10px;
+  border-radius:10px;
+  display: inline-block;
+  font-size: 16px;
+  height: 15px;
+  width: 25px;
+}
+
+.button {
+  align-items: center;
+  background-color: #FFFFFF;
+  border: 0;
+  border-radius: 100px;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  line-height: 20px;
+  max-width: 480px;
+  min-height: 40px;
+  min-width: 0px;
+  overflow: hidden;
+  padding: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-align: center;
+  transition: background-color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, box-shadow 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s, color 0.167s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+  user-select: none;
+  -webkit-user-select: none;
+  vertical-align: middle;
+}
+
+.button:hover,
+.button:focus { 
+  background-color: #ffa54b;
+  color: #ffffff;
+}
+
+.button:active {
+  background: #ff8c46;
+  color: rgb(255, 255, 255, .7);
+}
+
+.button:disabled { 
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, .08);
+  color: rgba(0, 0, 0, .3);
+}
+
+.arrow{
+  height: 10px;
+  width: 20px;
+}
+
+
+

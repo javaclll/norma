@@ -1,4 +1,4 @@
 export const ItemTypes = {
-  TIGER: 'tiger',
-  GOAT: 'goat'
+  TIGER: "tiger",
+  GOAT:"goat" 
 }

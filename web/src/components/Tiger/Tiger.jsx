@@ -1,19 +1,17 @@
 import tiger from "../../statics/tiger.svg";
 import "./styles/tiger.css";
 import { ItemTypes } from "../../utils/config.jsx";
-import { useDrag } from "react-dnd";
+import { useDrag, DragPreviewImage } from "react-dnd";
 
 const Tiger = ({ m, n }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
     item: {
       location: [m, n],
     },
     type: ItemTypes.TIGER,
-    collect: (monitor) => {
-      return {
-        isDragging: !!monitor.isDragging(),
-      };
-    },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
   }));
   return (
     <div
@@ -21,11 +19,10 @@ const Tiger = ({ m, n }) => {
       ref={drag}
       style={{
         opacity: isDragging ? 0.5 : 1,
-        fontSize: 25,
-        fontWeight: "bold",
-        cursor: "move",
+        cursor: "grab",
       }}
     >
+      <DragPreviewImage connect={preview} src={null} />
       <img src={tiger} />
     </div>
   );
