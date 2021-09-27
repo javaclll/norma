@@ -3,7 +3,7 @@ import "./styles/tiger.css";
 import { ItemTypes } from "../../utils/config.jsx";
 import { useDrag, DragPreviewImage } from "react-dnd";
 
-const Tiger = ({ m, n }) => {
+const Tiger = ({ m, n}) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     item: {
       location: [m, n],

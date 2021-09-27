@@ -9,68 +9,109 @@ import Tiger from "../Tiger/Tiger.jsx";
 import { GameContext } from "../../context/GameContext";
 import { ItemTypes } from "../../utils/config";
 import arrow from "../../statics/arrow.svg";
+import "../Board/styles/board.css";
+import tiger from "../../statics/tiger.svg";
+import goat from "../../statics/goat.svg";
 
 const Board = () => {
-  const {
-    game,
-    turn,
-    goatsCaptured,
-    goatCounter,
-    nextMove,
-    previousMove,
-    moveCounter,
-    moveHistory,
-  } = useContext(GameContext);
-  return (
-    <>
-      <DndProvider backend={HTML5Backend}>
-        <div className="board" style={{ backgroundImage: `url(${board})` }}>
-          <div className="tableDiv">
-            <table className="boardTable">
-              {game.map((row, rowIndex) => (
-                <tr className="row">
-                  {row.map((value, colIndex) => (
-                    <Intersection x={rowIndex} y={colIndex}>
-                      <CoRe condition={value === 1}>
-                        <Goat m={rowIndex} n={colIndex} />
-                      </CoRe>
-                      <CoRe condition={value === 0}>{null}</CoRe>
-                      <CoRe condition={value === -1}>
-                        <Tiger m={rowIndex} n={colIndex} />
-                      </CoRe>
-                    </Intersection>
-                  ))}
-                </tr>
-              ))}
-            </table>
-          </div>
-        </div>
-      </DndProvider>
+	const {
+		game,
+		gameResult,
+		turn,
+		goatsCaptured,
+		goatCounter,
+		nextMove,
+		previousMove,
+		moveCounter,
+		moveHistory,
+	} = useContext(GameContext);
+	return (
+		<>
+			<DndProvider backend={HTML5Backend}>
+				<div className="board" style={{ backgroundImage: `url(${board})` }}>
+					<div className="left-box">
+						<div className="left-box-content">
+							<div className="left-box-content-top">
+								<a className="left-box-title">Played moves</a>
+							</div>
+							<div className="left-box-content-bottom">{moveHistory}</div>
+						</div>
+					</div>
+					<div className="tableDiv">
+						<table className="boardTable">
+							<tbody>
+								{game.map((row, rowIndex) => (
+									<tr className="row" key={rowIndex}>
+										{row.map((value, colIndex) => (
+											<Intersection
+												x={rowIndex}
+												y={colIndex}
+												key={`(${rowIndex},${colIndex})`}
+											>
+												<CoRe condition={value === 1}>
+													<Goat m={rowIndex} n={colIndex} />
+												</CoRe>
+												<CoRe condition={value === -1}>
+													<Tiger m={rowIndex} n={colIndex} />
+												</CoRe>
+											</Intersection>
+										))}
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</DndProvider>
 
-      <div className="button-panel">
-        <button
-          className="backward button"
-          onClick={previousMove}
-          disabled={moveCounter === 0}
-        >
-          <img className="arrow" src={arrow} />
-        </button>
-        <div className="move-number">{moveCounter}</div>
-        <button
-          className="forward button"
-          onClick={nextMove}
-          disabled={moveCounter === moveHistory.length - 1}
-        >
-          <img className="arrow" src={arrow} />
-        </button>
-      </div>
+			<div className="right-box">
+				<div className="button-panel">
+					<button
+						className="backward button"
+						onClick={previousMove}
+						disabled={moveCounter === 0}
+					>
+						<img className="arrow" src={arrow} />
+					</button>
+					<div className="move-number">{moveCounter}</div>
+					<button
+						className="forward button"
+						onClick={nextMove}
+						disabled={moveCounter === moveHistory.length - 1}
+					>
+						<img className="arrow" src={arrow} />
+					</button>
+				</div>
 
-      <div className="detail-box">
-        <h1>{turn === ItemTypes.GOAT ? "Goat" : "Tiger"}'s Turn</h1>
-        <h1>Captured Goats: {goatsCaptured}</h1>
-        <h1>Placed Goats: {goatCounter}</h1>
-      </div>
-    </>
-  );
+				<div className="detail-box">
+					<CoRe condition={!gameResult.decided}>
+						<h2>{turn === ItemTypes.GOAT ? "Goat" : "Tiger"}'s Turn</h2>
+					</CoRe>
+					<CoRe condition={gameResult.decided}>
+						<h2>{gameResult.wonBy === -1 ? "Tiger" : "Goat"} Won!</h2>
+					</CoRe>
+					<h2>Captured Goats: {goatsCaptured}</h2>
+					<h2>Placed Goats: {goatCounter}</h2>
+					<h2>History Length: {moveHistory.length}</h2>
+				</div>
+			</div>
+
+			{gameResult.decided ? (
+				<>
+					<div className="win-screen">
+						<img
+							src={turn === ItemTypes.GOAT ? tiger : goat}
+							className="win-screen-img"
+						/>
+						<a className="win-screen-text">
+							{turn === ItemTypes.GOAT ? "Tiger" : "Goat"} Wins!
+						</a>
+					</div>
+				</>
+			) : (
+				<></>
+			)}
+		</>
+	);
 };
 export default Board;

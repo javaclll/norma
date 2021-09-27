@@ -6,7 +6,7 @@ import { GameProvider } from "./context/GameContext";
 function App() {
   return (
     <GameProvider>
-      <Board/>
+      <Board />
     </GameProvider>
   );
 }

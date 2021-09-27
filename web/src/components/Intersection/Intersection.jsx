@@ -4,7 +4,7 @@ import { ItemTypes } from "../../utils/config.jsx";
 import { GameContext } from "../../context/GameContext";
 
 export const Intersection = ({ x, y, children }) => {
-  const { game, makeMove, checkMove, turn, goatCounter, placeGoat } = useContext(GameContext);
+  const { game, makeMove, checkMove, turn, goatCounter, placeGoat, moveCounter, moveHistory } = useContext(GameContext);
 
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
@@ -31,7 +31,7 @@ export const Intersection = ({ x, y, children }) => {
   };
 
   return (
-    <td ref={drop} role="Space" className="cell" loco={`(${x},${y})`} onClick={onClickHandler}>
+    <td ref={drop} role="Space" className="cell" onClick={()=>onClickHandler()}>
       {children}
     </td>
   );

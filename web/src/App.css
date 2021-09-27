@@ -30,15 +30,20 @@
 }
 
 
-
 .button-panel{
-  margin-top: 10px;
-  margin-left: 20px;
 }
 
 .detail-box{
-  margin-left: 20px;
   color: #464655;
+}
+
+.right-box{
+  border-radius: 2vh;
+  background-color: #0000000A;
+  width: 18vw;
+  margin-top:10vh;
+  margin-left:5vh;
+  padding: 2vh;
 }
 
 .backward{
