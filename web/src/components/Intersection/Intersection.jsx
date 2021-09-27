@@ -31,7 +31,7 @@ export const Intersection = ({ x, y, children }) => {
   };
 
   return (
-    <td ref={drop} role="Space" className="cell" loco={`(${x},${y})`} onClick={onClickHandler}>
+    <td ref={drop} role="Space" className="cell" onClick={onClickHandler}>
       {children}
     </td>
   );

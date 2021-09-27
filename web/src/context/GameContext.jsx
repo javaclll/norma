@@ -20,6 +20,8 @@ export const GameProvider = ({ children }) => {
 
   const [goatsCaptured, setGoatsCaptured] = useState(0);
 
+  const [gameResult, setGameResult] = useState({ decided: false });
+
   const [moveHistory, setMoveHistory] = useState([startingLayout]);
 
   const [game, setGame] = useState(startingLayout);
@@ -32,6 +34,43 @@ export const GameProvider = ({ children }) => {
   const previousMove = () => {
     setGame(moveHistory[moveCounter - 1]);
     setMoveCounter(moveCounter - 1);
+  };
+
+  const gameStatusCheck = (position, capturedThisRound) => {
+    if (goatsCaptured + (capturedThisRound ? 1 : 0) >= 6) {
+      return { decided: true, wonBy: -1 };
+    }
+
+    let tigerHasMove = (() => {
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (position[i][j] === -1) {
+            for (let k = -2; k <= 2; k++) {
+              for (let l = -2; l <= 2; l++) {
+                let thisPieceHasAMove = checkMove(
+                  {
+                    source: [i, j],
+                    target: [i + k, j + l],
+                  },
+                  position,
+                  ItemTypes.TIGER
+                );
+                if (thisPieceHasAMove["isValid"]) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    })();
+
+    if (!tigerHasMove) {
+      return { decided: true, wonBy: 1 };
+    }
+
+    return { decided: false };
   };
 
   const makeMove = ({ source: [x, y], target: [m, n] }) => {
@@ -56,53 +95,81 @@ export const GameProvider = ({ children }) => {
       turn === ItemTypes.GOAT
         ? setTurn(ItemTypes.TIGER)
         : setTurn(ItemTypes.GOAT);
+
+      let gameStatusAfterMove = gameStatusCheck(
+        new_state,
+        eval_move["isCaptureMove"]
+      );
+      if (gameStatusAfterMove.decided === true) {
+        setGameResult(gameStatusAfterMove);
+      }
+
       setGame(new_state);
       setMoveCounter(moveCounter + 1);
     }
   };
 
   const placeGoat = ({ target: [m, n] }) => {
-    if (game[m][n] !== 0) {
+    if (game[m][n] !== 0 || gameResult.decided) {
       return false;
     } else {
       let new_state = [...game];
 
       let new_history = JSON.parse(JSON.stringify(moveHistory));
       new_history.push(game);
+
       setMoveHistory(new_history);
 
       setMoveCounter(moveCounter + 1);
       new_state[m][n] = 1;
+
+      let gameStatusAfterMove = gameStatusCheck(new_state, false);
+      if (gameStatusAfterMove.decided === true) {
+        setGameResult(gameStatusAfterMove);
+      }
+
       setGame(new_state);
       setGoatCounter(goatCounter + 1);
       setTurn(ItemTypes.TIGER);
     }
   };
 
-  const checkMove = ({ source: [x, y], target: [m, n] }) => {
-    // if(moveCounter != moveHistory.length -1){
-    //     return false;
-    // }
+  const checkMove = (
+    { source: [x, y], target: [m, n] },
+    position = game,
+    assumingTurn = turn
+  ) => {
+    if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
+      return { isValid: false };
+    }
+
+    if (gameResult.decided) {
+      return { isValid: false };
+    }
+
+    if (moveCounter != moveHistory.length - 1) {
+      return { isValid: false };
+    }
 
     // Is piece moved in its own turn
     if (
       !(
-        (turn === ItemTypes.GOAT && game[x][y] === 1) ||
-        (turn === ItemTypes.TIGER && game[x][y] === -1)
+        (assumingTurn === ItemTypes.GOAT && position[x][y] === 1) ||
+        (assumingTurn === ItemTypes.TIGER && position[x][y] === -1)
       )
     ) {
       return { isValid: false };
     }
 
     // Can't move goat before all goats are placed
-    if (turn === ItemTypes.GOAT) {
+    if (assumingTurn === ItemTypes.GOAT) {
       if (goatCounter < 20) {
         return { isValid: false };
       }
     }
 
     // If target has some piece
-    if (game[m][n] !== 0) {
+    if (position[m][n] !== 0) {
       return { isValid: false };
     }
 
@@ -120,14 +187,14 @@ export const GameProvider = ({ children }) => {
 
     // Tiger can jump goats
     if (
-      turn === ItemTypes.TIGER &&
+      assumingTurn === ItemTypes.TIGER &&
       ((xDiffAbs === 2 && (yDiffAbs === 0 || yDiffAbs === 2)) ||
         (yDiffAbs === 2 && (xDiffAbs === 0 || xDiffAbs === 2)))
     ) {
       let pieceToCapture = [x + xDiff / 2, y + yDiff / 2];
 
       //Check if piece to capture is goat
-      if (game[pieceToCapture[0]][pieceToCapture[1]] === 1) {
+      if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
         return {
           isValid: true,
           isCaptureMove: true,
@@ -168,6 +235,7 @@ export const GameProvider = ({ children }) => {
     previousMove,
     moveCounter,
     moveHistory,
+    gameResult,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

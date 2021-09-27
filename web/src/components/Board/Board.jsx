@@ -13,6 +13,7 @@ import arrow from "../../statics/arrow.svg";
 const Board = () => {
   const {
     game,
+    gameResult,
     turn,
     goatsCaptured,
     goatCounter,
@@ -27,48 +28,60 @@ const Board = () => {
         <div className="board" style={{ backgroundImage: `url(${board})` }}>
           <div className="tableDiv">
             <table className="boardTable">
-              {game.map((row, rowIndex) => (
-                <tr className="row">
-                  {row.map((value, colIndex) => (
-                    <Intersection x={rowIndex} y={colIndex}>
-                      <CoRe condition={value === 1}>
-                        <Goat m={rowIndex} n={colIndex} />
-                      </CoRe>
-                      <CoRe condition={value === 0}>{null}</CoRe>
-                      <CoRe condition={value === -1}>
-                        <Tiger m={rowIndex} n={colIndex} />
-                      </CoRe>
-                    </Intersection>
-                  ))}
-                </tr>
-              ))}
+              <tbody>
+                {game.map((row, rowIndex) => (
+                  <tr className="row" key={rowIndex}>
+                    {row.map((value, colIndex) => (
+                      <Intersection
+                        x={rowIndex}
+                        y={colIndex}
+                        key={`(${rowIndex},${colIndex})`}
+                      >
+                        <CoRe condition={value === 1}>
+                          <Goat m={rowIndex} n={colIndex} />
+                        </CoRe>
+                        <CoRe condition={value === -1}>
+                          <Tiger m={rowIndex} n={colIndex} />
+                        </CoRe>
+                      </Intersection>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </div>
       </DndProvider>
 
-      <div className="button-panel">
-        <button
-          className="backward button"
-          onClick={previousMove}
-          disabled={moveCounter === 0}
-        >
-          <img className="arrow" src={arrow} />
-        </button>
-        <div className="move-number">{moveCounter}</div>
-        <button
-          className="forward button"
-          onClick={nextMove}
-          disabled={moveCounter === moveHistory.length - 1}
-        >
-          <img className="arrow" src={arrow} />
-        </button>
-      </div>
+      <div className="right-box">
+        <div className="button-panel">
+          <button
+            className="backward button"
+            onClick={previousMove}
+            disabled={moveCounter === 0}
+          >
+            <img className="arrow" src={arrow} />
+          </button>
+          <div className="move-number">{moveCounter}</div>
+          <button
+            className="forward button"
+            onClick={nextMove}
+            disabled={moveCounter === moveHistory.length - 1}
+          >
+            <img className="arrow" src={arrow} />
+          </button>
+        </div>
 
-      <div className="detail-box">
-        <h1>{turn === ItemTypes.GOAT ? "Goat" : "Tiger"}'s Turn</h1>
-        <h1>Captured Goats: {goatsCaptured}</h1>
-        <h1>Placed Goats: {goatCounter}</h1>
+        <div className="detail-box">
+          <CoRe condition={!gameResult.decided}>
+            <h2>{turn === ItemTypes.GOAT ? "Goat" : "Tiger"}'s Turn</h2>
+          </CoRe>
+          <CoRe condition={gameResult.decided}>
+            <h2>{gameResult.wonBy===-1?"Tiger":"Goat"} Won!</h2>
+          </CoRe>
+          <h2>Captured Goats: {goatsCaptured}</h2>
+          <h2>Placed Goats: {goatCounter}</h2>
+        </div>
       </div>
     </>
   );
