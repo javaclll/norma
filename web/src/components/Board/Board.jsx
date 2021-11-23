@@ -6,7 +6,7 @@ import CoRe from "../Common/ConditionalRendering";
 import Goat from "../Goat/Goat.jsx";
 import Intersection from "../Intersection/Intersection.jsx";
 import Tiger from "../Tiger/Tiger.jsx";
-import { GameContext } from "../../context/GameContext";
+import { GameContext, startingLayout } from "../../context/GameContext";
 import { ItemTypes } from "../../utils/config";
 import arrow from "../../statics/arrow.svg";
 import "../Board/styles/board.css";
@@ -16,6 +16,14 @@ import goat from "../../statics/goat.svg";
 const Board = () => {
 	const {
 		game,
+		setTurn,
+		setGame,
+		setGoatCounter,
+		setMoveCounter,
+		setGameResult,
+		setMoveHistory,
+		setGoatsCaptured,
+		startingLayout,
 		gameResult,
 		turn,
 		goatsCaptured,
@@ -25,6 +33,16 @@ const Board = () => {
 		moveCounter,
 		moveHistory,
 	} = useContext(GameContext);
+
+	const onClickHandler = () => {
+		setGameResult({ decided: false });
+		setGoatsCaptured(0);
+		setTurn(ItemTypes.GOAT);
+		setMoveHistory([startingLayout]);
+		setGame(startingLayout);
+		setMoveCounter(0);
+		setGoatCounter(0);
+	};
 	return (
 		<>
 			<DndProvider backend={HTML5Backend}>
@@ -99,13 +117,23 @@ const Board = () => {
 			{gameResult.decided ? (
 				<>
 					<div className="win-screen">
-						<img
-							src={turn === ItemTypes.GOAT ? tiger : goat}
-							className="win-screen-img"
-						/>
-						<a className="win-screen-text">
-							{turn === ItemTypes.GOAT ? "Tiger" : "Goat"} Wins!
-						</a>
+						<div className="win-screen-top">
+							<img
+								src={turn === ItemTypes.GOAT ? tiger : goat}
+								className="win-screen-img"
+							/>
+							<a className="win-screen-text">
+								{turn === ItemTypes.GOAT ? "Tiger" : "Goat"} Wins!
+							</a>
+						</div>
+						<div className="win-screen-bottom">
+							<p
+								className="win-screen-play-again-button"
+								onClick={onClickHandler}
+							>
+								Play again!
+							</p>
+						</div>
 					</div>
 				</>
 			) : (

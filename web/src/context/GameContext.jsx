@@ -251,21 +251,27 @@ export const GameProvider = ({ children }) => {
   };
 
   const value = {
-    turn,
-    setTurn,
-    game,
-    setGame,
-    makeMove,
-    placeGoat,
-    checkMove,
-    goatCounter,
-    goatsCaptured,
-    nextMove,
-    previousMove,
-    moveCounter,
-    moveHistory,
-    gameResult,
-  };
+		turn,
+		setTurn,
+		game,
+		setGame,
+		makeMove,
+		placeGoat,
+		checkMove,
+		goatCounter,
+		goatsCaptured,
+		nextMove,
+		previousMove,
+		moveCounter,
+		moveHistory,
+		gameResult,
+		setGoatCounter,
+		setMoveCounter,
+		setGameResult,
+		setMoveHistory,
+		startingLayout,
+		setGoatsCaptured,
+	};
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
