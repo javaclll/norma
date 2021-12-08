@@ -131,7 +131,7 @@ const Board = () => {
               <div className="win-screen-bottom">
                 <p
                   className="win-screen-play-again-button"
-                  onClick={onClickHandler}
+                  onClick={()=>onClickHandler}
                 >
                   Play again!
                 </p>

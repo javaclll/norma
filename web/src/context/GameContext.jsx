@@ -138,8 +138,8 @@ export const GameProvider = ({ children }) => {
         setGameResult(gameStatusAfterMove);
       }
 
-      setGame(new_state);
       setMoveCounter(moveCounter + 1);
+      setGame(new_state);
       setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
     }
   };
@@ -153,9 +153,9 @@ export const GameProvider = ({ children }) => {
       let new_history = JSON.parse(JSON.stringify(moveHistory));
       new_history.push(game);
 
+      setMoveCounter(moveCounter + 1);
       setMoveHistory(new_history);
 
-      setMoveCounter(moveCounter + 1);
 
       new_state[m][n] = 1;
 
@@ -177,43 +177,48 @@ export const GameProvider = ({ children }) => {
     assumingTurn = turn,
   ) => {
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
-      console.log(`Reason 1`);
-      return { isValid: false };
+      const reason = "Cannot move outside the board!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     if (gameResult.decided) {
-      console.log(`Reason 2`);
-      return { isValid: false };
+      const reason = "Cannot move after game has been decided!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     if (moveCounter + 1 !== moveHistory.length) {
-      console.log(`Reason 3, Move count: ${moveHistory.length} ${moveCounter}`);
-      return { isValid: false };
+      const reason = "Cannot move while navigating history!";
+      console.log(reason);
+      console.log(`Move Counter: ${moveCounter}`);
+      console.log(`Move Counter: ${moveHistory.length}`);
+      return { isValid: false, reason: reason };
     }
 
-    // Is piece moved in its own turn
     if (
       !(
         (assumingTurn === ItemTypes.GOAT && position[x][y] === 1) ||
         (assumingTurn === ItemTypes.TIGER && position[x][y] === -1)
       )
     ) {
-      console.log(`Reason 4`);
-      return { isValid: false };
+      const reason = "Cannot move in other's turn!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
-    // Can't move goat before all goats are placed
     if (assumingTurn === ItemTypes.GOAT) {
       if (goatCounter < 20) {
-        console.log(`Reason 5`);
-        return { isValid: false };
+        const reason = "Can't move goat before all goats are placed";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
-    // If target has some piece
     if (position[m][n] !== 0) {
-      console.log(`Reason 6`);
-      return { isValid: false };
+      const reason = "Target already has a piece!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     let xDiffAbs = Math.abs(x - m);
@@ -223,10 +228,10 @@ export const GameProvider = ({ children }) => {
     let sSum = x + y;
     let tSum = m + n;
 
-    // Source and target can't be same
     if (xDiffAbs === 0 && yDiffAbs === 0) {
-      console.log(`Reason 7`);
-      return { isValid: false };
+      const reason = "Source and target can't be same!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     // Tiger can jump goats
@@ -238,41 +243,48 @@ export const GameProvider = ({ children }) => {
     ) {
       if (xDiffAbs === 2 && yDiffAbs === 2) {
         if (sSum % 2 !== 0) {
-          console.log(`Reason 13`);
-          return { isValid: false };
+          const reason = "Cannot jump diagonally from odd positions!";
+          console.log(reason);
+          return { isValid: false, reason: reason };
         }
       }
       let pieceToCapture = [x + xDiff / 2, y + yDiff / 2];
 
       //Check if piece to capture is goat
       if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
-        console.log(`Reason 8`);
+        const reason = "Can capture goat!";
+        console.log(reason);
         return {
           isValid: true,
           isCaptureMove: true,
           capturePiece: pieceToCapture,
+          reason: reason,
         };
       } else {
-        console.log(`Reason 9`);
-        return { isValid: false };
+        const reason = "Cannot capture tiger!";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
     // Can't move distance more than 2
     if (xDiffAbs > 1 || yDiffAbs > 1) {
-      console.log(`Reason 10`);
-      return { isValid: false };
+      const reason = "Cannot move distance more than 2!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     } // Can't move from odd position to another odd position
     // Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
     else if (sSum % 2) {
       if (tSum % 2) {
-        console.log(`Reason 11`);
-        return { isValid: false };
+        const reason = "Can't move from odd position to another odd position!";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
-    console.log(`Reason 12`);
-    return { isValid: true, isCaptureMove: false };
+    const reason = "Default move!";
+    console.log(reason);
+    return { isValid: true, isCaptureMove: false, reason: reason };
   };
 
   const value = {
