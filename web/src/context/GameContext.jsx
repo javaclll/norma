@@ -27,7 +27,7 @@ export const GameProvider = ({ children }) => {
   const [moveCounter, setMoveCounter] = useState(0);
 
   const [goatsCaptured, setGoatsCaptured] = useState(0);
-
+  
   const [pgn, setPGN] = useState([]);
 
   const [gameResult, setGameResult] = useState({ decided: false });
