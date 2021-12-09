@@ -11,6 +11,14 @@ export const startingLayout = [
   [-1, 0, 0, 0, -1],
 ];
 
+// export const startingLayout = [
+//   [1, 1, 1, 1, 1],
+//   [1, 1, 1, 1, 1],
+//   [1, 1, 1, 1, 1],
+//   [1, 1, 0, 0, 0],
+//   [-1, -1, -1, 0, -1],
+// ];
+
 export const GameProvider = ({ children }) => {
   const [turn, setTurn] = useState(ItemTypes.GOAT);
 
@@ -19,6 +27,8 @@ export const GameProvider = ({ children }) => {
   const [moveCounter, setMoveCounter] = useState(0);
 
   const [goatsCaptured, setGoatsCaptured] = useState(0);
+  
+  const [pgn, setPGN] = useState([]);
 
   const [gameResult, setGameResult] = useState({ decided: false });
 
@@ -53,7 +63,7 @@ export const GameProvider = ({ children }) => {
                     target: [i + k, j + l],
                   },
                   position,
-                  ItemTypes.TIGER
+                  ItemTypes.TIGER,
                 );
                 if (thisPieceHasAMove["isValid"]) {
                   return true;
@@ -71,6 +81,30 @@ export const GameProvider = ({ children }) => {
     }
 
     return { decided: false };
+  };
+
+  const cordToPGN = ({ source: [x, y], target: [m, n] }) => {
+    let secondChar = x === "X" ? x : (4 - x).toString();
+    let fourthChar = m === "X" ? m : (4 - m).toString();
+    // let fourthChar = m.toString();
+
+    let [firstChar, thirdChar] = [y, n].map((item) => {
+      switch (item) {
+        case 0:
+          return "A";
+        case 1:
+          return "B";
+        case 2:
+          return "C";
+        case 3:
+          return "D";
+        case 4:
+          return "E";
+        default:
+          return "X";
+      }
+    });
+    return firstChar + secondChar + thirdChar + fourthChar;
   };
 
   const makeMove = ({ source: [x, y], target: [m, n] }) => {
@@ -98,14 +132,15 @@ export const GameProvider = ({ children }) => {
 
       let gameStatusAfterMove = gameStatusCheck(
         new_state,
-        eval_move["isCaptureMove"]
+        eval_move["isCaptureMove"],
       );
       if (gameStatusAfterMove.decided === true) {
         setGameResult(gameStatusAfterMove);
       }
 
-      setGame(new_state);
       setMoveCounter(moveCounter + 1);
+      setGame(new_state);
+      setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
     }
   };
 
@@ -118,9 +153,10 @@ export const GameProvider = ({ children }) => {
       let new_history = JSON.parse(JSON.stringify(moveHistory));
       new_history.push(game);
 
+      setMoveCounter(moveCounter + 1);
       setMoveHistory(new_history);
 
-      setMoveCounter(moveCounter + 1);
+
       new_state[m][n] = 1;
 
       let gameStatusAfterMove = gameStatusCheck(new_state, false);
@@ -131,46 +167,58 @@ export const GameProvider = ({ children }) => {
       setGame(new_state);
       setGoatCounter(goatCounter + 1);
       setTurn(ItemTypes.TIGER);
+      setPGN([...pgn, cordToPGN({ source: ["X", "X"], target: [m, n] })]);
     }
   };
 
   const checkMove = (
     { source: [x, y], target: [m, n] },
     position = game,
-    assumingTurn = turn
+    assumingTurn = turn,
   ) => {
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
-      return { isValid: false };
+      const reason = "Cannot move outside the board!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     if (gameResult.decided) {
-      return { isValid: false };
+      const reason = "Cannot move after game has been decided!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
-    if (moveCounter != moveHistory.length - 1) {
-      return { isValid: false };
+    if (moveCounter + 1 !== moveHistory.length) {
+      const reason = "Cannot move while navigating history!";
+      console.log(reason);
+      console.log(`Move Counter: ${moveCounter}`);
+      console.log(`Move Counter: ${moveHistory.length}`);
+      return { isValid: false, reason: reason };
     }
 
-    // Is piece moved in its own turn
     if (
       !(
         (assumingTurn === ItemTypes.GOAT && position[x][y] === 1) ||
         (assumingTurn === ItemTypes.TIGER && position[x][y] === -1)
       )
     ) {
-      return { isValid: false };
+      const reason = "Cannot move in other's turn!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
-    // Can't move goat before all goats are placed
     if (assumingTurn === ItemTypes.GOAT) {
       if (goatCounter < 20) {
-        return { isValid: false };
+        const reason = "Can't move goat before all goats are placed";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
-    // If target has some piece
     if (position[m][n] !== 0) {
-      return { isValid: false };
+      const reason = "Target already has a piece!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     let xDiffAbs = Math.abs(x - m);
@@ -180,45 +228,63 @@ export const GameProvider = ({ children }) => {
     let sSum = x + y;
     let tSum = m + n;
 
-    // Source and target can't be same
     if (xDiffAbs === 0 && yDiffAbs === 0) {
-      return { isValid: false };
+      const reason = "Source and target can't be same!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
     }
 
     // Tiger can jump goats
     if (
+      // (2,0), (2,2), (0, 2), (2, 2)
       assumingTurn === ItemTypes.TIGER &&
-      ((xDiffAbs === 2 && (yDiffAbs === 0 || yDiffAbs === 2)) ||
+      ((xDiffAbs === 2 && yDiffAbs === 0) ||
         (yDiffAbs === 2 && (xDiffAbs === 0 || xDiffAbs === 2)))
     ) {
+      if (xDiffAbs === 2 && yDiffAbs === 2) {
+        if (sSum % 2 !== 0) {
+          const reason = "Cannot jump diagonally from odd positions!";
+          console.log(reason);
+          return { isValid: false, reason: reason };
+        }
+      }
       let pieceToCapture = [x + xDiff / 2, y + yDiff / 2];
 
       //Check if piece to capture is goat
       if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
+        const reason = "Can capture goat!";
+        console.log(reason);
         return {
           isValid: true,
           isCaptureMove: true,
           capturePiece: pieceToCapture,
+          reason: reason,
         };
       } else {
-        return { isValid: false };
+        const reason = "Cannot capture tiger!";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
     // Can't move distance more than 2
     if (xDiffAbs > 1 || yDiffAbs > 1) {
-      return { isValid: false };
-    }
-
-    // Can't move from odd position to another odd position
+      const reason = "Cannot move distance more than 2!";
+      console.log(reason);
+      return { isValid: false, reason: reason };
+    } // Can't move from odd position to another odd position
     // Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
     else if (sSum % 2) {
       if (tSum % 2) {
-        return { isValid: false };
+        const reason = "Can't move from odd position to another odd position!";
+        console.log(reason);
+        return { isValid: false, reason: reason };
       }
     }
 
-    return { isValid: true, isCaptureMove: false };
+    const reason = "Default move!";
+    console.log(reason);
+    return { isValid: true, isCaptureMove: false, reason: reason };
   };
 
   const value = {
@@ -236,6 +302,13 @@ export const GameProvider = ({ children }) => {
     moveCounter,
     moveHistory,
     gameResult,
+    setGoatCounter,
+    setMoveCounter,
+    setGameResult,
+    setMoveHistory,
+    startingLayout,
+    setGoatsCaptured,
+    pgn,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
