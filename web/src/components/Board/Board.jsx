@@ -12,6 +12,7 @@ import arrow from "../../statics/arrow.svg";
 import "../Board/styles/board.css";
 import tiger from "../../statics/tiger.svg";
 import goat from "../../statics/goat.svg";
+import replay from "../../statics/replay.svg";
 
 const Board = () => {
   const {
@@ -32,7 +33,8 @@ const Board = () => {
     previousMove,
     moveCounter,
     moveHistory,
-    pgn
+    playFromThisPoint,
+    pgn,
   } = useContext(GameContext);
 
   const onClickHandler = () => {
@@ -100,6 +102,13 @@ const Board = () => {
           >
             <img className="arrow" src={arrow} />
           </button>
+          <button
+            className="replay-bt button"
+            onClick={playFromThisPoint}
+            disabled={moveCounter === moveHistory.length - 1}
+          >
+            <img className="replay" src={replay} />
+          </button>
         </div>
 
         <div className="detail-box">
@@ -131,7 +140,7 @@ const Board = () => {
               <div className="win-screen-bottom">
                 <p
                   className="win-screen-play-again-button"
-                  onClick={()=>onClickHandler}
+                  onClick={() => onClickHandler}
                 >
                   Play again!
                 </p>

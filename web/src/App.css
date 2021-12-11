@@ -122,5 +122,11 @@
   width: 20px;
 }
 
+.replay{
+  height: 20px;
+  width: 20px;
+}
 
-
+.replay-bt{
+  margin-left: 20px;
+}

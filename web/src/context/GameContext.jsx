@@ -27,7 +27,7 @@ export const GameProvider = ({ children }) => {
   const [moveCounter, setMoveCounter] = useState(0);
 
   const [goatsCaptured, setGoatsCaptured] = useState(0);
-  
+
   const [pgn, setPGN] = useState([]);
 
   const [gameResult, setGameResult] = useState({ decided: false });
@@ -46,6 +46,16 @@ export const GameProvider = ({ children }) => {
     setMoveCounter(moveCounter - 1);
   };
 
+  const playFromThisPoint = () => {
+    setMoveHistory(moveHistory.slice(0, moveCounter + 1));
+    setPGN(pgn.slice(0, moveCounter));
+    if (moveCounter % 2) {
+      setTurn(ItemTypes.TIGER);
+    } else {
+      setTurn(ItemTypes.GOAT);
+    }
+  };
+
   const gameStatusCheck = (position, capturedThisRound) => {
     if (goatsCaptured + (capturedThisRound ? 1 : 0) >= 6) {
       return { decided: true, wonBy: -1 };
@@ -62,6 +72,7 @@ export const GameProvider = ({ children }) => {
                     source: [i, j],
                     target: [i + k, j + l],
                   },
+                  ()=>moveHistory,
                   position,
                   ItemTypes.TIGER,
                 );
@@ -139,6 +150,8 @@ export const GameProvider = ({ children }) => {
       }
 
       setMoveCounter(moveCounter + 1);
+
+
       setGame(new_state);
       setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
     }
@@ -156,7 +169,6 @@ export const GameProvider = ({ children }) => {
       setMoveCounter(moveCounter + 1);
       setMoveHistory(new_history);
 
-
       new_state[m][n] = 1;
 
       let gameStatusAfterMove = gameStatusCheck(new_state, false);
@@ -172,10 +184,12 @@ export const GameProvider = ({ children }) => {
   };
 
   const checkMove = (
-    { source: [x, y], target: [m, n] },
+    { source: [x, y], target: [m, n]},
+    history = ()=>(moveHistory),
     position = game,
     assumingTurn = turn,
   ) => {
+    let move_history = history();
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
       const reason = "Cannot move outside the board!";
       console.log(reason);
@@ -188,11 +202,11 @@ export const GameProvider = ({ children }) => {
       return { isValid: false, reason: reason };
     }
 
-    if (moveCounter + 1 !== moveHistory.length) {
+    if (moveCounter + 1 !== move_history.length) {
       const reason = "Cannot move while navigating history!";
       console.log(reason);
       console.log(`Move Counter: ${moveCounter}`);
-      console.log(`Move Counter: ${moveHistory.length}`);
+      console.log(`Move History: ${move_history.length}`);
       return { isValid: false, reason: reason };
     }
 
@@ -308,6 +322,7 @@ export const GameProvider = ({ children }) => {
     setMoveHistory,
     startingLayout,
     setGoatsCaptured,
+    playFromThisPoint,
     pgn,
   };
 

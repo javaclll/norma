@@ -4,13 +4,24 @@ import { ItemTypes } from "../../utils/config.jsx";
 import { GameContext } from "../../context/GameContext";
 
 export const Intersection = ({ x, y, children }) => {
-  const { game, makeMove, checkMove, turn, goatCounter, placeGoat, moveCounter, moveHistory } = useContext(GameContext);
+  const {
+    game,
+    makeMove,
+    checkMove,
+    turn,
+    goatCounter,
+    placeGoat,
+    moveHistory,
+  } = useContext(GameContext);
 
   const [{ isOver, canDrop }, drop] = useDrop(
     () => ({
       accept: [ItemTypes.TIGER, ItemTypes.GOAT],
       canDrop: (item) =>
-        checkMove({ source: item["location"], target: [x, y] }).isValid,
+        checkMove(
+          { source: item["location"], target: [x, y] },
+          () => (moveHistory),
+        ).isValid,
       drop: (item) => {
         makeMove({ source: item["location"], target: [x, y] });
       },
@@ -21,7 +32,7 @@ export const Intersection = ({ x, y, children }) => {
         };
       },
     }),
-    [game]
+    [game, moveHistory.length],
   );
 
   const onClickHandler = () => {
@@ -31,7 +42,12 @@ export const Intersection = ({ x, y, children }) => {
   };
 
   return (
-    <td ref={drop} role="Space" className="cell" onClick={()=>onClickHandler()}>
+    <td
+      ref={drop}
+      role="Space"
+      className="cell"
+      onClick={() => onClickHandler()}
+    >
       {children}
     </td>
   );
