@@ -12,6 +12,7 @@ export const Intersection = ({ x, y, children }) => {
     goatCounter,
     placeGoat,
     moveHistory,
+    goatsCaptured,
   } = useContext(GameContext);
 
   const [{ isOver, canDrop }, drop] = useDrop(
@@ -20,7 +21,6 @@ export const Intersection = ({ x, y, children }) => {
       canDrop: (item) =>
         checkMove(
           { source: item["location"], target: [x, y] },
-          () => (moveHistory),
         ).isValid,
       drop: (item) => {
         makeMove({ source: item["location"], target: [x, y] });
@@ -32,7 +32,7 @@ export const Intersection = ({ x, y, children }) => {
         };
       },
     }),
-    [game, moveHistory.length],
+    [game, moveHistory.length, goatCounter, goatsCaptured],
   );
 
   const onClickHandler = () => {

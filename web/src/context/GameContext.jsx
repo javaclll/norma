@@ -1,5 +1,6 @@
 import { createContext, useState } from "react";
 import { ItemTypes } from "../utils/config";
+import { cloneDeep } from "lodash";
 
 export const GameContext = createContext(null);
 
@@ -32,17 +33,27 @@ export const GameProvider = ({ children }) => {
 
   const [gameResult, setGameResult] = useState({ decided: false });
 
-  const [moveHistory, setMoveHistory] = useState([startingLayout]);
+  const [moveHistory, setMoveHistory] = useState([{
+    game: startingLayout,
+    goatCount: 0,
+    goatsCaptured: 0,
+  }]);
 
   const [game, setGame] = useState(startingLayout);
 
   const nextMove = () => {
-    setGame(moveHistory[moveCounter + 1]);
+    let nextGameState = moveHistory[moveCounter + 1];
+    setGame(nextGameState.game);
+    setGoatCounter(nextGameState.goatCount);
+    setGoatsCaptured(nextGameState.goatsCaptured);
     setMoveCounter(moveCounter + 1);
   };
 
   const previousMove = () => {
-    setGame(moveHistory[moveCounter - 1]);
+    let prevGameState = moveHistory[moveCounter - 1];
+    setGame(prevGameState.game);
+    setGoatCounter(prevGameState.goatCount);
+    setGoatsCaptured(prevGameState.goatsCaptured);
     setMoveCounter(moveCounter - 1);
   };
 
@@ -72,7 +83,6 @@ export const GameProvider = ({ children }) => {
                     source: [i, j],
                     target: [i + k, j + l],
                   },
-                  ()=>moveHistory,
                   position,
                   ItemTypes.TIGER,
                 );
@@ -122,18 +132,24 @@ export const GameProvider = ({ children }) => {
     let eval_move = checkMove({ source: [x, y], target: [m, n] });
 
     if (eval_move["isValid"]) {
-      let new_state = [...game];
+      let new_state = cloneDeep(game);
 
-      let new_history = JSON.parse(JSON.stringify(moveHistory));
-      new_history.push(game);
-      setMoveHistory(new_history);
-
-      if (eval_move["isCaptureMove"]) {
+      let captured = eval_move["isCaptureMove"];
+      if (captured) {
         new_state[eval_move["capturePiece"][0]][
           eval_move["capturePiece"][1]
         ] = 0;
         setGoatsCaptured(goatsCaptured + 1);
       }
+
+      let new_history = cloneDeep(moveHistory);
+
+      new_history.push({
+        game: new_state,
+        goatCount: goatCounter,
+        goatsCaptured: captured ? goatsCaptured + 1 : goatsCaptured,
+      });
+      setMoveHistory(new_history);
 
       new_state[m][n] = new_state[x][y];
       new_state[x][y] = 0;
@@ -151,7 +167,6 @@ export const GameProvider = ({ children }) => {
 
       setMoveCounter(moveCounter + 1);
 
-
       setGame(new_state);
       setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
     }
@@ -163,8 +178,14 @@ export const GameProvider = ({ children }) => {
     } else {
       let new_state = [...game];
 
-      let new_history = JSON.parse(JSON.stringify(moveHistory));
-      new_history.push(game);
+      let new_history = cloneDeep(moveHistory);
+
+      new_history.push({
+        game: game,
+        goatCount: goatCounter,
+        goatsCaptured: goatsCaptured,
+      });
+      console.log(new_history);
 
       setMoveCounter(moveCounter + 1);
       setMoveHistory(new_history);
@@ -184,12 +205,10 @@ export const GameProvider = ({ children }) => {
   };
 
   const checkMove = (
-    { source: [x, y], target: [m, n]},
-    history = ()=>(moveHistory),
+    { source: [x, y], target: [m, n] },
     position = game,
     assumingTurn = turn,
   ) => {
-    let move_history = history();
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
       const reason = "Cannot move outside the board!";
       console.log(reason);
@@ -202,11 +221,11 @@ export const GameProvider = ({ children }) => {
       return { isValid: false, reason: reason };
     }
 
-    if (moveCounter + 1 !== move_history.length) {
+    if (moveCounter + 1 !== moveHistory.length) {
       const reason = "Cannot move while navigating history!";
       console.log(reason);
       console.log(`Move Counter: ${moveCounter}`);
-      console.log(`Move History: ${move_history.length}`);
+      console.log(`Move History: ${moveHistory.length}`);
       return { isValid: false, reason: reason };
     }
 
