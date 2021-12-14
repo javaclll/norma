@@ -53,7 +53,7 @@ const Board = () => {
           <div className="left-box">
             <div className="left-box-content">
               <div className="left-box-content-top">
-                <a className="left-box-title">Played moves</a>
+                <a className="left-box-title text">Played Moves</a>
               </div>
               <div className="left-box-content-bottom">{pgn.join(" - ")}</div>
             </div>
@@ -94,7 +94,7 @@ const Board = () => {
           >
             <img className="arrow" src={arrow} />
           </button>
-          <div className="move-number">{moveCounter}</div>
+          <div className="move-number text">{moveCounter}</div>
           <button
             className="forward button"
             onClick={nextMove}
