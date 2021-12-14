@@ -1,27 +1,32 @@
 .board {
-  height: min(80vh, 80vw);
+  height: min(100vh, 100vw);
   top: 50%;
   left: 50%;
-  width: min(80vw, 80vh);
+  width: min(100vw, 100vh);
   background-size: cover;
   position: absolute;
-  margin: -40vh 0 0 -40vh;
+  margin: -50vh 0 0 -50vh;
+}
+
+.text{
+  color: #464655;
 }
 
 .cell{
   padding:0px;
-  width: 10vh;
-  height: 10vh;
+  width: 14vh;
+  height: 14vh;
 }
 
 .tableDiv {
-  margin-top:-10vh;
-  margin-left:-10vh;
+  margin-top:-00vh;
+  margin-left:-00vh;
 }
 
 .boardTable {
-  height: 100vh;
-  width: 100vh;
+  height: 84vh;
+  width: 84vh;
+  margin: 8vh 8vh 8vh 8vh;
 }
 
 .item{
@@ -61,7 +66,6 @@
 .move-number{
   display: inline-block;
   margin-right: 20px;
-  color: #464655;
   font-weight: 700;
 }
 
