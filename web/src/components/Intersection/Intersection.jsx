@@ -19,9 +19,7 @@ export const Intersection = ({ x, y, children }) => {
     () => ({
       accept: [ItemTypes.TIGER, ItemTypes.GOAT],
       canDrop: (item) =>
-        checkMove(
-          { source: item["location"], target: [x, y] },
-        ).isValid,
+        checkMove({ source: item["location"], target: [x, y] }).isValid,
       drop: (item) => {
         makeMove({ source: item["location"], target: [x, y] });
       },
@@ -32,7 +30,7 @@ export const Intersection = ({ x, y, children }) => {
         };
       },
     }),
-    [game, moveHistory.length, goatCounter, goatsCaptured],
+    [game, moveHistory.length, goatCounter, goatsCaptured]
   );
 
   const onClickHandler = () => {

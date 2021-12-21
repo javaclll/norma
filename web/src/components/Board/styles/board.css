@@ -1,26 +1,24 @@
-.board{
-
-}
-.left-box{
-  position:absolute;
-  left: 100%;
+.right-box {
   margin-top: 10vh;
-  width: 35%;
+  flex: 1;
+  border-radius: 20px;
+}
+.right-box-content {
+  width: 80%;
   height: 80%;
-  background-color: rgb(0,0,0,0.05);
-  border-radius:20px;
-  overflow: hidden;
+  margin: 0px auto;
+  border-radius: 2vh;
+  background-color: #0000000a;
 }
-.detail-box{
-
+.detail-box {
 }
-.left-box-content-top{
+.right-box-content-top {
   position: relative;
   text-align: center;
-  top:20%;
+  padding-top: 10px;
   width: 100%;
 }
-.left-box-title{
+.right-box-title {
   margin: auto;
   padding: auto;
   font-size: 2rem;
@@ -28,92 +26,96 @@
   text-align: center;
   position: relative;
 }
-.left-box-title::before{
+.right-box-title::before {
   content: "";
   position: absolute;
   top: 50px;
   width: 100%;
   height: 2px;
-  background-color:black;
+  background-color: black;
 }
-.left-box-content-bottom{
+.right-box-content-bottom {
   margin: auto;
   padding: 20px;
   font-size: 1rem;
   text-align: left;
   overflow: scroll;
 }
-.win-screen{
-  position:fixed;
-  top:0;
-  left:0;
-  background-color: rgb(255,255,255,0.8);
-  width:100%;
-  height:100%;
-  z-index:10;
-  animation:win-screen-text 2s;
+.win-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: rgb(255, 255, 255, 0.8);
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  animation: win-screen-text 2s;
 }
-.win-screen-img{
-  position:absolute;
-  transform: translate(110%,110%);
-  width:25%;
-  height:25%;
-  animation:win-screen-text 4s,;
+.win-screen-img {
+  position: absolute;
+  transform: translate(110%, 110%);
+  width: 25%;
+  height: 25%;
+  animation: win-screen-text 4s;
 }
-.win-screen-text{
-  position:absolute;
-  top:35%;
-  left:50%;
+.win-screen-text {
+  position: absolute;
+  top: 35%;
+  left: 50%;
   font-size: 5rem;
   font-weight: bold;
   text-align: center;
-  animation:fade-in-from-below 1s;
+  animation: fade-in-from-below 1s;
 }
-.win-screen-bottom{
-  width:200px;
-  height:80px;
+.win-screen-bottom {
+  width: 200px;
+  height: 80px;
   position: absolute;
   text-align: center;
-  top:55%;
-  left:50%;
-
+  top: 55%;
+  left: 50%;
 }
 
-.win-screen-play-again-button{
-  margin:auto;
+.win-screen-play-again-button {
+  margin: 0px;
   border: 1px solid black;
   border-radius: 10px;
   background-color: rgb(16, 28, 92);
   color: white;
   font-size: 1.5rem;
-  padding:10px;
+  padding: 10px;
   cursor: pointer;
-  animation:fade-in-from-below 4s;
+  animation: fade-in-from-below 1s;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
 }
-.win-screen-play-again-button:hover{
-  transform:scale(1.03);
+.win-screen-play-again-button:hover {
+  transform: scale(1.03);
   transition: transform 0.2s;
 }
 
-@keyframes win-screen-text{
-  0%{
-    opacity:0;
+@keyframes win-screen-text {
+  0% {
+    opacity: 0;
   }
-  100%{
-    opacity:1;
+  100% {
+    opacity: 1;
   }
 }
 
-@keyframes fade-in-from-below{
-  0%{
-    opacity:0;
+@keyframes fade-in-from-below {
+  0% {
+    opacity: 0;
     transform: translateY(100%);
   }
-  100%{
-    opacity:1;
+  100% {
+    opacity: 1;
     transform: translateY(0%);
   }
- 
 }
-  
-
