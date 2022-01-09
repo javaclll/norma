@@ -1,0 +1,9 @@
+.vim/
+.vscode/
+.idea/
+.mypy_cache/
+__pycache__/
+.DS_Store
+app.egg-info
+node_modules/
+!.gitkeep

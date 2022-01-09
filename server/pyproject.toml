@@ -1,17 +1,13 @@
 [tool.poetry]
-name = "bagchal"
+name = "bagchal-server"
 version = "0.1.0"
 description = ""
 authors = ["Daze <dazehere@yandex.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 
 [tool.poetry.dev-dependencies]
-pylint = "^2.10.2"
-black = "^21.7b0"
-rope = "^0.19.0"
-isort = "^5.9.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
