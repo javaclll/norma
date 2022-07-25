@@ -1,16 +1,28 @@
+.left-box {
+  margin-top: 10vh;
+  height: 90%;
+  flex: 1;
+}
+.left-box-content {
+  padding: 20px;
+  max-width: 400px;
+  margin: 0px auto;
+  border-radius: 2vh;
+  background-color: #0000000a;
+}
 .right-box {
+  position: relative;
   margin-top: 10vh;
   flex: 1;
   border-radius: 20px;
 }
 .right-box-content {
+  position: relative;
   width: 80%;
   height: 80%;
   margin: 0px auto;
   border-radius: 2vh;
   background-color: #0000000a;
-}
-.detail-box {
 }
 .right-box-content-top {
   position: relative;
@@ -26,54 +38,52 @@
   text-align: center;
   position: relative;
 }
-.right-box-title::before {
-  content: "";
-  position: absolute;
-  top: 50px;
-  width: 100%;
-  height: 2px;
-  background-color: black;
-}
 .right-box-content-bottom {
   margin: auto;
-  padding: 20px;
+  padding: 30px;
   font-size: 1rem;
   text-align: left;
   overflow: scroll;
 }
 .win-screen {
-  position: fixed;
-  top: 0;
+  position: relative;
+  top: 100px;
   left: 0;
-  background-color: rgb(255, 255, 255, 0.8);
-  width: 100%;
-  height: 100%;
-  z-index: 10;
+  width: 420px;
+  height: 420px;
+  margin: 0px auto;
   animation: win-screen-text 2s;
 }
+.win-screen-top {
+  padding: 10px;
+  position: relative;
+}
 .win-screen-img {
-  position: absolute;
-  transform: translate(110%, 110%);
+  padding: 10px;
+  display: block;
+  position: relative;
   width: 25%;
   height: 25%;
+  margin: 0px auto;
   animation: win-screen-text 4s;
 }
 .win-screen-text {
-  position: absolute;
-  top: 35%;
-  left: 50%;
-  font-size: 5rem;
+  padding: 10px;
+  display: block;
+  position: relative;
+  font-size: 4rem;
   font-weight: bold;
   text-align: center;
   animation: fade-in-from-below 1s;
 }
 .win-screen-bottom {
+  padding: 10px;
+  display: block;
   width: 200px;
   height: 80px;
-  position: absolute;
+  position: relative;
+  margin: 0px auto;
   text-align: center;
-  top: 55%;
-  left: 50%;
 }
 
 .win-screen-play-again-button {
@@ -98,6 +108,88 @@
 .win-screen-play-again-button:hover {
   transform: scale(1.03);
   transition: transform 0.2s;
+}
+
+.pgn_form {
+  width: 80%;
+  position: relative;
+  margin: 0px auto;
+}
+.load_PGN {
+  width: 95%;
+  height: 40px;
+  outline: none;
+  margin: 30px auto;
+  border-radius: 5px;
+  font-size: 16px;
+  padding: 10px;
+}
+.c_Notif {
+  color: #73b573;
+  padding: 10px;
+  animation: fadeInAnimation ease 1s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+@keyframes fadeInAnimation {
+  0% {
+    opacity: 0;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.copyButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 80px;
+}
+.a_copyButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+}
+.copyButton {
+  background-color: #ffa54b;
+  color: #ffffff;
+  width: 100px;
+  padding: 15px;
+  border-radius: 15px;
+  border: 0px;
+  cursor: pointer;
+}
+.copy_text {
+  font-size: 14px;
+  font-weight: bold;
+}
+.copyButton:hover {
+  background-color: #ffa54b87;
+  color: #ffffff;
+}
+.navButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+}
+.navButton {
+  background-color: #ffa54b;
+  color: #ffffff;
+  width: 180px;
+  padding: 15px;
+  border-radius: 15px;
+  border: 0px;
+  cursor: pointer;
+}
+.nav_text {
+  font-size: 14px;
+  font-weight: bold;
+}
+.navButton:hover {
+  background-color: #ffa54b87;
+  color: #ffffff;
 }
 
 @keyframes win-screen-text {

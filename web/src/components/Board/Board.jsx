@@ -1,13 +1,15 @@
 import { DndProvider } from "react-dnd";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import board from "../../statics/board.svg";
 import CoRe from "../Common/ConditionalRendering";
 import Goat from "../Goat/Goat.jsx";
 import Intersection from "../Intersection/Intersection.jsx";
 import Tiger from "../Tiger/Tiger.jsx";
-import { GameContext, startingLayout } from "../../context/GameContext";
+import { GameContext } from "../../context/GameContext";
 import { ItemTypes } from "../../utils/config";
+import { cloneDeep } from "lodash";
+import { Link } from "react-router-dom";
 import arrow from "../../statics/arrow.svg";
 import "../Board/styles/board.css";
 import tiger from "../../statics/tiger.svg";
@@ -17,14 +19,6 @@ import replay from "../../statics/replay.svg";
 const Board = () => {
   const {
     game,
-    setTurn,
-    setGame,
-    setGoatCounter,
-    setMoveCounter,
-    setGameResult,
-    setMoveHistory,
-    setGoatsCaptured,
-    startingLayout,
     gameResult,
     turn,
     goatsCaptured,
@@ -40,6 +34,9 @@ const Board = () => {
   const onClickHandler = () => {
     window.location = "/";
   };
+
+  const [notifShow, setNotif] = useState(false);
+
   return (
     <>
       <DndProvider backend={HTML5Backend}>
@@ -82,6 +79,31 @@ const Board = () => {
                 <h2>History Length: {moveHistory.length}</h2>
               </div>
             </div>
+            {gameResult.decided ? (
+              <>
+                <div className="win-screen">
+                  <div className="win-screen-top">
+                    <img
+                      src={turn === ItemTypes.GOAT ? tiger : goat}
+                      className="win-screen-img"
+                    />
+                    <a className="win-screen-text">
+                      {turn === ItemTypes.GOAT ? "Tiger" : "Goat"} Wins!
+                    </a>
+                  </div>
+                  <div className="win-screen-bottom">
+                    <button
+                      className="win-screen-play-again-button"
+                      onClick={(e) => onClickHandler(e)}
+                    >
+                      Play again!
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
           </div>
 
           <div className="board" style={{ backgroundImage: `url(${board})` }}>
@@ -117,6 +139,37 @@ const Board = () => {
                 <a className="right-box-title text">Played Moves</a>
               </div>
               <div className="right-box-content-bottom">{pgn.join(" - ")}</div>
+              <div className="navButtonBox">
+                <Link to="/analysis">
+                  <button
+                    className="navButton"
+                    type="button"
+                    onClick={(e) => {}}
+                  >
+                    <a className="nav_text">Go to Analysis Board</a>
+                  </button>
+                </Link>
+              </div>
+              <div className="copyButtonBox">
+                {notifShow ? (
+                  <a className="c_Notif">Copied to Clipboard</a>
+                ) : (
+                  ""
+                )}
+                <button
+                  className="copyButton"
+                  type="button"
+                  onClick={(e) => {
+                    navigator.clipboard.writeText(pgn.join("-"));
+                    setNotif(true);
+                    setTimeout(function () {
+                      setNotif(false);
+                    }, 1500);
+                  }}
+                >
+                  <a className="copy_text">Copy</a>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -137,7 +190,7 @@ const Board = () => {
             <div className="win-screen-bottom">
               <button
                 className="win-screen-play-again-button"
-                onClick={() => onClickHandler()}
+                onClick={(e) => onClickHandler(e)}
               >
                 Play again!
               </button>

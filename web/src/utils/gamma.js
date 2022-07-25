@@ -23,8 +23,8 @@ export class Game {
     };
   }
 
-  move({from, to}) {
-    console.log(this.gameState);
+  move({ from, to }) {
+    //console.log(this.gameState);
     this.gameState[to[0]][to[1]] = this.gameState[from[0]][from[1]];
     this.gameState[from[0]][from[1]] = 0;
     this.emitChange();

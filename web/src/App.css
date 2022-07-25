@@ -1,14 +1,15 @@
 .main-container {
   display: flex;
+  /* position: relative; */
 }
 ::-webkit-scrollbar {
   width: 0; /* Remove scrollbar space */
   background: transparent; /* Optional: just make scrollbar invisible */
 }
 /* Optional: show position indicator in red */
-::-webkit-scrollbar-thumb {
+/* ::-webkit-scrollbar-thumb {
   background: #ff0000;
-}
+} */
 .board {
   width: 100vh;
   flex: 2;
@@ -47,18 +48,6 @@
   color: #464655;
 }
 
-.left-box {
-  margin-top: 10vh;
-  height: 90%;
-  flex: 1;
-}
-.left-box-content {
-  padding: 20px;
-  width: 75%;
-  margin: 0px auto;
-  border-radius: 2vh;
-  background-color: #0000000a;
-}
 .backward {
   background-color: white;
   padding: 10px 10px;

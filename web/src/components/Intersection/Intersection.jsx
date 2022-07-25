@@ -35,6 +35,7 @@ export const Intersection = ({ x, y, children }) => {
 
   const onClickHandler = () => {
     if (turn == ItemTypes.GOAT && goatCounter < 20) {
+      //console.log("inter " + x, y);
       placeGoat({ target: [x, y] });
     }
   };

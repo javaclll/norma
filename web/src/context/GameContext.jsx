@@ -1,6 +1,6 @@
 import { createContext, useState } from "react";
 import { ItemTypes } from "../utils/config";
-import { cloneDeep } from "lodash";
+import { cloneDeep, set } from "lodash";
 
 export const GameContext = createContext(null);
 
@@ -33,11 +33,13 @@ export const GameProvider = ({ children }) => {
 
   const [gameResult, setGameResult] = useState({ decided: false });
 
-  const [moveHistory, setMoveHistory] = useState([{
-    game: startingLayout,
-    goatCount: 0,
-    goatsCaptured: 0,
-  }]);
+  const [moveHistory, setMoveHistory] = useState([
+    {
+      game: startingLayout,
+      goatCount: 0,
+      goatsCaptured: 0,
+    },
+  ]);
 
   const [game, setGame] = useState(startingLayout);
 
@@ -47,14 +49,21 @@ export const GameProvider = ({ children }) => {
     setGoatCounter(nextGameState.goatCount);
     setGoatsCaptured(nextGameState.goatsCaptured);
     setMoveCounter(moveCounter + 1);
+    // setTurn(
+    //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
+    // );
   };
 
   const previousMove = () => {
     let prevGameState = moveHistory[moveCounter - 1];
+    console.log(prevGameState.game);
     setGame(prevGameState.game);
     setGoatCounter(prevGameState.goatCount);
     setGoatsCaptured(prevGameState.goatsCaptured);
     setMoveCounter(moveCounter - 1);
+    // setTurn(
+    //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
+    // );
   };
 
   const playFromThisPoint = () => {
@@ -84,7 +93,7 @@ export const GameProvider = ({ children }) => {
                     target: [i + k, j + l],
                   },
                   position,
-                  ItemTypes.TIGER,
+                  ItemTypes.TIGER
                 );
                 if (thisPieceHasAMove["isValid"]) {
                   return true;
@@ -105,12 +114,12 @@ export const GameProvider = ({ children }) => {
   };
 
   const cordToPGN = ({ source: [x, y], target: [m, n] }) => {
-    let secondChar = x === "X" ? x : (4 - x).toString();
-    let fourthChar = m === "X" ? m : (4 - m).toString();
+    let secondChar = x === "X" ? x : (5 - parseInt(x)).toString();
+    let fourthChar = m === "X" ? m : (5 - parseInt(m)).toString();
     // let fourthChar = m.toString();
 
     let [firstChar, thirdChar] = [y, n].map((item) => {
-      switch (item) {
+      switch (parseInt(item)) {
         case 0:
           return "A";
         case 1:
@@ -159,7 +168,7 @@ export const GameProvider = ({ children }) => {
 
       let gameStatusAfterMove = gameStatusCheck(
         new_state,
-        eval_move["isCaptureMove"],
+        eval_move["isCaptureMove"]
       );
       if (gameStatusAfterMove.decided === true) {
         setGameResult(gameStatusAfterMove);
@@ -169,6 +178,7 @@ export const GameProvider = ({ children }) => {
 
       setGame(new_state);
       setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
+      //console.log(x, y, m, n);
     }
   };
 
@@ -180,12 +190,19 @@ export const GameProvider = ({ children }) => {
 
       let new_history = cloneDeep(moveHistory);
 
+      if (moveCounter + 1 !== moveHistory.length) {
+        const reason = "Cannot move while navigating history!";
+        //console.log(reason);
+        //console.log(`Move Counter: ${moveCounter}`);
+        //console.log(`Move History: ${moveHistory.length}`);
+        return { isValid: false, reason: reason };
+      }
+
       new_history.push({
         game: game,
-        goatCount: goatCounter,
+        goatCount: goatCounter + 1,
         goatsCaptured: goatsCaptured,
       });
-      console.log(new_history);
 
       setMoveCounter(moveCounter + 1);
       setMoveHistory(new_history);
@@ -207,25 +224,25 @@ export const GameProvider = ({ children }) => {
   const checkMove = (
     { source: [x, y], target: [m, n] },
     position = game,
-    assumingTurn = turn,
+    assumingTurn = turn
   ) => {
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
       const reason = "Cannot move outside the board!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     }
 
     if (gameResult.decided) {
       const reason = "Cannot move after game has been decided!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     }
 
     if (moveCounter + 1 !== moveHistory.length) {
       const reason = "Cannot move while navigating history!";
-      console.log(reason);
-      console.log(`Move Counter: ${moveCounter}`);
-      console.log(`Move History: ${moveHistory.length}`);
+      //console.log(reason);
+      //console.log(`Move Counter: ${moveCounter}`);
+      //console.log(`Move History: ${moveHistory.length}`);
       return { isValid: false, reason: reason };
     }
 
@@ -236,21 +253,21 @@ export const GameProvider = ({ children }) => {
       )
     ) {
       const reason = "Cannot move in other's turn!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     }
 
     if (assumingTurn === ItemTypes.GOAT) {
       if (goatCounter < 20) {
         const reason = "Can't move goat before all goats are placed";
-        console.log(reason);
+        //console.log(reason);
         return { isValid: false, reason: reason };
       }
     }
 
     if (position[m][n] !== 0) {
       const reason = "Target already has a piece!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     }
 
@@ -263,7 +280,7 @@ export const GameProvider = ({ children }) => {
 
     if (xDiffAbs === 0 && yDiffAbs === 0) {
       const reason = "Source and target can't be same!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     }
 
@@ -277,7 +294,7 @@ export const GameProvider = ({ children }) => {
       if (xDiffAbs === 2 && yDiffAbs === 2) {
         if (sSum % 2 !== 0) {
           const reason = "Cannot jump diagonally from odd positions!";
-          console.log(reason);
+          //console.log(reason);
           return { isValid: false, reason: reason };
         }
       }
@@ -286,7 +303,7 @@ export const GameProvider = ({ children }) => {
       //Check if piece to capture is goat
       if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
         const reason = "Can capture goat!";
-        console.log(reason);
+        //console.log(reason);
         return {
           isValid: true,
           isCaptureMove: true,
@@ -295,7 +312,7 @@ export const GameProvider = ({ children }) => {
         };
       } else {
         const reason = "Cannot capture tiger!";
-        console.log(reason);
+        //console.log(reason);
         return { isValid: false, reason: reason };
       }
     }
@@ -303,20 +320,20 @@ export const GameProvider = ({ children }) => {
     // Can't move distance more than 2
     if (xDiffAbs > 1 || yDiffAbs > 1) {
       const reason = "Cannot move distance more than 2!";
-      console.log(reason);
+      //console.log(reason);
       return { isValid: false, reason: reason };
     } // Can't move from odd position to another odd position
     // Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
     else if (sSum % 2) {
       if (tSum % 2) {
         const reason = "Can't move from odd position to another odd position!";
-        console.log(reason);
+        //console.log(reason);
         return { isValid: false, reason: reason };
       }
     }
 
     const reason = "Default move!";
-    console.log(reason);
+    //console.log(reason);
     return { isValid: true, isCaptureMove: false, reason: reason };
   };
 
@@ -342,7 +359,12 @@ export const GameProvider = ({ children }) => {
     startingLayout,
     setGoatsCaptured,
     playFromThisPoint,
+    cordToPGN,
+    setPGN,
+    startingLayout,
     pgn,
+    setMoveCounter,
+    gameStatusCheck,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
