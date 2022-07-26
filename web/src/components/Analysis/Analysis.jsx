@@ -44,7 +44,7 @@ const Analysis = () => {
   } = useContext(GameContext);
 
   const onClickHandler = () => {
-    window.location = "/";
+    window.location = window.location;
   };
 
   const handlePGNLoad = (e) => {
@@ -142,7 +142,7 @@ const Analysis = () => {
       ? (tempTurn = ItemTypes.TIGER)
       : (tempTurn = ItemTypes.GOAT);
     setGame(new_state);
-    let gameStatusAfterMove = pgnStatusCheck(new_state, goatsCap);
+    let gameStatusAfterMove = pgnStatusCheck(new_state, goatsCap, goatsPlace);
     if (gameStatusAfterMove.decided === true) {
       setGameResult(gameStatusAfterMove);
     }
@@ -155,7 +155,7 @@ const Analysis = () => {
     setTurn(tempTurn);
   };
 
-  const pgnStatusCheck = (position, goatsCap) => {
+  const pgnStatusCheck = (position, goatsCap, goatsPlace) => {
     if (goatsCap >= 6) {
       return { decided: true, wonBy: -1 };
     }
@@ -185,8 +185,48 @@ const Analysis = () => {
       return false;
     })();
 
-    if (!tigerHasMove) {
-      return { decided: true, wonBy: 1 };
+    let goatHasMove = (() => {
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (position[i][j] === 1) {
+            for (let k = -2; k <= 2; k++) {
+              for (let l = -2; l <= 2; l++) {
+                let thisPieceHasAMove = checkMove(
+                  {
+                    source: [i, j],
+                    target: [i + k, j + l],
+                  },
+                  position,
+                  ItemTypes.GOAT
+                );
+                if (thisPieceHasAMove["isValid"]) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    })();
+
+    if (!goatHasMove) {
+      if (goatsPlace != 20) {
+        console.log(goatsPlace);
+        goatHasMove = true;
+      }
+    }
+
+    if (turn == ItemTypes.GOAT) {
+      console.log("hi tiuger");
+      if (!goatHasMove) {
+        return { decided: true, wonBy: -1 };
+      }
+    } else if (turn == ItemTypes.TIGER) {
+      if (!tigerHasMove) {
+        console.log("hi goat");
+        return { decided: true, wonBy: 1 };
+      }
     }
 
     return { decided: false };
@@ -408,6 +448,25 @@ const Analysis = () => {
                     }
                   }}
                 />
+
+                <div className="a_submitButtonBox">
+                  {notifShow ? (
+                    <a className="c_Notif">Copied to Clipboard</a>
+                  ) : (
+                    ""
+                  )}
+                  <button
+                    className="copyButton"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handlePGNLoad();
+                    }}
+                  >
+                    <a className="copy_text">Submit</a>
+                  </button>
+                </div>
               </form>
             </div>
           </div>

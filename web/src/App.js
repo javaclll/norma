@@ -1,5 +1,6 @@
 import "./App.css";
 import Board from "./components/Board/Board.jsx";
+import StartScreen from "./components/StartScreen/StartScreen.jsx";
 import Analysis from "./components/Analysis/Analysis.jsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -10,7 +11,8 @@ function App() {
     <GameProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Board />} />
+          <Route path="/" element={<StartScreen />} />
+          <Route path="/game" element={<Board />} />
           <Route path="/analysis" element={<Analysis />} />
         </Routes>
       </BrowserRouter>

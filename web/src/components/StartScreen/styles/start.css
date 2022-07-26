@@ -1,0 +1,78 @@
+.menu-main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  /* position: relative; */
+}
+.menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+}
+.start_image {
+  align-items: center;
+  padding: 10px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: win-screen-text 2s;
+}
+.tart-menu-buttons {
+  flex-direction: column;
+  text-align: center;
+}
+.start-menu-text {
+  font-family: "Lato";
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+.start-menu-text-bot {
+  font-family: "Lato";
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  margin-top: 50px;
+}
+.menu-big {
+  padding: 35px;
+  font-size: 3.8em;
+}
+.menu-small {
+  padding: 5px;
+  font-size: 1em;
+  font-weight: 400;
+}
+.start-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+.button_color1 {
+  background-color: #ffa54b;
+}
+.button_color2 {
+  background-color: #ffa54b;
+}
+.button_color3 {
+  background-color: #ff8c46;
+}
+.button_color4 {
+  background-color: #464655;
+}
+.menuButton {
+  color: #ffffff;
+  width: 250px;
+  padding: 20px;
+  margin: 15px;
+  border-radius: 15px;
+  border: 0px;
+  cursor: pointer;
+}
+.menu_text {
+  font-size: 1.2em;
+  font-weight: bold;
+}

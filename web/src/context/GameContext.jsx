@@ -106,8 +106,47 @@ export const GameProvider = ({ children }) => {
       return false;
     })();
 
-    if (!tigerHasMove) {
-      return { decided: true, wonBy: 1 };
+    let goatHasMove = (() => {
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (position[i][j] === 1) {
+            for (let k = -2; k <= 2; k++) {
+              for (let l = -2; l <= 2; l++) {
+                let thisPieceHasAMove = checkMove(
+                  {
+                    source: [i, j],
+                    target: [i + k, j + l],
+                  },
+                  position,
+                  ItemTypes.GOAT
+                );
+                if (thisPieceHasAMove["isValid"]) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    })();
+
+    if (!goatHasMove) {
+      if (goatCounter != 20) {
+        goatHasMove = true;
+      }
+    }
+
+    if (turn == ItemTypes.GOAT) {
+      console.log("hi tiuger");
+      if (!goatHasMove) {
+        return { decided: true, wonBy: -1 };
+      }
+    } else if (turn == ItemTypes.TIGER) {
+      if (!tigerHasMove) {
+        console.log("hi goat");
+        return { decided: true, wonBy: 1 };
+      }
     }
 
     return { decided: false };

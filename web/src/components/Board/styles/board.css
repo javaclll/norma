@@ -142,6 +142,11 @@
     opacity: 0;
   }
 }
+.a_submitButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: -30px;
+}
 .copyButtonBox {
   position: absolute;
   right: 20px;
