@@ -13,6 +13,13 @@ export const startingLayout = [
 ];
 
 // export const startingLayout = [
+//   [1, -1, 1, 1, 1],
+//   [1, 1, -1, 1, 1],
+//   [1, 1, 1, -1, 1],
+//   [1, 1, 1, 1, -1],
+//   [0, 1, 1, 1, 0],
+// ];
+// export const startingLayout = [
 //   [1, 1, 1, 1, 1],
 //   [1, 1, 1, 1, 1],
 //   [1, 1, 1, 1, 1],
@@ -106,6 +113,9 @@ export const GameProvider = ({ children }) => {
       return false;
     })();
 
+    console.log(tigerHasMove);
+    console.log(turn);
+
     let goatHasMove = (() => {
       for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 5; j++) {
@@ -137,14 +147,12 @@ export const GameProvider = ({ children }) => {
       }
     }
 
-    if (turn == ItemTypes.GOAT) {
-      console.log("hi tiuger");
+    if (turn == ItemTypes.TIGER) {
       if (!goatHasMove) {
         return { decided: true, wonBy: -1 };
       }
-    } else if (turn == ItemTypes.TIGER) {
+    } else if (turn == ItemTypes.GOAT) {
       if (!tigerHasMove) {
-        console.log("hi goat");
         return { decided: true, wonBy: 1 };
       }
     }
@@ -247,8 +255,9 @@ export const GameProvider = ({ children }) => {
       setMoveHistory(new_history);
 
       new_state[m][n] = 1;
-
+      console.log("" + new_state);
       let gameStatusAfterMove = gameStatusCheck(new_state, false);
+      console.log("twte", gameStatusAfterMove);
       if (gameStatusAfterMove.decided === true) {
         setGameResult(gameStatusAfterMove);
       }
