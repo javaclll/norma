@@ -1,0 +1,8 @@
+version: "3"
+services:
+  redis:
+    image: redis:6-alpine
+    container_name: norma_redis
+    command: redis-server --requirepass password
+    ports:
+      - "6379:6379"

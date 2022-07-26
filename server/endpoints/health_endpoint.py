@@ -8,4 +8,4 @@ router = APIRouter()
 
 @router.get("/health")
 async def health_check() -> Any:
-    return JSONResponse(content={"status": "ok"}, media_type="application/health+json")
+    return JSONResponse(content={"success": True}, media_type="application/health+json")
