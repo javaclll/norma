@@ -450,11 +450,6 @@ const Analysis = () => {
                 />
 
                 <div className="a_submitButtonBox">
-                  {notifShow ? (
-                    <a className="c_Notif">Copied to Clipboard</a>
-                  ) : (
-                    ""
-                  )}
                   <button
                     className="copyButton"
                     type="button"

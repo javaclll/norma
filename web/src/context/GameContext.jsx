@@ -81,6 +81,9 @@ export const GameProvider = ({ children }) => {
     } else {
       setTurn(ItemTypes.GOAT);
     }
+    if (gameResult.decided == true) {
+      setGameResult({ decided: false });
+    }
   };
 
   const gameStatusCheck = (position, capturedThisRound) => {
