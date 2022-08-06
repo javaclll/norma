@@ -143,11 +143,14 @@ class Game:
         return {"success": True}
 
     def check_move(self, source, target):
-        if source == None and self.turn == 1:
-            if self.goat_counter >= 20:
-                return {"isValid": False}
+        if source == None:
+            if self.turn == 1:
+                if self.goat_counter >= 20:
+                    return {"isValid": False}
+                else:
+                    return {"isValid": True, "isPlaceMove": True}
             else:
-                return {"isValid": True, "isPlaceMove": True}
+                return {"isValid": False}
 
         x = source[0]
         y = source[1]

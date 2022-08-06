@@ -1,9 +1,7 @@
 from typing import Dict, List, Optional
 
-from fastapi import HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import HTTPException, WebSocket, status
 import random
-
-from fastapi.exceptions import WebSocketRequestValidationError
 
 from core import Game
 from core.exception import CommandException

@@ -38,7 +38,11 @@ async def game(
     await manager.connect(websocket, ident, id)
     try:
         while True:
-            message = await websocket.receive_json()
-            await manager.handle_messages(message, ident, id, websocket)
+            try:
+                message = await websocket.receive_json()
+                await manager.handle_messages(message, ident, id, websocket)
+            except Exception as e:
+                message = {"type": 4, "message": str(e)}
+                await websocket.send_json(message)
     except WebSocketDisconnect:
         manager.disconnect(ident)
