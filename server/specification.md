@@ -12,7 +12,7 @@ Response:
 ```
 {
   "success": True,
-  "ident": "d9d8a955-811a-465e-8487-bbb9ccd79073",
+  "ident": "d9d8a955-811a-465e-8487-bbb9ccd79073"
 }
 ```
 
@@ -24,7 +24,7 @@ Method: `POST`
 Payload:
 ```
 {
-  "preference": -1 | 1,
+  "preference": -1 | 1
 }
 ```
 
@@ -33,7 +33,7 @@ Response:
 {
   "success": True,
   "piece": -1 | 1,
-  "game_id": "c6f031b8-8f75-4869-b1f7-aff64cf88865",
+  "game_id": "c6f031b8-8f75-4869-b1f7-aff64cf88865"
 }
 ```
 
@@ -48,7 +48,7 @@ Payload:
 ```
 {
   "type": 1,
-  "move": "A1B1",
+  "move": "A1B1"
 }
 ```
 
@@ -58,7 +58,7 @@ Expected Response Type: `5 (Player Move Broadcast)` or `4 (Error Notification Br
 Payload:
 ```
 {
-  "type": 2,
+  "type": 2
 }
 ```
 
@@ -93,7 +93,7 @@ Payload:
 {
   "type": 6,
   "won_by": -1 | 1,
-  "reason": "resign" | "normal",
+  "reason": "resign" | "normal"
 }
 ```
 
@@ -109,6 +109,6 @@ Payload:
 ```
 {
   "type": 8,
-  "piece": -1 | 1,
+  "piece": -1 | 1
 }
 ```
