@@ -76,7 +76,7 @@ const Board = () => {
                 </CoRe>
                 <h2>Captured Goats: {goatsCaptured}</h2>
                 <h2>Placed Goats: {goatCounter}</h2>
-                <h2>History Length: {moveHistory.length}</h2>
+                <h2>History Length: {moveHistory.length - 1}</h2>
               </div>
             </div>
             {gameResult.decided ? (
@@ -180,11 +180,11 @@ const Board = () => {
           <div className="win-screen">
             <div className="win-screen-top">
               <img
-                src={gameResult.wonBy === ItemTypes.GOAT ? tiger : goat}
+                src={gameResult.wonBy === ItemTypes.GOAT ? goat : tiger}
                 className="win-screen-img"
               />
               <a className="win-screen-text">
-                {gameResult.wonBy ? "Tiger" : "Goat"} Wins!
+                {gameResult.wonBy === ItemTypes.GOAT ? "Goat" : "Tiger"} Wins!
               </a>
             </div>
             <div className="win-screen-bottom">
