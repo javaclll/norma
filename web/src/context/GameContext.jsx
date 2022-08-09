@@ -87,8 +87,8 @@ export const GameProvider = ({ children }) => {
   };
 
   const gameStatusCheck = (position, capturedThisRound) => {
-    if (goatsCaptured + (capturedThisRound ? 1 : 0) >= 6) {
-      return { decided: true, wonBy: -1 };
+    if (goatsCaptured + (capturedThisRound ? 1 : 0) >= 5) {
+      return { decided: true, wonBy: ItemTypes.TIGER };
     }
 
     let tigerHasMove = (() => {
@@ -152,11 +152,11 @@ export const GameProvider = ({ children }) => {
 
     if (turn == ItemTypes.TIGER) {
       if (!goatHasMove) {
-        return { decided: true, wonBy: -1 };
+        return { decided: true, wonBy: ItemTypes.TIGER };
       }
     } else if (turn == ItemTypes.GOAT) {
       if (!tigerHasMove) {
-        return { decided: true, wonBy: 1 };
+        return { decided: true, wonBy: ItemTypes.GOAT };
       }
     }
 
@@ -260,7 +260,6 @@ export const GameProvider = ({ children }) => {
       new_state[m][n] = 1;
       console.log("" + new_state);
       let gameStatusAfterMove = gameStatusCheck(new_state, false);
-      console.log("twte", gameStatusAfterMove);
       if (gameStatusAfterMove.decided === true) {
         setGameResult(gameStatusAfterMove);
       }

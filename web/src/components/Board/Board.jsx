@@ -180,11 +180,11 @@ const Board = () => {
           <div className="win-screen">
             <div className="win-screen-top">
               <img
-                src={turn === ItemTypes.GOAT ? tiger : goat}
+                src={gameResult.wonBy === ItemTypes.GOAT ? tiger : goat}
                 className="win-screen-img"
               />
               <a className="win-screen-text">
-                {turn === ItemTypes.GOAT ? "Tiger" : "Goat"} Wins!
+                {gameResult.wonBy ? "Tiger" : "Goat"} Wins!
               </a>
             </div>
             <div className="win-screen-bottom">
