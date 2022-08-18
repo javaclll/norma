@@ -1,10 +1,11 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import HTTPException, WebSocket, status
 import random
 
-from core import Game
-from core.exception import CommandException
+from core.exception import ManagerException
+from bagchal import Bagchal
+import uuid
 
 
 """
@@ -20,10 +21,36 @@ Message Types:
 """
 
 
+class GameInstance:
+    def __init__(
+        self,
+        game_id,
+        tiger,
+        goat,
+        socket,
+        game,
+    ):
+        self.game_id = game_id
+        self.tiger = tiger
+        self.goat = goat
+        self.socket = socket
+        self.game: Bagchal = game
+
+    @staticmethod
+    def new():
+        return GameInstance(
+            game_id=str(uuid.uuid4()),
+            game=Bagchal.new(),
+            tiger=None,
+            goat=None,
+            socket=[],
+        )
+
+
 class GameConnectionManager:
     def __init__(self):
         self.active_connections = []
-        self.games: List[Game] = []
+        self.games: List[GameInstance] = []
 
     async def connect(self, websocket: WebSocket, ident: str, game_id: str):
         try:
@@ -72,7 +99,7 @@ class GameConnectionManager:
     def create_game(
         self,
     ):
-        game = Game.new()
+        game = GameInstance.new()
         self.games.append(game)
 
         return game.game_id
@@ -101,7 +128,7 @@ class GameConnectionManager:
                     }
                     await self.broadcast(game_id, message)
 
-            except CommandException as e:
+            except ManagerException as e:
                 message = {"type": 4, "message": e.message}
                 await ws.send_json(message)
 
@@ -112,7 +139,7 @@ class GameConnectionManager:
                 message = {"type": 6, "won_by": won_by}
                 await self.broadcast(game_id, message)
 
-            except CommandException as e:
+            except ManagerException as e:
                 message = {"type": 4, "message": e.message}
                 await ws.send_json(message)
 
@@ -122,7 +149,7 @@ class GameConnectionManager:
 
                 message = {"type": 7, "pgn": message["pgn"]}
                 await self.broadcast(game_id, message)
-            except CommandException as e:
+            except ManagerException as e:
                 message = {"type": 4, "message": e.message}
                 await ws.send_json(message)
 
@@ -131,18 +158,28 @@ class GameConnectionManager:
             if game.game_id == game_id:
                 return game
 
-        raise CommandException(
+        raise ManagerException(
             message="Failed to find the game with mathing game_id and ident!"
         )
 
     async def make_move(self, game_id, ident, move):
-        game: Optional[Game] = self.get_game_by_id(game_id)
+        game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
 
-        source, destination = Game.pgn_unit_to_coord(move)
+        if game_instance.tiger == ident:
+            ident_piece = -1
+        elif game_instance.goat == ident:
+            ident_piece = 1
+        else:
+            raise ManagerException(message="Unauthorized user!")
 
-        game.move(source, destination, ident)
+        if ident_piece != game_instance.game.turn:
+            raise ManagerException(message="Not the player's turn!")
 
-        game_status = game.game_status_check()
+        source, destination = Bagchal.pgn_unit_to_coord(move)
+
+        game_instance.game.move(source, destination)
+
+        game_status = game_instance.game.game_status_check()
 
         if game_status["decided"]:
             return {"decided": True, "won_by": game_status["won_by"]}
@@ -150,14 +187,19 @@ class GameConnectionManager:
         return {"decided": False}
 
     def load_game(self, game_id, pgn):
-        game = self.get_game_by_id(game_id)
+        game_instance = self.get_game_by_id(game_id)
 
-        game.load_game(pgn)
+        game_instance.game.load_game(pgn)
 
     async def resign(self, game_id, ident):
-        game: Optional[Game] = self.get_game_by_id(game_id)
+        game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
 
-        resign_resp = game.resign(ident)
+        if game_instance.goat == ident:
+            resign_resp = game_instance.game.resign(1)
+        elif game_instance.tiger == ident:
+            resign_resp = game_instance.game.resign(-1)
+        else:
+            raise ManagerException(message="Unauthorized user!")
 
         return resign_resp["won_by"]
 

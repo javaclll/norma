@@ -1,52 +1,45 @@
-import uuid
-from core.enums import GameState
-from core.exception import CommandException
+from copy import deepcopy
+
+from .exception import GameException
+from .enum import GameState
+from .constant import DEFAULT_GAME_LAYOUT
 
 
-DEFAULT_GAME_LAYOUT = [
-    [-1, 0, 0, 0, -1],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
-    [-1, 0, 0, 0, -1],
-]
-
-
-class Game:
+class Bagchal:
     def __init__(
         self,
-        game_id,
-        tiger,
-        goat,
+        turn,
         goat_counter,
         goat_captured,
         game_state,
         game_history,
-        turn,
-        socket,
+        board=None,
     ):
-        self.game_id = game_id
-        self.tiger = tiger
-        self.goat = goat
+        self.turn = turn
         self.goat_counter = goat_counter
         self.goat_captured = goat_captured
         self.game_state = game_state
         self.game_history = game_history
-        self.turn = turn
-        self.socket = socket
+
+        if board:
+            self.game_history = [deepcopy(board)]
+
+    @property
+    def board(self):
+        return self.game_history[-1]
+
+    @property
+    def move_count(self):
+        return len(self.game_history) - 1
 
     @staticmethod
     def new():
-        return Game(
-            game_id=str(uuid.uuid4()),
-            tiger=None,
-            goat=None,
+        return Bagchal(
             goat_counter=0,
             goat_captured=0,
-            game_state=GameState.NOT_DECIDED.value,
-            game_history=[DEFAULT_GAME_LAYOUT.copy()],
             turn=1,
-            socket=[],
+            game_state=GameState.NOT_DECIDED.value,
+            game_history=[deepcopy(DEFAULT_GAME_LAYOUT)],
         )
 
     @staticmethod
@@ -68,16 +61,16 @@ class Game:
         if pgn[0:2] == "XX":
             source = None
         else:
-            source = [5 - int(pgn[1]), Game.char_to_cord(pgn[0])]
+            source = [5 - int(pgn[1]), Bagchal.char_to_cord(pgn[0])]
 
-        destination = [5 - int(pgn[3]), Game.char_to_cord(pgn[2])]
+        destination = [5 - int(pgn[3]), Bagchal.char_to_cord(pgn[2])]
         return (source, destination)
 
     def clear_game(self):
         self.goat_counter = 0
         self.goat_captured = 0
         self.game_state = GameState.NOT_DECIDED.value
-        self.game_history = [DEFAULT_GAME_LAYOUT.copy()]
+        self.game_history = [deepcopy(DEFAULT_GAME_LAYOUT)]
         self.turn = 1
 
     def load_game(self, pgn: str):
@@ -86,51 +79,39 @@ class Game:
 
         for pgn_seg in pgn:
             source, target = self.pgn_unit_to_coord(pgn_seg)
-            self.move(source, target, ident_check=False)
+            self.move(source, target)
 
-    def resign(self, ident):
-        if ident == self.goat:
+    def resign(self, side):
+        if side == 1:
             self.game_state = GameState.TIGER_WON.value
 
             return {
                 "success": True,
                 "won_by": -1,
             }
-        elif ident == self.tiger:
+        elif side == -1:
             self.game_state = GameState.GOAT_WON.value
             return {
                 "success": True,
                 "won_by": 1,
             }
         else:
-            raise CommandException(message="Unauthorized user!")
+            raise GameException(message="Invalid parameter!")
 
-    def move(self, source, target, ident=None, ident_check=True):
-        if ident_check:
-            if self.tiger == ident:
-                ident_piece = -1
-            elif self.goat == ident:
-                ident_piece = 1
-            else:
-                raise CommandException(message="Unauthorized user!")
+    def move(self, source, target, eval_res=None):
+        if not eval_res:
+            eval_res = self.check_move(source, target)
 
-            if ident_piece != self.turn:
-                raise CommandException(message="Not the player's turn!")
+        if not eval_res["isValid"]:
+            raise GameException(message="Invalid move!")
 
-        eval_move = self.check_move(source, target)
+        new_state = deepcopy(self.game_history[-1])
 
-        if not eval_move["isValid"]:
-            raise CommandException(message="Invalid move!")
-
-        new_state = self.game_history[-1].copy()
-
-        if eval_move.get("isPlaceMove"):
+        if eval_res.get("isPlaceMove"):
             new_state[target[0]][target[1]] = 1
         else:
-            if eval_move["isCaptureMove"] == True:
-                new_state[eval_move["capturePiece"][0]][
-                    eval_move["capturePiece"][1]
-                ] = 0
+            if eval_res["isCaptureMove"] == True:
+                new_state[eval_res["capturePiece"][0]][eval_res["capturePiece"][1]] = 0
                 self.goat_captured += 1
 
             new_state[source[0]][source[1]] = 0
@@ -143,30 +124,32 @@ class Game:
         return {"success": True}
 
     def check_move(self, source, target):
+        m = target[0]
+        n = target[1]
+
         if source == None:
             if self.turn == 1:
                 if self.goat_counter >= 20:
                     return {"isValid": False}
                 else:
+                    if self.board[m][n] != 0:
+                        reason = "Target already has a piece!"
+                        return {"isValid": False}
                     return {"isValid": True, "isPlaceMove": True}
             else:
                 return {"isValid": False}
 
         x = source[0]
         y = source[1]
-        m = target[0]
-        n = target[1]
 
         position = self.game_history[-1]
 
         if x < 0 or y < 0 or m < 0 or n < 0 or x > 4 or y > 4 or m > 4 or n > 4:
             reason = "Cannot move outside the board!"
-            print(reason)
             return {"isValid": False, "reason": reason}
 
         if self.game_state != GameState.NOT_DECIDED.value:
             reason = "Cannot move after game has been decided!"
-            print(reason)
             return {"isValid": False, "reason": reason}
 
         if not (
@@ -174,18 +157,15 @@ class Game:
             or (self.turn == -1 and position[x][y] == -1)
         ):
             reason = "Cannot move in other's turn!"
-            print(reason)
             return {"isValid": False, "reason": reason}
 
         if self.turn == 1:
             if self.goat_counter < 20:
                 reason = "Can't move goat before all goats are placed"
-                print(reason)
                 return {"isValid": False, "reason": reason}
 
         if position[m][n] != 0:
             reason = "Target already has a piece!"
-            print(reason)
             return {"isValid": False, "reason": reason}
 
         x_diff_abs = abs(x - m)
@@ -197,7 +177,6 @@ class Game:
 
         if x_diff_abs == 0 and y_diff_abs == 0:
             reason = "Source and target can't be same!"
-            print(reason)
             return {"isValid": False, "reason": reason}
 
         # Tiger can jump goats
@@ -212,7 +191,6 @@ class Game:
             if x_diff_abs == 2 and y_diff_abs == 2:
                 if s_sum % 2 != 0:
                     reason = "Cannot jump diagonally from odd positions!"
-                    print(reason)
                     return {"isValid": False, "reason": reason}
 
             piece_to_capture = [int(x + x_diff / 2), int(y + y_diff / 2)]
@@ -220,7 +198,6 @@ class Game:
             # Check if piece to capture is goat
             if position[piece_to_capture[0]][piece_to_capture[1]] == 1:
                 reason = "Can capture goat!"
-                print(reason)
                 return {
                     "isValid": True,
                     "isCaptureMove": True,
@@ -229,20 +206,17 @@ class Game:
                 }
             else:
                 reason = "Cannot capture tiger!"
-                print(reason)
                 return {"isValid": False, "reason": reason}
 
         # Can't move distance more than 2
         if x_diff_abs > 1 or y_diff_abs > 1:
             reason = "Cannot move distance more than 2!"
-            print(reason)
             return {"isValid": False, "reason": reason}
         # Can't move from odd position to another odd position
         # Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
         elif s_sum % 2:
             if t_sum % 2:
                 reason = "Can't move from odd position to another odd position!"
-                print(reason)
                 return {"isValid": False, "reason": reason}
 
         reason = "Default move!"
