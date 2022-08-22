@@ -2,7 +2,7 @@
 
 ## HTTP Endpoint
 #### Generate a new session
-Endpoint: `/session`
+Endpoint: `/ident`
 
 Method: `POST`
 
