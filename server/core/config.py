@@ -1,7 +1,7 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 import yaml
-from pydantic import BaseSettings, PostgresDsn, validator
+from pydantic import BaseSettings, PostgresDsn, validator, AnyHttpUrl
 
 
 class Settings(BaseSettings):
@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
     REDIS_PASSWORD: str
+
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl]
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:

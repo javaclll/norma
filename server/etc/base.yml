@@ -9,6 +9,11 @@ UVICORN_HOST : localhost
 UVICORN_WORKERS : 5
 UVICORN_PORT : 8080
 
+BACKEND_CORS_ORIGINS :
+  - http://localhost:3001
+  - http://localhost:3000
+  - http://localhost
+
 POSTGRES_SERVER : postgres
 POSTGRES_USER : test
 POSTGRES_PASSWORD : test
