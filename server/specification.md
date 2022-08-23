@@ -38,7 +38,7 @@ Response:
 ```
 
 ## Websocket Endpoint
-Endpoint: `/game/{game_id}?ident={ident}`
+Endpoint: `/game?id={game_id}?ident={ident}`
 
 ### Websocket Requests
 #### Make a Move
@@ -68,6 +68,14 @@ Payload:
 {
   "type": 3,
   "pgn": "XXA3 - A1A2 - XXA4 - A5B5 - XXA5 - B5C5 - XXB5"
+}
+```
+
+#### Request Piece Assign Notification
+Payload:
+```
+{
+  "type": 9
 }
 ```
 

@@ -18,6 +18,7 @@ Message Types:
     6 : Win/Loss Broadcast
     7 : Game State Broadcast
     8 : Piece Assign Notification
+    9 : Request Piece Assign Notification
 """
 
 
@@ -152,6 +153,23 @@ class GameConnectionManager:
             except ManagerException as e:
                 message = {"type": 4, "message": e.message}
                 await ws.send_json(message)
+
+        elif message_type == 9:
+            game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
+
+            if game_instance.tiger == ident:
+                ident_piece = -1
+            elif game_instance.goat == ident:
+                ident_piece = 1
+            else:
+                ident_piece = 0
+
+            message = {
+                "type": 8,
+                "piece": ident_piece,
+            }
+
+            await ws.send_json(message)
 
     def get_game_by_id(self, game_id):
         for game in self.games:
