@@ -2,7 +2,7 @@ import { createContext, useState } from "react";
 import { ItemTypes } from "../utils/config";
 import { cloneDeep, set } from "lodash";
 
-export const GameContext = createContext(null);
+export const OnlineGameContext = createContext(null);
 
 export const startingLayout = [
   [-1, 0, 0, 0, -1],
@@ -27,7 +27,7 @@ export const startingLayout = [
 //   [-1, -1, -1, 0, -1],
 // ];
 
-export const GameProvider = ({ children }) => {
+export const OnlineGameProvider = ({ children }) => {
   const [turn, setTurn] = useState(ItemTypes.GOAT);
 
   const [goatCounter, setGoatCounter] = useState(0);
@@ -188,7 +188,10 @@ export const GameProvider = ({ children }) => {
   };
 
   const makeMove = ({ source: [x, y], target: [m, n] }) => {
-    let eval_move = checkMove({ source: [x, y], target: [m, n] });
+    let eval_move = checkMove({
+      source: [parseInt(x), parseInt(y)],
+      target: [parseInt(m), parseInt(n)],
+    });
 
     if (eval_move["isValid"]) {
       let new_state = cloneDeep(game);
@@ -276,6 +279,12 @@ export const GameProvider = ({ children }) => {
     position = game,
     assumingTurn = turn
   ) => {
+    x = parseInt(x);
+    y = parseInt(y);
+    m = parseInt(m);
+    n = parseInt(n);
+    console.log(x + " " + y + " source" + m + " " + n + " destination");
+    console.log(game);
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
       const reason = "Cannot move outside the board!";
       console.log(reason);
@@ -296,23 +305,23 @@ export const GameProvider = ({ children }) => {
       return { isValid: false, reason: reason };
     }
 
-    if (
-      !(
-        (assumingTurn === ItemTypes.GOAT && position[x][y] === 1) ||
-        (assumingTurn === ItemTypes.TIGER && position[x][y] === -1)
-      )
-    ) {
-      const reason = "Cannot move in other's turn!";
-      return { isValid: false, reason: reason };
-    }
+    // if (
+    //   !(
+    //     (assumingTurn === ItemTypes.GOAT && position[x][y] === 1) ||
+    //     (assumingTurn === ItemTypes.TIGER && position[x][y] === -1)
+    //   )
+    // ) {
+    //   const reason = "Cannot move in other's turn!";
+    //   return { isValid: false, reason: reason };
+    // }
 
-    if (assumingTurn === ItemTypes.GOAT) {
-      if (goatCounter < 20) {
-        const reason = "Can't move goat before all goats are placed";
-        console.log(reason);
-        return { isValid: false, reason: reason };
-      }
-    }
+    // if (assumingTurn === ItemTypes.GOAT) {
+    //   if (goatCounter < 20) {
+    //     const reason = "Can't move goat before all goats are placed";
+    //     console.log(reason);
+    //     return { isValid: false, reason: reason };
+    //   }
+    // }
 
     if (position[m][n] !== 0) {
       const reason = "Target already has a piece!";
@@ -336,9 +345,8 @@ export const GameProvider = ({ children }) => {
     // Tiger can jump goats
     if (
       // (2,0), (2,2), (0, 2), (2, 2)
-      assumingTurn === ItemTypes.TIGER &&
-      ((xDiffAbs === 2 && yDiffAbs === 0) ||
-        (yDiffAbs === 2 && (xDiffAbs === 0 || xDiffAbs === 2)))
+      (xDiffAbs === 2 && yDiffAbs === 0) ||
+      (yDiffAbs === 2 && (xDiffAbs === 0 || xDiffAbs === 2))
     ) {
       if (xDiffAbs === 2 && yDiffAbs === 2) {
         if (sSum % 2 !== 0) {
@@ -348,7 +356,7 @@ export const GameProvider = ({ children }) => {
         }
       }
       let pieceToCapture = [x + xDiff / 2, y + yDiff / 2];
-
+      console.log(pieceToCapture);
       //Check if piece to capture is goat
       if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
         const reason = "Can capture goat!";
@@ -415,5 +423,9 @@ export const GameProvider = ({ children }) => {
     gameStatusCheck,
   };
 
-  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+  return (
+    <OnlineGameContext.Provider value={value}>
+      {children}
+    </OnlineGameContext.Provider>
+  );
 };

@@ -9,20 +9,6 @@ import tiger from "../../statics/tiger.svg";
 import goat from "../../statics/goat.svg";
 
 const StartScreen = () => {
-  const {
-    game,
-    gameResult,
-    turn,
-    goatsCaptured,
-    goatCounter,
-    nextMove,
-    previousMove,
-    moveCounter,
-    moveHistory,
-    playFromThisPoint,
-    pgn,
-  } = useContext(GameContext);
-
   const onClickHandler = () => {
     window.location = "/";
   };
@@ -50,7 +36,7 @@ const StartScreen = () => {
                 <a className="menu_text">Play Offline</a>
               </button>
             </Link>
-            <Link to="/game">
+            <Link to="/online">
               <button
                 className="menuButton button_color2"
                 type="button"

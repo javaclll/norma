@@ -1,0 +1,218 @@
+.left-box {
+  margin-top: 10vh;
+  height: 90%;
+  flex: 1;
+}
+.left-box-content {
+  padding: 20px;
+  max-width: 400px;
+  margin: 0px auto;
+  border-radius: 2vh;
+  background-color: #0000000a;
+}
+.right-box {
+  position: relative;
+  margin-top: 10vh;
+  flex: 1;
+  border-radius: 20px;
+}
+.right-box-content {
+  position: relative;
+  width: 80%;
+  height: 80%;
+  margin: 0px auto;
+  border-radius: 2vh;
+  background-color: #0000000a;
+}
+.right-box-content-top {
+  position: relative;
+  text-align: center;
+  padding-top: 10px;
+  width: 100%;
+}
+.right-box-title {
+  margin: auto;
+  padding: auto;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  position: relative;
+}
+.right-box-content-bottom {
+  margin: auto;
+  padding: 30px;
+  font-size: 1rem;
+  text-align: left;
+  overflow: scroll;
+}
+.win-screen {
+  position: relative;
+  top: 100px;
+  left: 0;
+  width: 420px;
+  height: 420px;
+  margin: 0px auto;
+  animation: win-screen-text 2s;
+}
+.win-screen-top {
+  padding: 10px;
+  position: relative;
+}
+.win-screen-img {
+  padding: 10px;
+  display: block;
+  position: relative;
+  width: 25%;
+  height: 25%;
+  margin: 0px auto;
+  animation: win-screen-text 4s;
+}
+.win-screen-text {
+  padding: 10px;
+  display: block;
+  position: relative;
+  font-size: 4rem;
+  font-weight: bold;
+  text-align: center;
+  animation: fade-in-from-below 1s;
+}
+.win-screen-bottom {
+  padding: 10px;
+  display: block;
+  width: 200px;
+  height: 80px;
+  position: relative;
+  margin: 0px auto;
+  text-align: center;
+}
+
+.win-screen-play-again-button {
+  margin: 0px;
+  border: 1px solid black;
+  border-radius: 10px;
+  background-color: rgb(16, 28, 92);
+  color: white;
+  font-size: 1.5rem;
+  padding: 10px;
+  cursor: pointer;
+  animation: fade-in-from-below 1s;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+.win-screen-play-again-button:hover {
+  transform: scale(1.03);
+  transition: transform 0.2s;
+}
+
+.pgn_form {
+  width: 80%;
+  position: relative;
+  margin: 0px auto;
+}
+.load_PGN {
+  width: 95%;
+  height: 40px;
+  outline: none;
+  margin: 30px auto;
+  border-radius: 5px;
+  font-size: 16px;
+  padding: 10px;
+}
+.c_Notif {
+  color: #73b573;
+  padding: 10px;
+  animation: fadeInAnimation ease 1s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+@keyframes fadeInAnimation {
+  0% {
+    opacity: 0;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.a_submitButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: -30px;
+}
+.copyButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 80px;
+}
+.a_copyButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+}
+.copyButton {
+  background-color: #ffa54b;
+  color: #ffffff;
+  width: 100px;
+  padding: 15px;
+  border-radius: 15px;
+  border: 0px;
+  cursor: pointer;
+}
+.copy_text {
+  font-size: 14px;
+  font-weight: bold;
+}
+.copyButton:hover {
+  background-color: #ffa54b87;
+  color: #ffffff;
+}
+.navButtonBox {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+}
+.navButton {
+  background-color: #ffa54b;
+  color: #ffffff;
+  width: 180px;
+  padding: 15px;
+  border-radius: 15px;
+  border: 0px;
+  cursor: pointer;
+}
+.nav_text {
+  font-size: 14px;
+  font-weight: bold;
+}
+.navButton:hover {
+  background-color: #ffa54b87;
+  color: #ffffff;
+}
+
+@keyframes win-screen-text {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-from-below {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}

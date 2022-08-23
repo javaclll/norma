@@ -109,6 +109,7 @@ class Bagchal:
 
         if eval_res.get("isPlaceMove"):
             new_state[target[0]][target[1]] = 1
+            self.goat_counter += 1
         else:
             if eval_res["isCaptureMove"] == True:
                 new_state[eval_res["capturePiece"][0]][eval_res["capturePiece"][1]] = 0
@@ -146,10 +147,12 @@ class Bagchal:
 
         if x < 0 or y < 0 or m < 0 or n < 0 or x > 4 or y > 4 or m > 4 or n > 4:
             reason = "Cannot move outside the board!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
         if self.game_state != GameState.NOT_DECIDED.value:
             reason = "Cannot move after game has been decided!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
         if not (
@@ -157,15 +160,18 @@ class Bagchal:
             or (self.turn == -1 and position[x][y] == -1)
         ):
             reason = "Cannot move in other's turn!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
         if self.turn == 1:
             if self.goat_counter < 20:
                 reason = "Can't move goat before all goats are placed"
+                # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
                 return {"isValid": False, "reason": reason}
 
         if position[m][n] != 0:
             reason = "Target already has a piece!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
         x_diff_abs = abs(x - m)
@@ -177,6 +183,7 @@ class Bagchal:
 
         if x_diff_abs == 0 and y_diff_abs == 0:
             reason = "Source and target can't be same!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
         # Tiger can jump goats
@@ -191,6 +198,7 @@ class Bagchal:
             if x_diff_abs == 2 and y_diff_abs == 2:
                 if s_sum % 2 != 0:
                     reason = "Cannot jump diagonally from odd positions!"
+                    # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
                     return {"isValid": False, "reason": reason}
 
             piece_to_capture = [int(x + x_diff / 2), int(y + y_diff / 2)]
@@ -198,6 +206,7 @@ class Bagchal:
             # Check if piece to capture is goat
             if position[piece_to_capture[0]][piece_to_capture[1]] == 1:
                 reason = "Can capture goat!"
+                # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
                 return {
                     "isValid": True,
                     "isCaptureMove": True,
@@ -206,20 +215,24 @@ class Bagchal:
                 }
             else:
                 reason = "Cannot capture tiger!"
+                # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
                 return {"isValid": False, "reason": reason}
 
         # Can't move distance more than 2
         if x_diff_abs > 1 or y_diff_abs > 1:
             reason = "Cannot move distance more than 2!"
+            # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
         # Can't move from odd position to another odd position
         # Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
         elif s_sum % 2:
             if t_sum % 2:
                 reason = "Can't move from odd position to another odd position!"
+                # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
                 return {"isValid": False, "reason": reason}
 
         reason = "Default move!"
+        # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
         return {"isValid": True, "reason": reason, "isCaptureMove": False}
 
     def tiger_can_move(self):
@@ -251,7 +264,7 @@ class Bagchal:
                                 return True
 
     def game_status_check(self):
-        if self.goat_captured >= 6:
+        if self.goat_captured >= 5:
             return {"decided": True, "won_by": -1}
 
         if self.turn == -1 and not self.tiger_can_move():
