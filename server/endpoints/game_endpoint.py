@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from pydantic.networks import ascii_domain_regex
 
 from core.ident import Ident, get_ident
 from core.socket import manager
@@ -38,11 +39,7 @@ async def game(
     await manager.connect(websocket, ident, id)
     try:
         while True:
-            try:
-                message = await websocket.receive_json()
-                await manager.handle_messages(message, ident, id, websocket)
-            except Exception as e:
-                message = {"type": 4, "message": str(e)}
-                await websocket.send_json(message)
+            message = await websocket.receive_json()
+            await manager.handle_messages(message, ident, id, websocket)
     except WebSocketDisconnect:
-        manager.disconnect(ident)
+        manager.disconnect(id, websocket)

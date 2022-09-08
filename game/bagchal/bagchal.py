@@ -1,8 +1,8 @@
 from copy import deepcopy
 
-from .exception import GameException
-from .enum import GameState
 from .constant import DEFAULT_GAME_LAYOUT
+from .enum import GameState
+from .exception import GameException
 
 
 class Bagchal:
@@ -13,7 +13,6 @@ class Bagchal:
         goat_captured,
         game_state,
         game_history,
-        board=None,
     ):
         self.turn = turn
         self.goat_counter = goat_counter
@@ -21,12 +20,9 @@ class Bagchal:
         self.game_state = game_state
         self.game_history = game_history
 
-        if board:
-            self.game_history = [deepcopy(board)]
-
     @property
     def board(self):
-        return self.game_history[-1]
+        return self.game_history[-1]["board"]
 
     @property
     def move_count(self):
@@ -39,7 +35,13 @@ class Bagchal:
             goat_captured=0,
             turn=1,
             game_state=GameState.NOT_DECIDED.value,
-            game_history=[deepcopy(DEFAULT_GAME_LAYOUT)],
+            game_history=[
+                {
+                    "board": deepcopy(DEFAULT_GAME_LAYOUT),
+                    "goat_count": 0,
+                    "goat_captured": 0,
+                }
+            ],
         )
 
     @staticmethod
@@ -70,7 +72,13 @@ class Bagchal:
         self.goat_counter = 0
         self.goat_captured = 0
         self.game_state = GameState.NOT_DECIDED.value
-        self.game_history = [deepcopy(DEFAULT_GAME_LAYOUT)]
+        self.game_history = [
+            {
+                "board": deepcopy(DEFAULT_GAME_LAYOUT),
+                "goat_count": 0,
+                "goat_captured": 0,
+            }
+        ]
         self.turn = 1
 
     def load_game(self, pgn: str):
@@ -105,7 +113,7 @@ class Bagchal:
         if not eval_res["isValid"]:
             raise GameException(message="Invalid move!")
 
-        new_state = deepcopy(self.game_history[-1])
+        new_state = deepcopy(self.board)
 
         if eval_res.get("isPlaceMove"):
             new_state[target[0]][target[1]] = 1
@@ -120,7 +128,13 @@ class Bagchal:
 
         self.turn = -1 if self.turn == 1 else 1
 
-        self.game_history.append(new_state)
+        self.game_history.append(
+            {
+                "board": new_state,
+                "goat_count": self.goat_counter,
+                "goat_captured": self.goat_captured,
+            }
+        )
 
         return {"success": True}
 
@@ -143,7 +157,7 @@ class Bagchal:
         x = source[0]
         y = source[1]
 
-        position = self.game_history[-1]
+        position = self.board
 
         if x < 0 or y < 0 or m < 0 or n < 0 or x > 4 or y > 4 or m > 4 or n > 4:
             reason = "Cannot move outside the board!"
@@ -236,7 +250,7 @@ class Bagchal:
         return {"isValid": True, "reason": reason, "isCaptureMove": False}
 
     def tiger_can_move(self):
-        position = self.game_history[-1]
+        position = self.board
 
         for i in range(5):
             for j in range(5):
@@ -252,7 +266,7 @@ class Bagchal:
         if self.goat_counter < 20 and self.turn == 1:
             return True
 
-        position = self.game_history[-1]
+        position = self.board
 
         for i in range(5):
             for j in range(5):
