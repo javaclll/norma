@@ -1,12 +1,13 @@
+import json
+import random
+import uuid
 from typing import List, Optional
 
+from bagchal import Bagchal
 from fastapi import HTTPException, WebSocket, status
-import random
 
 from core.exception import ManagerException
-from bagchal import Bagchal
-import uuid
-
+from core.redis import redis_client
 
 """
 Message Types:
@@ -30,12 +31,14 @@ class GameInstance:
         goat,
         socket,
         game,
+        pgn,
     ):
         self.game_id = game_id
         self.tiger = tiger
         self.goat = goat
         self.socket = socket
         self.game: Bagchal = game
+        self.pgn = pgn
 
     @staticmethod
     def new():
@@ -45,6 +48,7 @@ class GameInstance:
             tiger=None,
             goat=None,
             socket=[],
+            pgn="",
         )
 
 
@@ -52,6 +56,55 @@ class GameConnectionManager:
     def __init__(self):
         self.active_connections = []
         self.games: List[GameInstance] = []
+
+        self.load_from_redis()
+
+    def save_to_redis(self):
+        save_games = []
+
+        for game_instance in self.games:
+            save_games.append(
+                {
+                    "game_id": game_instance.game_id,
+                    "tiger": game_instance.tiger,
+                    "goat": game_instance.goat,
+                    "turn": game_instance.game.turn,
+                    "goat_counter": game_instance.game.goat_counter,
+                    "goat_captured": game_instance.game.goat_captured,
+                    "game_state": game_instance.game.game_state,
+                    "game_history": game_instance.game.game_history,
+                    "pgn": game_instance.pgn,
+                }
+            )
+
+        if len(save_games) != 0:
+            redis_client.set("games", json.dumps(save_games))
+
+    def load_from_redis(self):
+        games = redis_client.get("games")
+
+        if not games:
+            return
+
+        games = json.loads(games)
+
+        for game in games:
+            self.games.append(
+                GameInstance(
+                    game_id=game.get("game_id"),
+                    tiger=game.get("tiger"),
+                    goat=game.get("goat"),
+                    socket=[],
+                    pgn=game.get("pgn"),
+                    game=Bagchal(
+                        turn=game.get("turn"),
+                        goat_counter=game.get("goat_counter"),
+                        goat_captured=game.get("goat_captured"),
+                        game_state=game.get("game_state"),
+                        game_history=game.get("game_history"),
+                    ),
+                )
+            )
 
     async def connect(self, websocket: WebSocket, ident: str, game_id: str):
         try:
@@ -91,17 +144,29 @@ class GameConnectionManager:
 
         await websocket.send_json(message)
 
-    def disconnect(self, ident):
-        for cons in self.active_connections:
-            if cons["ident"] == ident:
-                self.active_connections.remove(cons)
-                return
+        message = {
+            "type": 7,
+            "pgn": game.pgn,
+            "turn": game.game.turn,
+            "captured_goats": game.game.goat_captured,
+            "placed_goats": game.game.goat_counter,
+            "history": game.game.game_history,
+        }
+
+        await websocket.send_json(message)
+
+    def disconnect(self, id, socket):
+        game = self.get_game_by_id(id)
+
+        game.socket.remove(socket)
 
     def create_game(
         self,
     ):
         game = GameInstance.new()
         self.games.append(game)
+
+        self.save_to_redis()
 
         return game.game_id
 
@@ -116,9 +181,22 @@ class GameConnectionManager:
 
         if message_type == 1:
             try:
-                move_result = await self.make_move(game_id, ident, message["move"])
+                move_result = await self.make_move(
+                    game_id, ident, message["move"].replace(" ", "")
+                )
 
-                message = {"type": 5, "move": message["move"]}
+                self.save_to_redis()
+
+                game = move_result["game"]
+
+                message = {
+                    "type": 7,
+                    "pgn": game.pgn,
+                    "turn": game.game.turn,
+                    "captured_goats": game.game.goat_captured,
+                    "placed_goats": game.game.goat_counter,
+                    "history": game.game.game_history,
+                }
                 await self.broadcast(game_id, message)
 
                 if move_result["decided"]:
@@ -137,6 +215,8 @@ class GameConnectionManager:
             try:
                 won_by = await self.resign(game_id, ident)
 
+                self.save_to_redis()
+
                 message = {"type": 6, "won_by": won_by}
                 await self.broadcast(game_id, message)
 
@@ -147,6 +227,8 @@ class GameConnectionManager:
         elif message_type == 3:
             try:
                 await self.load_game(game_id, message["pgn"])  # type: ignore
+
+                self.save_to_redis()
 
                 message = {"type": 7, "pgn": message["pgn"]}
                 await self.broadcast(game_id, message)
@@ -180,7 +262,7 @@ class GameConnectionManager:
             message="Failed to find the game with mathing game_id and ident!"
         )
 
-    async def make_move(self, game_id, ident, move):
+    async def make_move(self, game_id, ident, move: str):
         game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
 
         if game_instance.tiger == ident:
@@ -199,10 +281,15 @@ class GameConnectionManager:
 
         game_status = game_instance.game.game_status_check()
 
+        if not game_instance.pgn or game_instance.pgn == "":
+            game_instance.pgn = move
+        else:
+            game_instance.pgn = game_instance.pgn + "-" + move
+
         if game_status["decided"]:
             return {"decided": True, "won_by": game_status["won_by"]}
 
-        return {"decided": False}
+        return {"decided": False, "game": game_instance}
 
     def load_game(self, game_id, pgn):
         game_instance = self.get_game_by_id(game_id)
@@ -227,6 +314,8 @@ class GameConnectionManager:
                 self.games.remove(game)
                 break
 
+        self.save_to_redis()
+
     def assign_game(self, game_id, ident, piece):
         for game in self.games:
             if game.game_id == game_id:
@@ -235,6 +324,8 @@ class GameConnectionManager:
                 else:
                     game.goat = ident
                 break
+
+        self.save_to_redis()
 
 
 manager = GameConnectionManager()

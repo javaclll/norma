@@ -55,32 +55,21 @@ export const OnlineGameProvider = ({ children }) => {
     setGame(nextGameState.game);
     setGoatCounter(nextGameState.goatCount);
     setGoatsCaptured(nextGameState.goatsCaptured);
-    setMoveCounter(moveCounter + 1);
-    // setTurn(
-    //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
-    // );
+    setMoveCounter((move) => move + 1);
   };
 
   const previousMove = () => {
     let prevGameState = moveHistory[moveCounter - 1];
-    console.log(prevGameState.game);
+    // console.log(prevGameState.game);
     setGame(prevGameState.game);
     setGoatCounter(prevGameState.goatCount);
     setGoatsCaptured(prevGameState.goatsCaptured);
-    setMoveCounter(moveCounter - 1);
-    // setTurn(
-    //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
-    // );
+    setMoveCounter((move) => move - 1);
   };
 
   const playFromThisPoint = () => {
     setMoveHistory(moveHistory.slice(0, moveCounter + 1));
     setPGN(pgn.slice(0, moveCounter));
-    if (moveCounter % 2) {
-      setTurn(ItemTypes.TIGER);
-    } else {
-      setTurn(ItemTypes.GOAT);
-    }
     if (gameResult.decided == true) {
       setGameResult({ decided: false });
     }
@@ -116,8 +105,8 @@ export const OnlineGameProvider = ({ children }) => {
       return false;
     })();
 
-    console.log(tigerHasMove);
-    console.log(turn);
+    // console.log(tigerHasMove);
+    // console.log(turn);
 
     let goatHasMove = (() => {
       for (let i = 0; i < 5; i++) {
@@ -201,23 +190,23 @@ export const OnlineGameProvider = ({ children }) => {
         new_state[eval_move["capturePiece"][0]][
           eval_move["capturePiece"][1]
         ] = 0;
-        setGoatsCaptured(goatsCaptured + 1);
+        setGoatsCaptured((goatsCap) => goatsCap + 1);
       }
 
-      let new_history = cloneDeep(moveHistory);
+      setMoveHistory((hist) => {
+        let new_history = cloneDeep(hist);
 
-      new_history.push({
-        game: new_state,
-        goatCount: goatCounter,
-        goatsCaptured: captured ? goatsCaptured + 1 : goatsCaptured,
+        new_history.push({
+          game: new_state,
+          goatCount: goatCounter,
+          goatsCaptured: captured ? goatsCaptured + 1 : goatsCaptured,
+        });
+
+        return new_history;
       });
-      setMoveHistory(new_history);
 
       new_state[m][n] = new_state[x][y];
       new_state[x][y] = 0;
-      turn === ItemTypes.GOAT
-        ? setTurn(ItemTypes.TIGER)
-        : setTurn(ItemTypes.GOAT);
 
       let gameStatusAfterMove = gameStatusCheck(
         new_state,
@@ -227,10 +216,10 @@ export const OnlineGameProvider = ({ children }) => {
         setGameResult(gameStatusAfterMove);
       }
 
-      setMoveCounter(moveCounter + 1);
+      setMoveCounter((moveCount) => moveCount + 1);
 
-      setGame(new_state);
-      setPGN([...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
+      setGame((_) => new_state);
+      setPGN((_) => [...pgn, cordToPGN({ source: [x, y], target: [m, n] })]);
       //console.log(x, y, m, n);
     }
   };
@@ -245,9 +234,8 @@ export const OnlineGameProvider = ({ children }) => {
 
       if (moveCounter + 1 !== moveHistory.length) {
         const reason = "Cannot move while navigating history!";
-        //console.log(reason);
-        //console.log(`Move Counter: ${moveCounter}`);
-        //console.log(`Move History: ${moveHistory.length}`);
+        // console.log(`Move Counter: ${moveCounter}`);
+        // console.log(`Move History: ${moveHistory.length}`);
         return { isValid: false, reason: reason };
       }
 
@@ -257,20 +245,19 @@ export const OnlineGameProvider = ({ children }) => {
         goatsCaptured: goatsCaptured,
       });
 
-      setMoveCounter(moveCounter + 1);
-      setMoveHistory(new_history);
+      setMoveCounter((moveCount) => moveCount + 1);
+      setMoveHistory((_) => new_history);
 
       new_state[m][n] = 1;
-      console.log("" + new_state);
+      // console.log("" + new_state);
       let gameStatusAfterMove = gameStatusCheck(new_state, false);
       if (gameStatusAfterMove.decided === true) {
         setGameResult(gameStatusAfterMove);
       }
 
       setGame(new_state);
-      setGoatCounter(goatCounter + 1);
-      setTurn(ItemTypes.TIGER);
-      setPGN([...pgn, cordToPGN({ source: ["X", "X"], target: [m, n] })]);
+      setGoatCounter((goatCount) => goatCount + 1);
+      setPGN(() => [...pgn, cordToPGN({ source: ["X", "X"], target: [m, n] })]);
     }
   };
 
@@ -283,25 +270,25 @@ export const OnlineGameProvider = ({ children }) => {
     y = parseInt(y);
     m = parseInt(m);
     n = parseInt(n);
-    console.log(x + " " + y + " source" + m + " " + n + " destination");
-    console.log(game);
+    // console.log(x + " " + y + " source" + m + " " + n + " destination");
+    // console.log(game);
     if (x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4) {
       const reason = "Cannot move outside the board!";
-      console.log(reason);
+      // console.log(reason);
       return { isValid: false, reason: reason };
     }
 
     if (gameResult.decided) {
       const reason = "Cannot move after game has been decided!";
-      console.log(reason);
+      // console.log(reason);
       return { isValid: false, reason: reason };
     }
 
     if (moveCounter + 1 !== moveHistory.length) {
       const reason = "Cannot move while navigating history!";
-      console.log(reason);
-      //console.log(`Move Counter: ${moveCounter}`);
-      //console.log(`Move History: ${moveHistory.length}`);
+      // console.log(reason);
+      // console.log(`Move Counter: ${moveCounter}`);
+      // console.log(`Move History: ${moveHistory.length}`);
       return { isValid: false, reason: reason };
     }
 
@@ -325,7 +312,7 @@ export const OnlineGameProvider = ({ children }) => {
 
     if (position[m][n] !== 0) {
       const reason = "Target already has a piece!";
-      console.log(reason);
+      // console.log(reason);
       return { isValid: false, reason: reason };
     }
 
@@ -338,7 +325,7 @@ export const OnlineGameProvider = ({ children }) => {
 
     if (xDiffAbs === 0 && yDiffAbs === 0) {
       const reason = "Source and target can't be same!";
-      console.log(reason);
+      // console.log(reason);
       return { isValid: false, reason: reason };
     }
 
@@ -351,16 +338,16 @@ export const OnlineGameProvider = ({ children }) => {
       if (xDiffAbs === 2 && yDiffAbs === 2) {
         if (sSum % 2 !== 0) {
           const reason = "Cannot jump diagonally from odd positions!";
-          console.log(reason);
+          // console.log(reason);
           return { isValid: false, reason: reason };
         }
       }
       let pieceToCapture = [x + xDiff / 2, y + yDiff / 2];
-      console.log(pieceToCapture);
+      // console.log(pieceToCapture);
       //Check if piece to capture is goat
       if (position[pieceToCapture[0]][pieceToCapture[1]] === 1) {
         const reason = "Can capture goat!";
-        //console.log(reason);
+        // console.log(reason);
         return {
           isValid: true,
           isCaptureMove: true,
@@ -369,7 +356,7 @@ export const OnlineGameProvider = ({ children }) => {
         };
       } else {
         const reason = "Cannot capture tiger!";
-        console.log(reason);
+        // console.log(reason);
         return { isValid: false, reason: reason };
       }
     }
@@ -377,14 +364,14 @@ export const OnlineGameProvider = ({ children }) => {
     // Can't move distance more than 2
     if (xDiffAbs > 1 || yDiffAbs > 1) {
       const reason = "Cannot move distance more than 2!";
-      console.log(reason);
+      // console.log(reason);
       return { isValid: false, reason: reason };
     } // Can't move from odd position to another odd position
     // Example: 0,1 (0+1 = 1 odd) to 1,2 (1+2 = 3 odd)
     else if (sSum % 2) {
       if (tSum % 2) {
         const reason = "Can't move from odd position to another odd position!";
-        console.log(reason);
+        // console.log(reason);
         return { isValid: false, reason: reason };
       }
     }
@@ -409,7 +396,6 @@ export const OnlineGameProvider = ({ children }) => {
     moveHistory,
     gameResult,
     setGoatCounter,
-    setMoveCounter,
     setGameResult,
     setMoveHistory,
     startingLayout,
@@ -419,6 +405,7 @@ export const OnlineGameProvider = ({ children }) => {
     setPGN,
     startingLayout,
     pgn,
+    setPGN,
     setMoveCounter,
     gameStatusCheck,
   };

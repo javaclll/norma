@@ -22,20 +22,31 @@ import { OnlineGameProvider } from "../../context/OnlineGameContext";
 
 const WebGame = () => {
   const {
-    game,
-    gameResult,
     turn,
     setTurn,
-    goatsCaptured,
+    game,
+    setGame,
+    makeMove,
+    placeGoat,
+    checkMove,
     goatCounter,
+    goatsCaptured,
     nextMove,
     previousMove,
     moveCounter,
     moveHistory,
+    gameResult,
+    setGoatCounter,
+    setMoveCounter,
+    setGameResult,
+    setMoveHistory,
+    setGoatsCaptured,
     playFromThisPoint,
-    placeGoat,
-    makeMove,
+    cordToPGN,
+    startingLayout,
     pgn,
+    setPGN,
+    gameStatusCheck,
   } = useContext(OnlineGameContext);
 
   const onClickHandler = () => {
@@ -66,51 +77,27 @@ const WebGame = () => {
     return secondChar + firstChar + fourthChar + thirdChar;
   };
 
-  // useEffect(() => {
-  //   console.log(turn + " hello");
-  // }, [turn]);
-
   const onMessage = (event) => {
     let data = JSON.parse(event.data);
     if (playerType === 0 && data.type === 8) {
       setPlayerType(data.piece);
     }
     if (data.type === 5) {
-      const temp = data.move.split("");
-      const temp2 = PGNtoCord({
-        source: [temp[0], temp[1]],
-        target: [temp[2], temp[3]],
+    } else if (data.type === 7) {
+      setTurn(data.turn == -1 ? ItemTypes.TIGER : ItemTypes.GOAT);
+      setPGN(data.pgn.split("-"));
+      setGoatsCaptured(() => data.captured_goats);
+      setGoatCounter(() => data.placed_goats);
+      let history = data.history.map((item) => {
+        return {
+          game: item.board,
+          goatCount: item.goat_count,
+          goatsCaptured: item.goat_captured,
+        };
       });
-
-      const finalcut = temp2.split("");
-
-      if (finalcut[0] == "X") {
-        placeGoat({ target: [finalcut[2], finalcut[3]] });
-      } else {
-        makeMove({
-          source: [finalcut[0], finalcut[1]],
-          target: [finalcut[2], finalcut[3]],
-        });
-        // if (eval_move["isValid"]) {
-        //   let captured = eval_move["isCaptureMove"];
-        //   if (captured) {
-        //     new_state[eval_move["capturePiece"][0]][
-        //       eval_move["capturePiece"][1]
-        //     ] = 0;
-        //     goatsCap++;
-        //   }
-        //   new_state[finalcut[2]][finalcut[3]] =
-        //     new_state[finalcut[0]][finalcut[1]];
-        //   new_state[finalcut[0]][finalcut[1]] = 0;
-        //   // let gameStatusAfterMove = gameStatusCheck(
-        //   //   new_state,
-        //   //   eval_move["isCaptureMove"]
-        //   // );
-        //   // if (gameStatusAfterMove.decided === true) {
-        //   //   setGameResult(gameStatusAfterMove);
-        //   // }
-        // }
-      }
+      setMoveCounter(history.length - 1);
+      setMoveHistory(() => history);
+      setGame(() => history[history.length - 1].game);
     }
   };
 
@@ -138,6 +125,7 @@ const WebGame = () => {
   const [notifShow, setNotif] = useState(false);
   return (
     <WebsocketContext.Provider value={websocket}>
+      {console.log(moveHistory)}
       <DndProvider backend={HTML5Backend}>
         <div className="main-container">
           <div className="left-box">

@@ -41,7 +41,7 @@ export const WebSockIntersection = ({ x, y, children }) => {
   };
 
   useEffect(() => {
-    console.log(turn + "bhitrta bata");
+    // console.log(turn + "bhitrta bata");
   }, [turn]);
 
   const [{ isOver, canDrop }, drop] = useDrop(
