@@ -287,7 +287,7 @@ class GameConnectionManager:
             game_instance.pgn = game_instance.pgn + "-" + move
 
         if game_status["decided"]:
-            return {"decided": True, "won_by": game_status["won_by"]}
+            return {"decided": True, "won_by": game_status["won_by"], "game": game_instance}
 
         return {"decided": False, "game": game_instance}
 
