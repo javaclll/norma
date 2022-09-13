@@ -124,6 +124,11 @@ const WebGame = () => {
       setMoveCounter(history.length - 1);
       setMoveHistory(() => history);
       setGame(() => history[history.length - 1].game);
+    } else if (data.type === 6) {
+      setGameResult({
+        decided: true,
+        wonBy: data["won_by"] === -1 ? ItemTypes.TIGER : ItemTypes.GOAT,
+      });
     }
   };
 
