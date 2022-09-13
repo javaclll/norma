@@ -57,7 +57,9 @@ const Online = () => {
       method: "POST",
     });
     const sess = sessionResponseFormatter(req);
-    if (sess && sess.success) {
+    const currentSess = localStorage.getItem("ident");
+    console.log(currentSess);
+    if (sess && sess.success && !currentSess) {
       localStorage.setItem("ident", sess.ident);
     }
     console.log(sess);
