@@ -260,6 +260,7 @@ class Bagchal:
                             this_move = self.check_move([i, j], [i + k, j + l])
                             if this_move["isValid"]:
                                 return True
+        
         return False
 
     def goat_can_move(self):
@@ -287,3 +288,29 @@ class Bagchal:
             return {"decided": True, "won_by": -1}
 
         return {"decided": False}
+
+
+    def check_trap(self):
+        position = self.board
+
+        tiger_trapped = 0
+        goat_trapped = 0
+
+        for i in range(5):
+            for j in range(5):
+                if position[i][j] == -1:
+                    for k in range(-2, 3):
+                        for l in range(-2, 3):
+                            this_move = self.check_move([i, j], [i + k, j + l])
+                            if not this_move["isValid"]:
+                                tiger_trapped += 1
+
+                if position[i][j] == 1:
+                    for k in range(-1, 2):
+                        for l in range(-1, 2):
+                            this_move = self.check_move([i, j], [i + k, j + l])
+                            if not this_move["isValid"]:
+                                goat_trapped += 1
+
+
+        return goat_trapped, tiger_trapped
