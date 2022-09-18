@@ -1,5 +1,5 @@
 from random import randint
-from model.bagchal import Bagchal
+from bagchal import Bagchal
 
 import numpy as np
 
@@ -68,12 +68,16 @@ class Agent:
                 if moves["source"] is not None:
                     source[moves["source"][0]][moves["source"][1]] = 1
                 
-                    
+                
                 # model.predict(state, action) => get reward
-                predictions.append(self.model.model.predict(game.board, source, target))
+                predictions.append(self.model.predict(game.board, source, target)[0,0])
                 # find the max reward and use that move in the game
-            
 
+            print(predictions)
+
+            maxIndex = np.argmax(predictions)
+            
+            move = possibleMoves[maxIndex]
             #find the predicted values for the moves ....
         #get the next board state from the current board state
         return move
@@ -118,6 +122,7 @@ class Agent:
 
         #         pgn += "-"
         move = self.moveState(game)
-        game.move(move["source"], move["source"], ident_check=False)
+        print(move)
+        game.move(move["source"], move["target"])
             
         return move, game

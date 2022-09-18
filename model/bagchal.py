@@ -1,8 +1,8 @@
 from copy import deepcopy
 
-from model.constant import DEFAULT_GAME_LAYOUT
-from model.enum import GameState
-from model.exception import GameException
+from constant import DEFAULT_GAME_LAYOUT
+from enums import GameState
+from exception import GameException
 
 
 class Bagchal:

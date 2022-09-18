@@ -1,7 +1,7 @@
-from model.bagchal import Bagchal
-from model.enum import AgentType, GameState
-from model.agent import Agent
-from model.model import Model
+from enums import AgentType, GameState
+from bagchal import Bagchal
+from agent import Agent
+from model import Model
 
 from functools import reduce
 import numpy as np
@@ -9,11 +9,11 @@ import numpy as np
 
 class Simulator:
 
-    def __init__(self, agentGoat: Agent, agentTiger: Agent, game: Bagchal):
+    def __init__(self, agentGoat: Agent, agentTiger: Agent):
         self.agentGoat = agentGoat
         self.agentTiger = agentTiger
         self.game = Bagchal.new()
-        self.stateMemory = np.zeros((0, 5, 5, 4))
+        self.stateMemory = np.zeros((0, 101))
 
     def play(self, noOfPlays):
 
@@ -22,6 +22,7 @@ class Simulator:
         for _ in range(noOfPlays):
             # agentGoat.getState()
             # agentTiger.moveState()
+            count = 0
 
             while not self.game.game_status_check()["decided"]:
                 
@@ -54,7 +55,7 @@ class Simulator:
                     prevTrapGoat, prevTrapTiger = self.game.check_trap()
                     move, self.game = self.agentTiger.move(self.game)
                     currentTrapGoat, currentTrapTiger = self.game.check_trap()
-                    currentGoatCapture = self.self.game.game_history[-1]["goat_captured"]
+                    currentGoatCapture = self.game.game_history[-1]["goat_captured"]
 
                     indivReward = indivReward + (currentGoatCapture - prevGoatCapture)
 
@@ -84,7 +85,11 @@ class Simulator:
                 source = source.flatten()
                 target = target.flatten()
                 
-                flattenBoard = np.concatenate((goatBoard, tigerBoard, source, target, indivReward), axis=None)
+                flattenBoard = np.concatenate((goatBoard, tigerBoard, source, target, indivReward), axis=None).reshape((1,-1))
+
+
+                print(self.stateMemory.shape)
+                print(flattenBoard.shape)
                 self.stateMemory = np.concatenate((self.stateMemory, flattenBoard), axis = 0)
                 # print(playingGame.game_history)
                 if count > 100:
@@ -116,22 +121,25 @@ class Simulator:
                 
             #Generate the Data for Training:
             #[playerGoat, plaerTiger] [state for Tiger], [state for Goat] [1  or 0]
+        print("Final ", self.stateMemory.shape)
         return {"Simulation End": True}
 
 
-if __name__=="main":
+if __name__ == "__main__":
 
     noOfSims = 3
 
     prevModel = None
     currentModel = None
 
-    for _ in noOfSims:
+    for _ in range(noOfSims):
         agentGoat = Agent(type = AgentType.GOAT.value, model = prevModel)
         agentTiger = Agent(type = AgentType.TIGER.value, model = currentModel)
         gameSimulation = Simulator(agentGoat = agentGoat, agentTiger = agentTiger)
 
-        simulationResult = gameSimulation.play()
+        simulationResult = gameSimulation.play(10)
+
+        print(gameSimulation.stateMemory)
 
         if simulationResult["Simulation End"]:
             prevModel = currentModel 
