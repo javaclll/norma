@@ -13,12 +13,16 @@ class Bagchal:
         goat_captured,
         game_state,
         game_history,
+        pgn,
+        prev_move,
     ):
         self.turn = turn
         self.goat_counter = goat_counter
         self.goat_captured = goat_captured
         self.game_state = game_state
         self.game_history = game_history
+        self.pgn = pgn
+        self.prev_move = prev_move
 
     @property
     def board(self):
@@ -27,6 +31,60 @@ class Bagchal:
     @property
     def move_count(self):
         return len(self.game_history) - 1
+
+    def pos_dec(self, num):
+        if num == 1:
+            return [1, 0, 0, 0, 0]
+        elif num == 2:
+            return [0, 1, 0, 0, 0]
+        elif num == 3:
+            return [0, 0, 1, 0, 0]
+        elif num == 4:
+            return [0, 0, 0, 1, 0]
+        elif num == 5:
+            return [0, 0, 0, 0, 1]
+
+        return [0, 0, 0, 0, 0]
+
+    def state_as_inputs(self, possible_moves):
+        if not possible_moves:
+            possible_moves = self.get_possible_moves()
+
+        vector_list = []
+
+        for neighbours in possible_moves:
+            input = []
+
+            pos = neighbours["resulting_state"]
+            # Board Positions
+            for i in range(5):
+                for j in range(5):
+                    if pos.board[i][j] == 1:
+                        input += [1, 0]
+                    elif pos.board[i][j] == -1:
+                        input += [0, 1]
+                    else:
+                        input += [0, 0]
+
+            coord = neighbours["move"]
+
+            # Source
+            input += self.pos_dec(coord[0][0])
+            input += self.pos_dec(coord[0][1])
+
+            # Destination
+            input += self.pos_dec(coord[1][0])
+            input += self.pos_dec(coord[1][1])
+
+            # Goat Placement Complete
+            if pos.goat_counter >= 20:
+                input += [1]
+            else:
+                input += [0]
+
+            vector_list.append(input)
+
+        return vector_list
 
     @staticmethod
     def new():
@@ -42,7 +100,39 @@ class Bagchal:
                     "goat_captured": 0,
                 }
             ],
+            pgn="",
+            prev_move=None,
         )
+
+    @staticmethod
+    def cord_to_char(num):
+        match (num):
+            case 0:
+                return "A"
+            case 1:
+                return "B"
+            case 2:
+                return "C"
+            case 3:
+                return "D"
+            case 4:
+                return "E"
+            case _ :
+                return "X"
+
+    @staticmethod
+    def coord_to_png_unit(source, destination):
+        unit = ""
+        if source == None:
+            unit = "XX"
+        else:
+            unit += Bagchal.cord_to_char(source[1])
+            unit += str(5-source[0])
+
+        unit += Bagchal.cord_to_char(destination[1])
+        unit += str(5-destination[0])
+
+        return unit
 
     @staticmethod
     def char_to_cord(char):
@@ -136,6 +226,12 @@ class Bagchal:
             }
         )
 
+        if self.pgn == "":
+            self.pgn = Bagchal.coord_to_png_unit(source, target)
+        else:
+            self.pgn = self.pgn + "-" + Bagchal.coord_to_png_unit(source, target) # type: ignore
+
+        self.prev_move = [source, target]
         return {"success": True}
 
     def check_move(self, source, target):
@@ -255,9 +351,9 @@ class Bagchal:
         for i in range(5):
             for j in range(5):
                 if position[i][j] == -1:
-                    for k in range(-2, 3):
-                        for l in range(-2, 3):
-                            this_move = self.check_move([i, j], [i + k, j + l])
+                    for k in range(5):
+                        for l in range(5):
+                            this_move = self.check_move([i, j], [k, l])
                             if this_move["isValid"]:
                                 return True
         return False
@@ -287,3 +383,57 @@ class Bagchal:
             return {"decided": True, "won_by": -1}
 
         return {"decided": False}
+
+    def get_possible_moves(self):
+        moves = []
+
+        if self.turn == -1:
+            for i in range(5):
+                for j in range(5):
+                    if self.board[i][j] == -1:  # type: ignore
+                        for k in range(5):
+                            for l in range(5):
+                                this_move = self.check_move([i, j], [k, l])
+                                if this_move["isValid"]:
+                                    new_move_state = deepcopy(self)
+                                    new_move_state.move([i, j], [k, l], this_move)
+                                    moves.append(  # type: ignore
+                                        {
+                                            "move": [[i, j], [k, l]],
+                                            "resulting_state": new_move_state,
+                                        }
+                                    )
+        else:
+            if self.goat_counter >= 20:
+                for i in range(5):
+                    for j in range(5):
+                        if self.board[i][j] == 1:  # type: ignore
+                            for k in range(-1, 2):
+                                for l in range(-1, 2):
+                                    this_move = self.check_move([i, j], [i + k, j + l])
+                                    if this_move["isValid"]:
+                                        new_move_state = deepcopy(self)
+                                        new_move_state.move(
+                                            [i, j], [i + k, j + l], this_move
+                                        )
+                                        moves.append(  # type: ignore
+                                            {
+                                                "move": [[i, j], [i + k, j + l]],
+                                                "resulting_state": new_move_state,
+                                            }
+                                        )
+            else:
+                for i in range(5):
+                    for j in range(5):
+                        if self.board[i][j] == 0:
+                            new_move_state = deepcopy(self)
+                            new_move_state.move(None, [i, j])
+
+                            moves.append(
+                                {
+                                    "move": [[0, 0], [i, j]],
+                                    "resulting_state": new_move_state,
+                                }
+                            )
+
+        return moves

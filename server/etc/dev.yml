@@ -2,6 +2,8 @@ PROJECT_NAME : bagchal
 
 DEV_MODE: true
 
+ENGINE_IDENT: d4beab3f-9b3c-44df-ba62-d477fb33c67b
+
 FIRST_SUPERUSER : test@test.com
 FIRST_SUPERUSER_PASSWORD : test
 

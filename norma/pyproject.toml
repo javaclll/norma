@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "norma"
+version = "0.1.0"
+description = ""
+authors = ["Daze <dazehere@yandex.com>"]
+
+[tool.poetry.dependencies]
+python = "3.9.13"
+tensorflow = "^2.10.0"
+bagchal = {path = "../game", develop = true}
+websocket-client = "^1.4.1"
+tensorflow-gpu = "^2.10.0"
+numpy = "^1.23.3"
+rel = "^0.4.7"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
