@@ -12,7 +12,7 @@ class Simulator:
         self.agentGoat = agentGoat
         self.agentTiger = agentTiger
         self.game = Bagchal.new()
-        self.stateMemory = np.zeros((0, 71))
+        self.stateMemory = np.zeros((0, 5, 5, 4))
 
     def play(self, noOfPlays):
 
@@ -26,7 +26,7 @@ class Simulator:
                 
                 indivReward = 0
                 
-                flattenBoard = np.array(reduce(lambda z, y :z + y, self.game.game_history[-1]["board"]))
+                flattenBoard = np.array(reduce(lambda z, y :z + y, self.game.board))
                 goatBoard = (flattenBoard == 1) * 1
                 tigerBoard = (flattenBoard == -1) * 1
 
@@ -69,20 +69,21 @@ class Simulator:
                 
                 count += 1
 
-                sourceOne = np.zeros(5)
-                sourceTwo = np.zeros(5)
+                source = np.zeros((5,5))
 
-                targetOne = np.zeros(5)
-                targetTwo = np.zeros(5)
+                target = np.zeros((5,5))
 
-                targetOne[move["target"][0]] = 1
-                targetTwo[move["target"][1]] = 1
+                target[move["target"][0]][move["target"][1]] = 1
+                
 
                 if move["source"] is not None:
-                    sourceOne[move["source"][0]] = 1
-                    sourceTwo[move["source"][1]] = 1
+                    source[move["source"][0]][move["source"][1]] = 1
                 
-                flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceOne, sourceTwo, targetOne, targetTwo, indivReward), axis=None)
+                
+                source = source.flatten()
+                target = target.flatten()
+                
+                flattenBoard = np.concatenate((goatBoard, tigerBoard, source, target, indivReward), axis=None)
                 self.stateMemory = np.concatenate((self.stateMemory, flattenBoard), axis = 0)
                 # print(playingGame.game_history)
                 if count > 100:
