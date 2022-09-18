@@ -37,23 +37,34 @@ class Model:
 
         self.model.summary()
 
-    def stateToTensor(self, flatStateMove):
-        xTensor = flatStateMove[:-2]
-        yTensor = flatStateMove[-1]
-        
-        yTensor = yTensor.reshape((1,1,1))
-        xTensor = xTensor.reshape((1,-1,5,5))
+    def stateToTensor(self, flatStateMove, train = True):
 
-        return xTensor, yTensor
+        if train:
+            print("FF", flatStateMove.shape)
+            xTensor = flatStateMove[:,:-1]
+            yTensor = flatStateMove[:,-1]
+            print(xTensor)
+            print(yTensor)
+            print("xT",xTensor.shape)
+            print("yT",yTensor.shape)
+            
+            yTensor = yTensor.reshape((1,1,1))
+            xTensor = xTensor.reshape((1,5,5,-1))
 
+            return xTensor, yTensor
+        else:
+            xTensor = flatStateMove.reshape((1,5,5,-1))
+            return xTensor
 
 
     def training(self, flattendData, startLoss = 30):
         noOfData = flattendData.shape[0]
-        trainX = np.zeros((noOfData,4,5,5))
+
+        print(noOfData)
+        trainX = np.zeros((noOfData,5,5,4))
         trainY = np.zeros((noOfData,1,1))
         for index, data in enumerate(flattendData):
-            xTensor, yTensor = self.stateToTensor(data)
+            xTensor, yTensor = self.stateToTensor(data.reshape((1,-1)))
             trainX[index, :, :, :] = xTensor
             trainY[index, :, :] = yTensor
 
@@ -61,10 +72,19 @@ class Model:
 
         while startLoss > 0.02:
             self.model.fit(trainX, trainY, epochs = 10, batch_size = 256, verbose = 2)
-            startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)
+            startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)[0]
             count += 1
 
             print("Counter: ", count, " Loss: ", startLoss)
+
+            if count > 100:
+                break
+        print(trainX.shape)
+        newX = trainX[0,:,:,:]
+        newX = newX[np.newaxis, :]
+
+        print(newX.shape)
+        print(self.model.predict(newX))
 
     def predict(self, state, source, target):
 
@@ -75,10 +95,11 @@ class Model:
         target = target.flatten()
         flattenBoard = np.concatenate((goatBoard, tigerBoard, source, target), axis=None)
 
-        predictTensor = self.stateToTensor(flattenBoard)
+        predictTensor = self.stateToTensor(flattenBoard.reshape((1,-1)), train = False)
+        print(predictTensor.shape)
 
         predictedValue = self.model.predict(predictTensor, verbose = 2)
-
+        print(predictedValue)
         return predictedValue
 
        
