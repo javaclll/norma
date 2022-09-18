@@ -1,6 +1,5 @@
 from random import randint
-from game import bagchal
-from game.bagchal.bagchal import Bagchal
+from model.bagchal import Bagchal
 
 import numpy as np
 
@@ -10,10 +9,10 @@ import numpy as np
 
 class Agent:
     
-    def __init__(self, type, game: Bagchal):
+    def __init__(self, type, model = None):
         self.noGames = 0
         self.epsilon = 10
-        self.model = None
+        self.model = model
         self.type = type
 
     def moveState(self, game: Bagchal):

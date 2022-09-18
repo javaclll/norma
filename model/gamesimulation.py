@@ -1,6 +1,7 @@
-from game.bagchal import Bagchal
-from game.bagchal.enum import GameState
-from .agent import Agent
+from model.bagchal import Bagchal
+from model.enum import AgentType, GameState
+from model.agent import Agent
+from model.model import Model
 
 from functools import reduce
 import numpy as np
@@ -106,7 +107,7 @@ class Simulator:
             elif self.game.game_state == GameState.NOT_DECIDED.value:
                 totalReward = 0
 
-            if totalReward is not 0:
+            if totalReward != 0:
                 for k in range(noOfStates):
                     if k % 2 == 0:
                         self.stateMemory[previousGameNo + k][71] = self.stateMemory[previousGameNo + k][71] + (totalReward / (noOfStates - k))
@@ -115,4 +116,27 @@ class Simulator:
                 
             #Generate the Data for Training:
             #[playerGoat, plaerTiger] [state for Tiger], [state for Goat] [1  or 0]
-        #[return data in the form [state, action pair] and reward]
+        return {"Simulation End": True}
+
+
+if __name__=="main":
+
+    noOfSims = 3
+
+    prevModel = None
+    currentModel = None
+
+    for _ in noOfSims:
+        agentGoat = Agent(type = AgentType.GOAT.value, model = prevModel)
+        agentTiger = Agent(type = AgentType.TIGER.value, model = currentModel)
+        gameSimulation = Simulator(agentGoat = agentGoat, agentTiger = agentTiger)
+
+        simulationResult = gameSimulation.play()
+
+        if simulationResult["Simulation End"]:
+            prevModel = currentModel 
+            currentModel = Model()
+
+            currentModel.training(flattendData = gameSimulation.stateMemory)
+            
+        

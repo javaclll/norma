@@ -1,41 +1,38 @@
 import numpy as np
-import keras
-import keras.layers as kl
-import keras.models as km
-from keras import optimizers
+from tensorflow import keras
 from functools import reduce
 
 class Model:
 
     def __init__(self):
-        self.optimizer = optimizers.Adam(learning_rate=0.01)
+        self.optimizer = keras.optimizers.Adam(learning_rate=0.01)
 
-        self.model = km.Sequential()
+        self.model = keras.models.Sequential()
 
-        self.model.add(kl.Conv2D(32, (5, 5), padding='same', input_shape=(5,5,4)))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(32, (4, 4), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(32, (4, 4), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(64, (3, 3), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(64, (3, 3), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(64, (3, 3), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Conv2D(64, (3, 3), padding='same'))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(32, (5, 5), padding='same', input_shape=(5,5,4)))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(32, (4, 4), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(32, (4, 4), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(64, (3, 3), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(64, (3, 3), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(64, (3, 3), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Conv2D(64, (3, 3), padding='same'))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
 
-        self.model.add(kl.Flatten(input_shape=(5,5,4)))
-        self.model.add(kl.Dense(100))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Dense(10))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
-        self.model.add(kl.Dense(10))
-        self.model.add(kl.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Flatten(input_shape=(5,5,4)))
+        self.model.add(keras.layers.Dense(100))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Dense(10))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
+        self.model.add(keras.layers.Dense(10))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.3))
 
-        self.model.add(kl.Dense(1, activation='linear'))
+        self.model.add(keras.layers.Dense(1, activation='linear'))
         self.model.compile(optimizer=self.optimizer, loss='mean_squared_error', metrics=['accuracy'])
 
         self.model.summary()
@@ -83,9 +80,5 @@ class Model:
         predictedValue = self.model.predict(predictTensor, verbose = 2)
 
         return predictedValue
-        
-
-    def NNModel():
-        pass
 
        
