@@ -7,7 +7,6 @@ import numpy as np
 #agent is the player that plays games and then, stores the data for training.
 
 #use this to generate the training data, so generate the self play data, and the montecarlo search tree data. 
-NO_OF_PLAY_DATA = 1000
 
 class Agent:
     
@@ -56,25 +55,27 @@ class Agent:
             
 
         else:
+
+            predictions = []
             for moves in possibleMoves:
 
-                sourceOne = np.zeros(5)
-                sourceTwo = np.zeros(5)
+                source = np.zeros((5,5))
 
-                targetOne = np.zeros(5)
-                targetTwo = np.zeros(5)
+                target = np.zeros((5,5))
 
-                targetOne[moves["target"][0]] = 1
-                targetTwo[moves["target"][1]] = 1
+                target[moves["target"][0]][moves["target"][1]] = 1
+                
 
-                if moves.source is not None:
-                    sourceOne[moves["source"][0]] = 1
-                    sourceTwo[moves["source"][1]] = 1
+                if moves["source"] is not None:
+                    source[moves["source"][0]][moves["source"][1]] = 1
+                
                     
                 # model.predict(state, action) => get reward
-
+                predictions.append(self.model.model.predict(game.board, source, target))
                 # find the max reward and use that move in the game
             
+
+            #find the predicted values for the moves ....
         #get the next board state from the current board state
         return move
         #use policy network to find the next move
