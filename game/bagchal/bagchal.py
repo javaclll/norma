@@ -4,17 +4,39 @@ from .constant import DEFAULT_GAME_LAYOUT
 from .enum import GameState
 from .exception import GameException
 
+# For Tiger
+T_GOAT_CAPTURE = 2
+T_GOT_TRAPPED = -1
+T_TRAP_ESCAPE = 0.5
+T_WIN = 5
+T_LOSE = -5
+T_DRAW = -3
+
+# For Goat
+G_GOAT_CAPTURED = -2
+G_TIGER_TRAP = 1
+G_TIGER_ESCAPE = -0.5
+G_WIN = 5
+G_LOSE = -5
+G_DRAW = -3
+
+# Max Moves
+MAX_MOVES = 100
+
 
 class Bagchal:
     def __init__(
         self,
-        turn,
-        goat_counter,
-        goat_captured,
-        game_state,
-        game_history,
-        pgn,
-        prev_move,
+        turn=0,
+        goat_counter=0,
+        goat_captured=0,
+        game_state=GameState.NOT_DECIDED.value,
+        game_history=[],
+        pgn="",
+        prev_move=None,
+        move_reward_tiger=[],
+        move_reward_goat=[],
+        trapped_tiger=0,
     ):
         self.turn = turn
         self.goat_counter = goat_counter
@@ -23,6 +45,9 @@ class Bagchal:
         self.game_history = game_history
         self.pgn = pgn
         self.prev_move = prev_move
+        self.move_reward_tiger = move_reward_tiger
+        self.move_reward_goat = move_reward_goat
+        self.trapped_tiger = trapped_tiger
 
     @property
     def board(self):
@@ -46,9 +71,10 @@ class Bagchal:
 
         return [0, 0, 0, 0, 0]
 
-    def state_as_inputs(self, possible_moves):
+    def state_as_inputs(self, possible_moves=None):
         if not possible_moves:
             possible_moves = self.get_possible_moves()
+
 
         vector_list = []
 
@@ -56,6 +82,7 @@ class Bagchal:
             input = []
 
             pos = neighbours["resulting_state"]
+
             # Board Positions
             for i in range(5):
                 for j in range(5):
@@ -82,6 +109,12 @@ class Bagchal:
             else:
                 input += [0]
 
+            # Goat or Tiger's Turn
+            if self.turn == -1:
+                input += [1]
+            else:
+                input += [0]
+
             vector_list.append(input)
 
         return vector_list
@@ -102,6 +135,9 @@ class Bagchal:
             ],
             pgn="",
             prev_move=None,
+            move_reward_tiger=[],
+            move_reward_goat=[],
+            trapped_tiger=0,
         )
 
     @staticmethod
@@ -117,7 +153,7 @@ class Bagchal:
                 return "D"
             case 4:
                 return "E"
-            case _ :
+            case _:
                 return "X"
 
     @staticmethod
@@ -127,10 +163,10 @@ class Bagchal:
             unit = "XX"
         else:
             unit += Bagchal.cord_to_char(source[1])
-            unit += str(5-source[0])
+            unit += str(5 - source[0])
 
         unit += Bagchal.cord_to_char(destination[1])
-        unit += str(5-destination[0])
+        unit += str(5 - destination[0])
 
         return unit
 
@@ -196,12 +232,40 @@ class Bagchal:
         else:
             raise GameException(message="Invalid parameter!")
 
+    def check_trapped_tiger(self):
+        count = 0
+        for i in range(5):
+            for j in range(5):
+                if self.board[i][j] == -1:
+                    has_move = False
+
+                    for k in range(5):
+                        for l in range(5):
+                            res = self.check_move([i, j], [k, l], assuming_turn=-1)
+                            has_move = res["isValid"]
+                            print(f"From: {i},{j} , To: {k},{l}, Result: {res}")
+                            if has_move:
+                                break
+                        if has_move:
+                            break
+
+                    if not has_move:
+                        count += 1
+
+        self.trapped_tiger = count
+
     def move(self, source, target, eval_res=None):
+        prev_captured = self.goat_captured
+        prev_trapped = self.trapped_tiger
+
         if not eval_res:
             eval_res = self.check_move(source, target)
 
         if not eval_res["isValid"]:
             raise GameException(message="Invalid move!")
+
+        self.move_reward_goat.append(0)
+        self.move_reward_tiger.append(0)
 
         new_state = deepcopy(self.board)
 
@@ -229,17 +293,59 @@ class Bagchal:
         if self.pgn == "":
             self.pgn = Bagchal.coord_to_png_unit(source, target)
         else:
-            self.pgn = self.pgn + "-" + Bagchal.coord_to_png_unit(source, target) # type: ignore
+            self.pgn = self.pgn + "-" + Bagchal.coord_to_png_unit(source, target)  # type: ignore
+
+        # self.check_trapped_tiger()
 
         self.prev_move = [source, target]
+
+        # Goat got captured
+        if prev_captured != self.goat_captured:
+            self.move_reward_goat[-1] += G_GOAT_CAPTURED
+            self.move_reward_tiger[-1] += T_GOAT_CAPTURE
+
+        # Tiger got trapped
+        if prev_trapped < self.trapped_tiger:
+            self.move_reward_goat[-1] += G_TIGER_TRAP
+            self.move_reward_tiger[-1] += T_GOT_TRAPPED
+
+        # Tiger escaped trap
+        if prev_trapped > self.trapped_tiger:
+            self.move_reward_goat[-1] += G_TIGER_ESCAPE
+            self.move_reward_tiger[-1] += T_TRAP_ESCAPE
+
+        # Game has been decided
+        status_after_move = self.game_status_check()
+
+        if status_after_move["decided"]:
+            if status_after_move["won_by"] == -1:
+                self.game_state = GameState.TIGER_WON.value
+                self.move_reward_tiger[-1] += T_WIN
+                self.move_reward_goat[-1] += G_LOSE
+            else:
+                self.game_state = GameState.GOAT_WON.value
+                self.move_reward_goat[-1] += G_WIN
+                self.move_reward_tiger[-1] += T_LOSE
+
+        # Max moves reached
+        if len(self.game_history) >= MAX_MOVES:
+            self.game_state = GameState.DRAW.value
+            self.move_reward_goat[-1] += G_DRAW
+            self.move_reward_tiger[-1] += T_DRAW
+
         return {"success": True}
 
-    def check_move(self, source, target):
+    def check_move(self, source, target, assuming_turn = None):
+        if assuming_turn:
+            turn = assuming_turn
+        else:
+            turn = self.turn
+
         m = target[0]
         n = target[1]
 
         if source == None:
-            if self.turn == 1:
+            if turn == 1:
                 if self.goat_counter >= 20:
                     return {"isValid": False}
                 else:
@@ -266,14 +372,14 @@ class Bagchal:
             return {"isValid": False, "reason": reason}
 
         if not (
-            (self.turn == 1 and position[x][y] == 1)
-            or (self.turn == -1 and position[x][y] == -1)
+            (turn == 1 and position[x][y] == 1)
+            or (turn == -1 and position[x][y] == -1)
         ):
             reason = "Cannot move in other's turn!"
             # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
             return {"isValid": False, "reason": reason}
 
-        if self.turn == 1:
+        if turn == 1:
             if self.goat_counter < 20:
                 reason = "Can't move goat before all goats are placed"
                 # print(f'{reason} {x} {y} source {m} {n} destination {self.goat_counter}')
@@ -299,7 +405,7 @@ class Bagchal:
         # Tiger can jump goats
         if (
             # (2,0), (2,2), (0, 2), (2, 2)
-            self.turn == -1
+            turn == -1
             and (
                 (x_diff_abs == 2 and y_diff_abs == 0)
                 or (y_diff_abs == 2 and (x_diff_abs == 0 or x_diff_abs == 2))

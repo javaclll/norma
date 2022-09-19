@@ -22,15 +22,12 @@ async def create_game(
     else:
         piece = random.choice([-1, 1])
 
-    if with_norma:
-        pass
-
     game_id = manager.create_game(with_norma=with_norma)
 
     manager.assign_game(game_id, ident.value, piece)
 
     if with_norma:
-        manager.assign_game_to_engine(
+        await manager.assign_game_to_engine(
             game_id, settings.ENGINE_IDENT, -1 if piece == 1 else 1
         )
 

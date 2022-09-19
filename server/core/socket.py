@@ -118,14 +118,7 @@ class GameConnectionManager:
 
         await websocket.accept()
 
-        wants_norma = redis_client.get("wants_norma")
-
-        print(f"wanting_norma: {wants_norma}")
-
-        if wants_norma:
-            wants_norma = json.loads(wants_norma)
-        else:
-            wants_norma = []
+        wants_norma = await self.get_wants_norma()
 
         for game_id in wants_norma:
             game_instance = self.get_game_by_id(game_id)
@@ -350,7 +343,7 @@ class GameConnectionManager:
             message="Failed to find the game with mathing game_id and ident!"
         )
 
-    def assign_game_to_engine(self, game_id, ident, piece):
+    async def assign_game_to_engine(self, game_id, ident, piece):
         self.assign_game(game_id, ident, piece)
         norma_game_list = redis_client.get("norma_associated_games")
 
@@ -358,6 +351,10 @@ class GameConnectionManager:
             norma_game_list = json.loads(norma_game_list)
         else:
             norma_game_list = []
+
+        if piece == 1:
+            await self.append_to_wants_norma(game_id)
+            await self.inform_executors(game_id=game_id)
 
         norma_game_list.append(
             {
@@ -367,6 +364,41 @@ class GameConnectionManager:
         )
 
         redis_client.set("norma_associated_games", json.dumps(norma_game_list))
+
+    async def append_to_wants_norma(self, game_id):
+        wants_norma = await self.get_wants_norma()
+
+        wants_norma.append(game_id)
+
+        redis_client.set("wants_norma", json.dumps(wants_norma))
+
+    async def get_wants_norma(self):
+        wants_norma = redis_client.get("wants_norma")
+
+        if wants_norma:
+            return json.loads(wants_norma)
+        else:
+            return []
+
+    async def inform_executors(self, game_id=None, game_instance=None):
+        if game_id:
+            game: GameInstance = self.get_game_by_id(game_id)
+        else:
+            game: GameInstance = game_instance  # type: ignore
+
+        if len(self.norma_executors) != 0:
+            message = {
+                "type": 10,
+                "game": {
+                    "game_id": game.game_id,
+                    "turn": game.game.turn,
+                    "goat_counter": game.game.goat_counter,
+                    "goat_captured": game.game.goat_captured,
+                    "game_history": game.game.game_history,
+                    "pgn": game.game.pgn,
+                },
+            }
+            await random.choice(self.norma_executors).send_json(message)
 
     async def make_move(self, game_id, ident, move: str):
         game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
@@ -395,30 +427,8 @@ class GameConnectionManager:
             }
 
         if game_instance.is_with_norma and ident != settings.ENGINE_IDENT:
-            wants_norma = redis_client.get("wants_norma")
-
-            if wants_norma:
-                wants_norma = json.loads(wants_norma)
-            else:
-                wants_norma = []
-
-            wants_norma.append(game_id)
-
-            redis_client.set("wants_norma", json.dumps(wants_norma))
-
-            if len(self.norma_executors) != 0:
-                message = {
-                    "type": 10,
-                    "game": {
-                        "game_id": game_instance.game_id,
-                        "turn": game_instance.game.turn,
-                        "goat_counter": game_instance.game.goat_counter,
-                        "goat_captured": game_instance.game.goat_captured,
-                        "game_history": game_instance.game.game_history,
-                        "pgn": game_instance.game.pgn,
-                    },
-                }
-                await random.choice(self.norma_executors).send_json(message)
+            await self.append_to_wants_norma(game_id)
+            await self.inform_executors(game_instance=game_instance)
 
         return {"decided": False, "game": game_instance}
 
