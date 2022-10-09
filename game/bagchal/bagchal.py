@@ -22,10 +22,14 @@ class Bagchal:
 
     @property
     def board(self):
-        return self.game_history[-1]["board"]
+        pass
 
     @property
     def move_count(self):
+        return len(self.game_history) - 1
+
+    @property
+    def state_as_inputs(self):
         return len(self.game_history) - 1
 
     @staticmethod

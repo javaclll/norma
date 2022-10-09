@@ -6,6 +6,7 @@ from typing import List, Optional
 from bagchal import Bagchal
 from fastapi import HTTPException, WebSocket, status
 
+from core import settings
 from core.exception import ManagerException
 from core.redis import redis_client
 
@@ -54,7 +55,7 @@ class GameInstance:
 
 class GameConnectionManager:
     def __init__(self):
-        self.active_connections = []
+        self.norma_executors = []
         self.games: List[GameInstance] = []
 
         self.load_from_redis()
@@ -105,6 +106,14 @@ class GameConnectionManager:
                     ),
                 )
             )
+
+    async def executor_connect(self, websocket: WebSocket, ident: str):
+        if ident != settings.ENGINE_IDENT:
+            return
+
+        await websocket.accept()
+
+        self.norma_executors.append(websocket)
 
     async def connect(self, websocket: WebSocket, ident: str, game_id: str):
         try:
@@ -287,7 +296,11 @@ class GameConnectionManager:
             game_instance.pgn = game_instance.pgn + "-" + move
 
         if game_status["decided"]:
-            return {"decided": True, "won_by": game_status["won_by"], "game": game_instance}
+            return {
+                "decided": True,
+                "won_by": game_status["won_by"],
+                "game": game_instance,
+            }
 
         return {"decided": False, "game": game_instance}
 

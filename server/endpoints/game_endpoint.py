@@ -43,3 +43,17 @@ async def game(
             await manager.handle_messages(message, ident, id, websocket)
     except WebSocketDisconnect:
         manager.disconnect(id, websocket)
+
+@router.websocket("/glory")
+async def game(
+    websocket: WebSocket,
+    id: str,
+    ident: str,
+) -> Any:
+    await manager.executor_connect(websocket, ident)
+    try:
+        while True:
+            message = await websocket.receive_json()
+            await manager.handle_messages(message, ident, id, websocket)
+    except WebSocketDisconnect:
+        manager.disconnect(id, websocket)
