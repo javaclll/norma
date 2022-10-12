@@ -1,5 +1,7 @@
 use crate::constants;
-use crate::types::{GameState, GameStateInstance, GameStatusCheckResult, Move, MoveCheckResult};
+use crate::types::{
+    GameState, GameStateInstance, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
+};
 
 #[derive(Debug, Clone)]
 pub struct Bagchal {
@@ -63,15 +65,93 @@ impl Bagchal {
         }
     }
 
-    fn pos_dec(num: i8) -> [i8; 5] {
+    fn pos_dec(num: i8) -> Vec<i8> {
         match num {
-            1 => return [1, 0, 0, 0, 0],
-            2 => return [0, 1, 0, 0, 0],
-            3 => return [0, 0, 1, 0, 0],
-            4 => return [0, 0, 0, 1, 0],
-            5 => return [0, 0, 0, 0, 1],
-            _ => return [0, 0, 0, 0, 0],
+            1 => return [1, 0, 0, 0, 0].to_vec(),
+            2 => return [0, 1, 0, 0, 0].to_vec(),
+            3 => return [0, 0, 1, 0, 0].to_vec(),
+            4 => return [0, 0, 0, 1, 0].to_vec(),
+            5 => return [0, 0, 0, 0, 1].to_vec(),
+            _ => return [0, 0, 0, 0, 0].to_vec(),
         }
+    }
+
+    fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
+        let mut vector = Vec::<i8>::with_capacity(20);
+
+        if source.is_none() {
+            vector.append(&mut [0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec());
+        } else {
+            vector.append(&mut Bagchal::pos_dec(source.unwrap()[0]));
+            vector.append(&mut Bagchal::pos_dec(source.unwrap()[1]));
+        }
+
+        vector.append(&mut Bagchal::pos_dec(destination[0]));
+        vector.append(&mut Bagchal::pos_dec(destination[1]));
+
+        return vector;
+    }
+
+    fn state_as_inputs(self, possible_moves_pre: Option<Vec<PossibleMove>>) -> Vec<Vec<i8>> {
+        let possible_moves: Vec<PossibleMove>;
+
+        if possible_moves_pre.is_none() {
+            possible_moves = self.get_possible_moves();
+        } else {
+            possible_moves = possible_moves_pre.unwrap();
+        }
+
+        let mut vector_list = Vec::<Vec<i8>>::new();
+
+        for neighbours in possible_moves {
+            let pos = neighbours.resulting_state;
+            let mut input = Vec::<i8>::new();
+
+            // Board positions
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    let piece = pos.board()[i as usize][j as usize];
+
+                    match piece {
+                        1 => {
+                            input.push(1);
+                            input.push(0);
+                        }
+                        -1 => {
+                            input.push(0);
+                            input.push(1);
+                        }
+                        _ => {
+                            input.push(0);
+                            input.push(0);
+                        }
+                    }
+                }
+            }
+
+            let move_ = neighbours.r#move;
+
+            // Source and Destination
+            input.append(&mut Bagchal::action_to_vector(move_.0, move_.1));
+
+            // Goat placement complete
+            if pos.goat_counter >= 20 {
+                input.push(1)
+            } else {
+                input.push(0)
+            };
+
+            // Goat or tiger's turn
+            if self.turn == -1 {
+                input.push(1)
+            } else {
+                input.push(0)
+            };
+
+            vector_list.push(input);
+        }
+
+        return vector_list;
     }
 
     fn pgn_unit_to_coord(pgn: String) -> Move {
@@ -114,23 +194,77 @@ impl Bagchal {
         return unit;
     }
 
-    fn check_trapped_tiger(&self) {
-        let count = 0;
+    fn clear_game(&mut self) {
+        self.goat_counter = 0;
+        self.goat_captured = 0;
+        self.game_state = GameState::NotDecided;
+        self.game_history = [GameStateInstance::default()].to_vec();
+        self.turn = 1;
+    }
 
-        for i in 0..5 {
-            for j in 0..5 {
+    fn resign(&mut self, side: i8) -> GameStatusCheckResult {
+        if side == 1 {
+            self.game_state = GameState::TigerWon;
+
+            return GameStatusCheckResult {
+                decided: true,
+                won_by: -1,
+            };
+        } else if side == -1 {
+            self.game_state = GameState::GoatWon;
+
+            return GameStatusCheckResult {
+                decided: true,
+                won_by: 1,
+            };
+        } else {
+            return GameStatusCheckResult {
+                decided: false,
+                won_by: 0,
+            };
+        }
+    }
+
+    fn load_game(&mut self, pgn: String) {
+        self.clear_game();
+        let pgn_units: Vec<&str> = pgn.split("-").collect();
+
+        for pgn_seg in pgn_units {
+            let (source, target) = Bagchal::pgn_unit_to_coord(pgn_seg.to_string());
+            self.make_move(source, target, None);
+        }
+    }
+
+    fn check_trapped_tiger(&mut self) {
+        let mut count = 0;
+
+        for i in 0i8..5 {
+            for j in 0i8..5 {
                 let board = self.board();
-                if board[i][j] == -1 {
-                    let has_move = false;
+                if board[i as usize][j as usize] == -1 {
+                    let mut has_move = false;
 
-                    for k in 0..5 {
-                        for l in 0..5 {
-                            res = self.check_move()
+                    for k in 0i8..5 {
+                        for l in 0i8..5 {
+                            let res = self.check_move(Some([i, j]), [k, l], None);
+                            has_move = res.is_valid;
+                            if has_move {
+                                break;
+                            }
                         }
+                        if has_move {
+                            break;
+                        };
+                    }
+
+                    if !has_move {
+                        count += 1;
                     }
                 }
             }
         }
+
+        self.trapped_tiger = count;
     }
 
     fn make_move(
@@ -510,8 +644,8 @@ impl Bagchal {
         }
     }
 
-    fn get_possible_moves(self) {
-        let moves = Vec::<Move>::new();
+    fn get_possible_moves(&self) -> Vec<PossibleMove> {
+        let mut moves = Vec::<PossibleMove>::new();
 
         let position = self.board();
 
@@ -521,15 +655,54 @@ impl Bagchal {
                     if position[i as usize][j as usize] == -1 {
                         for k in 0i8..5 {
                             for l in 0i8..5 {
-                                let this_move = self.check_move(Some([i, j]), [i + k, j + l], None);
+                                let this_move = self.check_move(Some([i, j]), [k, l], None);
                                 if this_move.is_valid {
-                                    let new_move_state = self.clone();
+                                    let mut new_move_state = self.clone();
+                                    new_move_state.make_move(Some([i, j]), [k, l], None);
+                                    moves.push(PossibleMove {
+                                        r#move: (Some([i, j]), [k, l]),
+                                        resulting_state: new_move_state,
+                                    });
                                 }
                             }
                         }
                     }
                 }
             }
+        } else if self.goat_counter >= 20 {
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    if position[i as usize][j as usize] == 1 {
+                        for k in -1i8..2 {
+                            for l in -1i8..2 {
+                                let this_move = self.check_move(Some([i, j]), [i + k, j + l], None);
+                                if this_move.is_valid {
+                                    let mut new_move_state = self.clone();
+                                    new_move_state.make_move(Some([i, j]), [i + k, j + l], None);
+                                    moves.push(PossibleMove {
+                                        r#move: (Some([i, j]), [i + k, j + l]),
+                                        resulting_state: new_move_state,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    if position[i as usize][j as usize] == 0 {
+                        let mut new_move_state = self.clone();
+                        new_move_state.make_move(None, [i, j], None);
+                        moves.push(PossibleMove {
+                            r#move: (None, [i, j]),
+                            resulting_state: new_move_state,
+                        });
+                    }
+                }
+            }
         }
+        return moves;
     }
 }
