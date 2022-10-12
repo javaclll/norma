@@ -1,14 +1,16 @@
 use crate::constants;
 use crate::types::{
-    GameState, GameStateInstance, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
+    GameStatus, GameStateInstance, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
 };
+use pyo3::prelude::*;
 
 #[derive(Debug, Clone)]
-pub struct Bagchal {
+#[pyclass]
+pub struct BaghchalRS {
     pub turn: i8,
     pub goat_counter: i8,
     pub goat_captured: i8,
-    pub game_state: GameState,
+    pub game_state: GameStatus,
     pub game_history: Vec<GameStateInstance>,
     pub pgn: String,
     pub prev_move: Option<Move>,
@@ -17,13 +19,13 @@ pub struct Bagchal {
     pub trapped_tiger: i8,
 }
 
-impl Default for Bagchal {
+impl Default for BaghchalRS {
     fn default() -> Self {
         Self {
             turn: 1,
             goat_counter: 0,
             goat_captured: 0,
-            game_state: GameState::NotDecided,
+            game_state: GameStatus::NotDecided,
             game_history: [GameStateInstance::default()].to_vec(),
             pgn: "".to_string(),
             prev_move: None,
@@ -34,16 +36,16 @@ impl Default for Bagchal {
     }
 }
 
-impl Bagchal {
-    fn board(&self) -> [[i8; 5]; 5] {
+impl BaghchalRS {
+    pub fn board(&self) -> [[i8; 5]; 5] {
         return self.game_history[1].board;
     }
 
-    fn move_count(&self) -> i8 {
+    pub fn move_count(&self) -> i8 {
         return (self.game_history.len() - 1) as i8;
     }
 
-    fn cord_to_char(num: i8) -> char {
+    pub fn cord_to_char(num: i8) -> char {
         match num {
             0 => return 'A',
             1 => return 'B',
@@ -54,7 +56,7 @@ impl Bagchal {
         }
     }
 
-    fn char_to_cord(c: char) -> i8 {
+    pub fn char_to_cord(c: char) -> i8 {
         match c {
             'A' => return 0,
             'B' => return 1,
@@ -65,7 +67,7 @@ impl Bagchal {
         }
     }
 
-    fn pos_dec(num: i8) -> Vec<i8> {
+    pub fn pos_dec(num: i8) -> Vec<i8> {
         match num {
             1 => return [1, 0, 0, 0, 0].to_vec(),
             2 => return [0, 1, 0, 0, 0].to_vec(),
@@ -76,23 +78,23 @@ impl Bagchal {
         }
     }
 
-    fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
+    pub fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
         let mut vector = Vec::<i8>::with_capacity(20);
 
         if source.is_none() {
             vector.append(&mut [0, 0, 0, 0, 0, 0, 0, 0, 0, 0].to_vec());
         } else {
-            vector.append(&mut Bagchal::pos_dec(source.unwrap()[0]));
-            vector.append(&mut Bagchal::pos_dec(source.unwrap()[1]));
+            vector.append(&mut BaghchalRS::pos_dec(source.unwrap()[0]));
+            vector.append(&mut BaghchalRS::pos_dec(source.unwrap()[1]));
         }
 
-        vector.append(&mut Bagchal::pos_dec(destination[0]));
-        vector.append(&mut Bagchal::pos_dec(destination[1]));
+        vector.append(&mut BaghchalRS::pos_dec(destination[0]));
+        vector.append(&mut BaghchalRS::pos_dec(destination[1]));
 
         return vector;
     }
 
-    fn state_as_inputs(self, possible_moves_pre: Option<Vec<PossibleMove>>) -> Vec<Vec<i8>> {
+    pub fn state_as_inputs(&self, possible_moves_pre: Option<Vec<PossibleMove>>) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
         if possible_moves_pre.is_none() {
@@ -132,7 +134,7 @@ impl Bagchal {
             let move_ = neighbours.r#move;
 
             // Source and Destination
-            input.append(&mut Bagchal::action_to_vector(move_.0, move_.1));
+            input.append(&mut BaghchalRS::action_to_vector(move_.0, move_.1));
 
             // Goat placement complete
             if pos.goat_counter >= 20 {
@@ -154,7 +156,7 @@ impl Bagchal {
         return vector_list;
     }
 
-    fn pgn_unit_to_coord(pgn: String) -> Move {
+    pub fn pgn_unit_to_coord(pgn: String) -> Move {
         let source: Option<[i8; 2]>;
 
         let mut pgn_iter = pgn.chars();
@@ -164,54 +166,54 @@ impl Bagchal {
         } else {
             source = Some([
                 5 - pgn_iter.nth(1).unwrap().to_digit(10).unwrap() as i8,
-                Bagchal::char_to_cord(pgn_iter.nth(0).unwrap()),
+                BaghchalRS::char_to_cord(pgn_iter.nth(0).unwrap()),
             ]);
         }
 
         let destination = [
             5 - pgn_iter.nth(3).unwrap().to_digit(10).unwrap() as i8,
-            Bagchal::char_to_cord(pgn_iter.nth(2).unwrap()),
+            BaghchalRS::char_to_cord(pgn_iter.nth(2).unwrap()),
         ];
 
         return (source, destination);
     }
 
-    fn coord_to_png_unit(source: Option<[i8; 2]>, destination: [i8; 2]) -> String {
+    pub fn coord_to_png_unit(source: Option<[i8; 2]>, destination: [i8; 2]) -> String {
         let mut unit = String::new();
 
         // Source coordinates to PGN
         if source.is_none() {
             unit = "XX".to_string();
         } else {
-            unit.push(Bagchal::cord_to_char(source.unwrap()[1]));
+            unit.push(BaghchalRS::cord_to_char(source.unwrap()[1]));
             unit.push_str(&(5 - source.unwrap()[0]).to_string());
         };
 
         // Destination coordinates to PGN
-        unit.push(Bagchal::cord_to_char(destination[1]));
+        unit.push(BaghchalRS::cord_to_char(destination[1]));
         unit.push_str(&(5 - destination[0]).to_string());
 
         return unit;
     }
 
-    fn clear_game(&mut self) {
+    pub fn clear_game(&mut self) {
         self.goat_counter = 0;
         self.goat_captured = 0;
-        self.game_state = GameState::NotDecided;
+        self.game_state = GameStatus::NotDecided;
         self.game_history = [GameStateInstance::default()].to_vec();
         self.turn = 1;
     }
 
-    fn resign(&mut self, side: i8) -> GameStatusCheckResult {
+    pub fn resign(&mut self, side: i8) -> GameStatusCheckResult {
         if side == 1 {
-            self.game_state = GameState::TigerWon;
+            self.game_state = GameStatus::TigerWon;
 
             return GameStatusCheckResult {
                 decided: true,
                 won_by: -1,
             };
         } else if side == -1 {
-            self.game_state = GameState::GoatWon;
+            self.game_state = GameStatus::GoatWon;
 
             return GameStatusCheckResult {
                 decided: true,
@@ -225,17 +227,17 @@ impl Bagchal {
         }
     }
 
-    fn load_game(&mut self, pgn: String) {
+    pub fn load_game(&mut self, pgn: String) {
         self.clear_game();
         let pgn_units: Vec<&str> = pgn.split("-").collect();
 
         for pgn_seg in pgn_units {
-            let (source, target) = Bagchal::pgn_unit_to_coord(pgn_seg.to_string());
+            let (source, target) = BaghchalRS::pgn_unit_to_coord(pgn_seg.to_string());
             self.make_move(source, target, None);
         }
     }
 
-    fn check_trapped_tiger(&mut self) {
+    pub fn check_trapped_tiger(&mut self) {
         let mut count = 0;
 
         for i in 0i8..5 {
@@ -267,7 +269,7 @@ impl Bagchal {
         self.trapped_tiger = count;
     }
 
-    fn make_move(
+    pub fn make_move(
         &mut self,
         source: Option<[i8; 2]>,
         target: [i8; 2],
@@ -317,11 +319,11 @@ impl Bagchal {
 
         // Append PGN unit after move
         if self.pgn == "" {
-            self.pgn = Bagchal::coord_to_png_unit(source, target);
+            self.pgn = BaghchalRS::coord_to_png_unit(source, target);
         } else {
             self.pgn.push('-');
             self.pgn
-                .push_str(&Bagchal::coord_to_png_unit(source, target));
+                .push_str(&BaghchalRS::coord_to_png_unit(source, target));
         }
 
         self.prev_move = Some((source, target));
@@ -346,11 +348,11 @@ impl Bagchal {
 
         if status_after_move.decided {
             if status_after_move.won_by == -1 {
-                self.game_state = GameState::TigerWon;
+                self.game_state = GameStatus::TigerWon;
                 *self.move_reward_tiger.last_mut().unwrap() += constants::T_WIN;
                 *self.move_reward_goat.last_mut().unwrap() += constants::G_LOSE;
             } else {
-                self.game_state = GameState::GoatWon;
+                self.game_state = GameStatus::GoatWon;
                 *self.move_reward_goat.last_mut().unwrap() += constants::G_WIN;
                 *self.move_reward_tiger.last_mut().unwrap() += constants::T_LOSE;
             }
@@ -359,7 +361,7 @@ impl Bagchal {
         return true;
     }
 
-    fn check_move(
+    pub fn check_move(
         &self,
         source: Option<[i8; 2]>,
         target: [i8; 2],
@@ -434,7 +436,7 @@ impl Bagchal {
         }
 
         // Game state check
-        if self.game_state != GameState::NotDecided {
+        if self.game_state != GameStatus::NotDecided {
             return MoveCheckResult {
                 is_valid: false,
                 reason: "Cannot move after game has been decided!".to_string(),
@@ -576,7 +578,7 @@ impl Bagchal {
         return MoveCheckResult::default();
     }
 
-    fn goat_can_move(&self) -> bool {
+    pub fn goat_can_move(&self) -> bool {
         if self.goat_counter < 20 && self.turn == 1 {
             return true;
         }
@@ -600,7 +602,7 @@ impl Bagchal {
         false
     }
 
-    fn tiger_can_move(&self) -> bool {
+    pub fn tiger_can_move(&self) -> bool {
         let position = self.board();
 
         for i in 0i8..5 {
@@ -620,7 +622,7 @@ impl Bagchal {
         false
     }
 
-    fn game_status_check(&self) -> GameStatusCheckResult {
+    pub fn game_status_check(&self) -> GameStatusCheckResult {
         if self.goat_captured >= 5 {
             return GameStatusCheckResult {
                 decided: true,
@@ -644,7 +646,7 @@ impl Bagchal {
         }
     }
 
-    fn get_possible_moves(&self) -> Vec<PossibleMove> {
+    pub fn get_possible_moves(&self) -> Vec<PossibleMove> {
         let mut moves = Vec::<PossibleMove>::new();
 
         let position = self.board();

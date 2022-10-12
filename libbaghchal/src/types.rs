@@ -1,8 +1,10 @@
 use crate::constants;
-use crate::bagchal::Bagchal;
+use crate::bagchal::BaghchalRS;
+use pyo3::prelude::*;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum GameState {
+#[pyclass]
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum GameStatus {
     NotDecided,
     GoatWon,
     TigerWon,
@@ -11,7 +13,8 @@ pub enum GameState {
 
 pub type Move = (Option<[i8; 2]>, [i8; 2]);
 
-#[derive(Debug, Clone)]
+#[pyclass]
+#[derive(Debug, Clone, Copy)]
 pub struct GameStateInstance {
     pub board: [[i8; 5]; 5],
     pub goat_count: i8,
@@ -28,6 +31,7 @@ impl Default for GameStateInstance {
     }
 }
 
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct MoveCheckResult {
     pub is_valid: bool,
@@ -49,14 +53,16 @@ impl Default for MoveCheckResult {
     }
 }
 
-#[derive(Debug, Clone)]
+#[pyclass]
+#[derive(Debug, Clone, Copy)]
 pub struct GameStatusCheckResult {
     pub decided: bool,
     pub won_by: i8,
 }
 
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct PossibleMove {
     pub r#move: Move,
-    pub resulting_state: Bagchal,
+    pub resulting_state: BaghchalRS,
 }
