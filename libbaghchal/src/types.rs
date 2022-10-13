@@ -1,9 +1,10 @@
-use crate::constants;
 use crate::bagchal::BaghchalRS;
+use crate::constants;
 use pyo3::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[pyclass]
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum GameStatus {
     NotDecided,
     GoatWon,
@@ -11,13 +12,41 @@ pub enum GameStatus {
     Draw,
 }
 
+#[pymethods]
+impl GameStatus {
+    fn to_value(&self) -> i8 {
+        match self {
+            Self::NotDecided => 0,
+            Self::GoatWon => 1,
+            Self::TigerWon => 2,
+            Self::Draw => 3,
+        }
+    }
+
+    #[staticmethod]
+    fn from_value(value: i8) -> GameStatus {
+        match value {
+            0 => GameStatus::NotDecided,
+            1 => GameStatus::GoatWon,
+            2 => GameStatus::TigerWon,
+            3 => GameStatus::Draw,
+            _ => GameStatus::NotDecided,
+        }
+    }
+}
+
 pub type Move = (Option<[i8; 2]>, [i8; 2]);
 
 #[pyclass]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct GameStateInstance {
+    #[pyo3(get)]
     pub board: [[i8; 5]; 5],
+
+    #[pyo3(get)]
     pub goat_count: i8,
+
+    #[pyo3(get)]
     pub goat_captured: i8,
 }
 
@@ -31,13 +60,28 @@ impl Default for GameStateInstance {
     }
 }
 
+#[pymethods]
+impl GameStateInstance {
+    fn to_str(&self) -> String
+    where
+        Self: Serialize,
+    {
+        return serde_json::to_string(&self).unwrap();
+    }
+}
+
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MoveCheckResult {
+    #[pyo3(get)]
     pub is_valid: bool,
+    #[pyo3(get)]
     pub is_place_move: bool,
+    #[pyo3(get)]
     pub is_capture_move: bool,
+    #[pyo3(get)]
     pub capture_piece: Option<[i8; 2]>,
+    #[pyo3(get)]
     pub reason: String,
 }
 
@@ -53,16 +97,52 @@ impl Default for MoveCheckResult {
     }
 }
 
-#[pyclass]
-#[derive(Debug, Clone, Copy)]
-pub struct GameStatusCheckResult {
-    pub decided: bool,
-    pub won_by: i8,
+#[pymethods]
+impl MoveCheckResult {
+    fn to_str(&self) -> String
+    where
+        Self: Serialize,
+    {
+        return serde_json::to_string(&self).unwrap();
+    }
 }
 
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameStatusCheckResult {
+    #[pyo3(get)]
+    pub decided: bool,
+
+    #[pyo3(get)]
+    pub won_by: i8,
+}
+
+#[pymethods]
+impl GameStatusCheckResult {
+    fn to_str(&self) -> String
+    where
+        Self: Serialize,
+    {
+        return serde_json::to_string(&self).unwrap();
+    }
+}
+
+#[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PossibleMove {
+    #[pyo3(get)]
     pub r#move: Move,
+
+    #[pyo3(get)]
     pub resulting_state: BaghchalRS,
+}
+
+#[pymethods]
+impl PossibleMove {
+    fn to_str(&self) -> String
+    where
+        Self: Serialize,
+    {
+        return serde_json::to_string(&self).unwrap();
+    }
 }

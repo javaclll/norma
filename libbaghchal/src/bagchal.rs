@@ -1,10 +1,11 @@
 use crate::constants;
 use crate::types::{
-    GameStatus, GameStateInstance, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
+    GameStateInstance, GameStatus, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
 };
 use pyo3::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[pyclass]
 pub struct BaghchalRS {
     pub turn: i8,
@@ -38,7 +39,7 @@ impl Default for BaghchalRS {
 
 impl BaghchalRS {
     pub fn board(&self) -> [[i8; 5]; 5] {
-        return self.game_history[1].board;
+        return self.game_history.last().unwrap().board;
     }
 
     pub fn move_count(&self) -> i8 {
@@ -159,20 +160,20 @@ impl BaghchalRS {
     pub fn pgn_unit_to_coord(pgn: String) -> Move {
         let source: Option<[i8; 2]>;
 
-        let mut pgn_iter = pgn.chars();
+        let pgn_iter = pgn.chars().collect::<Vec<char>>();
 
-        if pgn_iter.nth(0).unwrap() == 'X' {
+        if *pgn_iter.get(1).unwrap() == 'X' {
             source = None;
         } else {
             source = Some([
-                5 - pgn_iter.nth(1).unwrap().to_digit(10).unwrap() as i8,
-                BaghchalRS::char_to_cord(pgn_iter.nth(0).unwrap()),
+                5 - pgn_iter.get(1).unwrap().to_digit(10).unwrap() as i8,
+                BaghchalRS::char_to_cord(*pgn_iter.get(0).unwrap()),
             ]);
         }
 
         let destination = [
-            5 - pgn_iter.nth(3).unwrap().to_digit(10).unwrap() as i8,
-            BaghchalRS::char_to_cord(pgn_iter.nth(2).unwrap()),
+            5 - pgn_iter.get(3).unwrap().to_digit(10).unwrap() as i8,
+            BaghchalRS::char_to_cord(*pgn_iter.get(2).unwrap()),
         ];
 
         return (source, destination);
@@ -229,7 +230,8 @@ impl BaghchalRS {
 
     pub fn load_game(&mut self, pgn: String) {
         self.clear_game();
-        let pgn_units: Vec<&str> = pgn.split("-").collect();
+        let compact_pgn = pgn.replace(" ", "");
+        let pgn_units: Vec<&str> = compact_pgn.split("-").collect();
 
         for pgn_seg in pgn_units {
             let (source, target) = BaghchalRS::pgn_unit_to_coord(pgn_seg.to_string());
@@ -269,12 +271,17 @@ impl BaghchalRS {
         self.trapped_tiger = count;
     }
 
+    pub fn make_move_pgn(&mut self, pgn: String) -> MoveCheckResult {
+        let (source, target) = BaghchalRS::pgn_unit_to_coord(pgn);
+        return self.make_move(source, target, None);
+    }
+
     pub fn make_move(
         &mut self,
         source: Option<[i8; 2]>,
         target: [i8; 2],
         eval_res: Option<MoveCheckResult>,
-    ) -> bool {
+    ) -> MoveCheckResult {
         let prev_captured = self.goat_captured;
         let prev_trapped = self.trapped_tiger;
 
@@ -286,7 +293,7 @@ impl BaghchalRS {
         }
 
         if !move_eval.is_valid {
-            return false;
+            return move_eval;
         }
 
         self.move_reward_goat.push(0f32);
@@ -301,6 +308,7 @@ impl BaghchalRS {
             if move_eval.is_capture_move {
                 let piece = move_eval.capture_piece.unwrap();
                 new_state[piece[0] as usize][piece[1] as usize] = 0;
+                self.goat_captured += 1;
             }
 
             new_state[source.unwrap()[0usize] as usize][source.unwrap()[1usize] as usize] = 0;
@@ -358,7 +366,7 @@ impl BaghchalRS {
             }
         }
 
-        return true;
+        return move_eval;
     }
 
     pub fn check_move(
@@ -375,8 +383,8 @@ impl BaghchalRS {
             turn = self.turn;
         }
 
-        let m = target[0] as usize;
-        let n = target[1] as usize;
+        let m = target[0] as i8;
+        let n = target[1] as i8;
 
         let position = self.board();
 
@@ -395,7 +403,7 @@ impl BaghchalRS {
                 // If all goats haven't been placed
                 else {
                     // If target position already has a piece
-                    if position[m][n] != 0 {
+                    if position[m as usize][n as usize] != 0 {
                         return MoveCheckResult {
                             is_valid: false,
                             reason: "Target already has a piece!".to_string(),
@@ -423,8 +431,8 @@ impl BaghchalRS {
             }
         }
 
-        let x = source.unwrap()[0] as usize;
-        let y = source.unwrap()[1] as usize;
+        let x = source.unwrap()[0] as i8;
+        let y = source.unwrap()[1] as i8;
 
         // Board boundary check
         if x < 0 || y < 0 || m < 0 || n < 0 || x > 4 || y > 4 || m > 4 || n > 4 {
@@ -445,7 +453,9 @@ impl BaghchalRS {
         }
 
         // Turn check
-        if !((turn == 1 && position[x][y] == 1) || (turn == -1 && position[x][y] == -1)) {
+        if !((turn == 1 && position[x as usize][y as usize] == 1)
+            || (turn == -1 && position[x as usize][y as usize] == -1))
+        {
             return MoveCheckResult {
                 is_valid: false,
                 reason: "Cannot move in other's turn!".to_string(),
@@ -463,7 +473,7 @@ impl BaghchalRS {
         }
 
         // Target already has a piece check
-        if position[m][n] != 0 {
+        if position[m as usize][n as usize] != 0 {
             return MoveCheckResult {
                 is_valid: false,
                 reason: "Target already has a piece!".to_string(),
@@ -471,21 +481,10 @@ impl BaghchalRS {
             };
         }
 
-        let x_diff_abs = ((x - m) as i8).abs() as usize;
-        let y_diff_abs = ((y - n) as i8).abs() as usize;
-        let x_diff = m - x;
-        let y_diff = n - y;
+        let x_diff_abs = x.abs_diff(m) as usize;
+        let y_diff_abs = y.abs_diff(n) as usize;
         let s_sum = x + y;
         let t_sum = m + n;
-
-        // Cannot move distance more than 2 check
-        if x_diff_abs > 2 || y_diff_abs > 2 {
-            return MoveCheckResult {
-                is_valid: false,
-                reason: "Cannot move distance more than 2!".to_string(),
-                ..Default::default()
-            };
-        }
 
         // Source and target check
         if x_diff_abs == 0 && y_diff_abs == 0 {
@@ -496,21 +495,15 @@ impl BaghchalRS {
             };
         }
 
-        // Odd to Odd position check
-        if s_sum % 2 != 0 && t_sum % 2 != 0 {
-            return MoveCheckResult {
-                is_valid: false,
-                reason: "Cannot move from odd position to another odd position!".to_string(),
-                ..Default::default()
-            };
-        }
-
         // Tiger jump over goat check
         if turn == -1 {
             let can_jump = match (x_diff_abs, y_diff_abs) {
                 (2, 2) => s_sum % 2 == 0, // Can only jump diagonally from even position
                 (2, 0) => true,
                 (0, 2) => true,
+                (1, 0) => return MoveCheckResult::default(),
+                (1, 1) => return MoveCheckResult::default(),
+                (0, 1) => return MoveCheckResult::default(),
                 _ => false,
             };
 
@@ -522,7 +515,7 @@ impl BaghchalRS {
                 };
             }
 
-            let piece_to_capture = [(x + x_diff / 2) as i8, (y + y_diff / 2) as i8];
+            let piece_to_capture = [((x + m) / 2) as i8, ((y + n) / 2) as i8];
 
             // If capture piece is goat
             if position[piece_to_capture[0] as usize][piece_to_capture[1] as usize] == 1 {
@@ -536,44 +529,28 @@ impl BaghchalRS {
             } else {
                 return MoveCheckResult {
                     is_valid: false,
-                    reason: "Cannot capture tiger!".to_string(),
+                    reason: "Cannot capture tiger or empty space!".to_string(),
                     ..Default::default()
                 };
             }
         }
 
-        // if turn == -1
-        //     && ((x_diff_abs == 2 && y_diff_abs == 0)
-        //         || (y_diff_abs == 2 && (x_diff_abs == 0 || x_diff_abs == 2)))
-        // {
-        //     if x_diff_abs == 2 && y_diff_abs == 2 {
-        //         if s_sum % 2 != 0 {
-        //             return MoveCheckResult {
-        //                 is_valid: false,
-        //                 reason: "Cannot jump diagonally from odd position!".to_string(),
-        //                 ..Default::default()
-        //             };
-        //         } else {
-        //             let piece_to_capture = [(x + x_diff / 2) as i8, (y + y_diff / 2) as i8];
-        //
-        //             if position[piece_to_capture[0] as usize][piece_to_capture[1] as usize] == 1 {
-        //                 return MoveCheckResult {
-        //                     is_valid: true,
-        //                     is_capture_move: true,
-        //                     capture_piece: Some(piece_to_capture),
-        //                     reason: "Can capture goat!".to_string(),
-        //                     ..Default::default()
-        //                 };
-        //             } else {
-        //                 return MoveCheckResult {
-        //                     is_valid: false,
-        //                     reason: "Cannot capture tiger!".to_string(),
-        //                     ..Default::default()
-        //                 };
-        //             }
-        //         }
-        //     }
-        // }
+        // Cannot move distance more than 2 check
+        if x_diff_abs > 1 || y_diff_abs > 1 {
+            return MoveCheckResult {
+                is_valid: false,
+                reason: "Cannot move distance more than 2!".to_string(),
+                ..Default::default()
+            };
+        }
+        // Odd to Odd position check
+        else if s_sum % 2 != 0 && t_sum % 2 != 0 {
+            return MoveCheckResult {
+                is_valid: false,
+                reason: "Cannot move from odd position to another odd position!".to_string(),
+                ..Default::default()
+            };
+        }
 
         return MoveCheckResult::default();
     }
@@ -706,5 +683,23 @@ impl BaghchalRS {
             }
         }
         return moves;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_default() {
+        let mut b = BaghchalRS::default();
+        b.load_game("XXA3-A1A2-XXB5-A5C5-XXC4-E1E2-XXE1-C5C3-XXA5".to_string());
+        println!("{:?}", b.board()[0]);
+        println!("{:?}", b.board()[1]);
+        println!("{:?}", b.board()[2]);
+        println!("{:?}", b.board()[3]);
+        println!("{:?}", b.board()[4]);
+        println!("{:?}", b.make_move_pgn("A2A4".to_string()));
     }
 }

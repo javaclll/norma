@@ -5,19 +5,13 @@ pub mod constants;
 pub mod types;
 
 use bagchal::BaghchalRS;
+use serde::{Deserialize, Serialize};
 use types::*;
 
 #[pyclass]
+#[derive(Serialize, Deserialize, Debug)]
 struct Baghchal {
     inner: BaghchalRS,
-}
-
-impl Default for Baghchal {
-    fn default() -> Self {
-        Self {
-            inner: BaghchalRS::default(),
-        }
-    }
 }
 
 #[pymethods]
@@ -78,6 +72,29 @@ impl Baghchal {
         };
 
         return Ok(obj);
+    }
+
+    #[staticmethod]
+    pub fn default() -> Self {
+        return Self {
+            inner: BaghchalRS::default(),
+        };
+    }
+
+    #[staticmethod]
+    pub fn from_str(serialized: &str) -> Self {
+        let deserialized: Self = serde_json::from_str(&serialized).unwrap();
+
+        return deserialized;
+    }
+
+    #[staticmethod]
+    pub fn pgn_unit_to_coord(pgn: String) -> Move {
+        return BaghchalRS::pgn_unit_to_coord(pgn);
+    }
+
+    pub fn to_str(&self) -> String {
+        return serde_json::to_string(&self).unwrap();
     }
 
     pub fn board(&self) -> [[i8; 5]; 5] {
@@ -153,7 +170,7 @@ impl Baghchal {
         source: Option<[i8; 2]>,
         target: [i8; 2],
         eval_res: Option<MoveCheckResult>,
-    ) -> bool {
+    ) -> MoveCheckResult {
         return self.inner.make_move(source, target, eval_res);
     }
 
@@ -163,11 +180,12 @@ impl Baghchal {
 }
 
 #[pymodule]
-fn libbaghchal(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<Baghchal>()?;
-    m.add_class::<MoveCheckResult>()?;
-    m.add_class::<PossibleMove>()?;
-    m.add_class::<GameStateInstance>()?;
-    m.add_class::<GameStatusCheckResult>()?;
+fn libbaghchal(_py: Python, module: &PyModule) -> PyResult<()> {
+    module.add_class::<Baghchal>()?;
+    module.add_class::<MoveCheckResult>()?;
+    module.add_class::<PossibleMove>()?;
+    module.add_class::<GameStateInstance>()?;
+    module.add_class::<GameStatusCheckResult>()?;
+    module.add_class::<GameStatus>()?;
     Ok(())
 }

@@ -6,13 +6,14 @@ authors = ["Daze <dazehere@yandex.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
-bagchal = {path = "../game", develop = true}
+# bagchal = {path = "../game", develop = true}
 websocket-client = "^1.4.1"
 numpy = "^1.23.3"
 rel = "^0.4.7"
 tensorflow-macos = {version = "^2.10.0", platform = "darwin"}
 tensorflow = {version = "^2.10.0", platform = "linux"}
 tensorflow-metal = {version = "^0.6.0", platform = "darwin"}
+libbaghchal = {path = "../libbaghchal/target/wheels/libbaghchal-0.1.0-cp39-cp39-macosx_11_0_arm64.whl"}
 
 [tool.poetry.dev-dependencies]
 
