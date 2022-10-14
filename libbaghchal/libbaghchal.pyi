@@ -6,16 +6,16 @@ import json
 class Baghchal:
     def __new__(
         cls: type[Self],
-        turn: Optional[int],
-        goat_counter: Optional[int],
-        goat_captured: Optional[int],
-        game_state: Optional[Any],
-        game_history: Optional[List[Any]],
-        pgn: Optional[str],
-        prev_move: Optional[Any],
-        move_reward_tiger: Optional[List[float]],
-        move_reward_goat: Optional[List[float]],
-        trapped_tiger: Optional[int],
+        turn: Optional[int] = None,
+        goat_counter: Optional[int] = None,
+        goat_captured: Optional[int] = None,
+        game_state: Optional[Any] = None,
+        game_history: Optional[List[Any]] = None,
+        pgn: Optional[str] = None,
+        prev_move: Optional[Any] = None,
+        move_reward_tiger: Optional[List[float]] = None,
+        move_reward_goat: Optional[List[float]] = None,
+        trapped_tiger: Optional[int] = None,
     ) -> Self:
         ...
 
@@ -29,6 +29,10 @@ class Baghchal:
 
     @staticmethod
     def pgn_unit_to_coord(pgn: str) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def coord_to_png_unit(source: Optional[List[int]], destination: List[int]) -> str:
         ...
 
     def to_str(self) -> str:

@@ -2,6 +2,7 @@ use crate::constants;
 use crate::types::{
     GameStateInstance, GameStatus, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
 };
+use crate::Baghchal;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +35,12 @@ impl Default for BaghchalRS {
             move_reward_goat: [].to_vec(),
             trapped_tiger: 0,
         }
+    }
+}
+
+impl Into<Baghchal> for BaghchalRS {
+    fn into(self) -> Baghchal {
+        Baghchal { inner: self }
     }
 }
 
@@ -138,7 +145,7 @@ impl BaghchalRS {
             input.append(&mut BaghchalRS::action_to_vector(move_.0, move_.1));
 
             // Goat placement complete
-            if pos.goat_counter >= 20 {
+            if pos.goat_counter() >= 20 {
                 input.push(1)
             } else {
                 input.push(0)
@@ -498,11 +505,32 @@ impl BaghchalRS {
         // Tiger jump over goat check
         if turn == -1 {
             let can_jump = match (x_diff_abs, y_diff_abs) {
-                (2, 2) => s_sum % 2 == 0, // Can only jump diagonally from even position
+                // Can only move diagonally from even position
+                (2, 2) => s_sum % 2 == 0,
+
+                // Horizontal jump move possible on all positions
                 (2, 0) => true,
+
+                // Vertical jump move possible on all positions
                 (0, 2) => true,
+
+                // Distance 1 move possible on all positions
                 (1, 0) => return MoveCheckResult::default(),
-                (1, 1) => return MoveCheckResult::default(),
+
+                // Can only jump diagonally from even position
+                (1, 1) => {
+                    if s_sum % 2 == 0 {
+                        return MoveCheckResult::default();
+                    } else {
+                        return MoveCheckResult {
+                            is_valid: false,
+                            reason: "Cannot move diagonally from odd positions".to_string(),
+                            ..Default::default()
+                        };
+                    }
+                }
+
+                // Distance 1 move possible on all positions
                 (0, 1) => return MoveCheckResult::default(),
                 _ => false,
             };
@@ -640,7 +668,7 @@ impl BaghchalRS {
                                     new_move_state.make_move(Some([i, j]), [k, l], None);
                                     moves.push(PossibleMove {
                                         r#move: (Some([i, j]), [k, l]),
-                                        resulting_state: new_move_state,
+                                        resulting_state: new_move_state.into(),
                                     });
                                 }
                             }
@@ -660,7 +688,7 @@ impl BaghchalRS {
                                     new_move_state.make_move(Some([i, j]), [i + k, j + l], None);
                                     moves.push(PossibleMove {
                                         r#move: (Some([i, j]), [i + k, j + l]),
-                                        resulting_state: new_move_state,
+                                        resulting_state: new_move_state.into(),
                                     });
                                 }
                             }
@@ -676,7 +704,7 @@ impl BaghchalRS {
                         new_move_state.make_move(None, [i, j], None);
                         moves.push(PossibleMove {
                             r#move: (None, [i, j]),
-                            resulting_state: new_move_state,
+                            resulting_state: new_move_state.into(),
                         });
                     }
                 }
@@ -694,12 +722,28 @@ mod tests {
     #[test]
     fn test_default() {
         let mut b = BaghchalRS::default();
-        b.load_game("XXA3-A1A2-XXB5-A5C5-XXC4-E1E2-XXE1-C5C3-XXA5".to_string());
+        b.load_game("XXA3-A5B5-XXA2-E1E2-XXA4-A1B1-XXA5-B1C2-XXA1-C2B1-XXB3-B1C2-XXB2-C2B1-XXB4-B5C4-XXB5-B1C2-XXC5-C2C1-XXD5-C1C2-XXB1-C2C1-XXE1-C1C2-XXC1-C2C3-XXC2-C3D2-XXC3".to_string());
+
         println!("{:?}", b.board()[0]);
         println!("{:?}", b.board()[1]);
         println!("{:?}", b.board()[2]);
         println!("{:?}", b.board()[3]);
         println!("{:?}", b.board()[4]);
-        println!("{:?}", b.make_move_pgn("A2A4".to_string()));
+
+        println!("{:?}", b.make_move_pgn("E2D1".to_string()));
+
+        println!("{:?}", b.board()[0]);
+        println!("{:?}", b.board()[1]);
+        println!("{:?}", b.board()[2]);
+        println!("{:?}", b.board()[3]);
+        println!("{:?}", b.board()[4]);
+
+        // println!("{:?}",b.make_move_pgn("D1C1".to_string()));
+        //
+        // println!("{:?}", b.board()[0]);
+        // println!("{:?}", b.board()[1]);
+        // println!("{:?}", b.board()[2]);
+        // println!("{:?}", b.board()[3]);
+        // println!("{:?}", b.board()[4]);
     }
 }

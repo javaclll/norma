@@ -37,6 +37,7 @@ name = "libbaghchal"
 version = "0.1.0"
 dependencies = [
  "pyo3",
+ "pythonize",
  "serde",
  "serde_json",
 ]
@@ -118,6 +119,7 @@ dependencies = [
  "pyo3-build-config",
  "pyo3-ffi",
  "pyo3-macros",
+ "serde",
  "unindent",
 ]
 
@@ -162,6 +164,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "pythonize"
+version = "0.17.0"
+source = "git+https://github.com/davidhewitt/pythonize#663c613aacaf611de8456e09c4e429c297c0caa1"
+dependencies = [
+ "pyo3",
+ "serde",
 ]
 
 [[package]]

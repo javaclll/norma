@@ -1,5 +1,5 @@
-use crate::bagchal::BaghchalRS;
 use crate::constants;
+use crate::Baghchal;
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -134,7 +134,7 @@ pub struct PossibleMove {
     pub r#move: Move,
 
     #[pyo3(get)]
-    pub resulting_state: BaghchalRS,
+    pub resulting_state: Baghchal,
 }
 
 #[pymethods]

@@ -5,12 +5,13 @@ pub mod constants;
 pub mod types;
 
 use bagchal::BaghchalRS;
+use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use types::*;
 
 #[pyclass]
-#[derive(Serialize, Deserialize, Debug)]
-struct Baghchal {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Baghchal {
     inner: BaghchalRS,
 }
 
@@ -22,7 +23,9 @@ impl Baghchal {
         goat_counter: Option<i8>,
         goat_captured: Option<i8>,
         game_state: Option<GameStatus>,
-        game_history: Option<Vec<GameStateInstance>>,
+        game_history: Option<Vec<PyObject>>,
+        // game_history: Option<Vec<HashMap<String, PyObject>>>,
+        // game_history: Option<String>,
         pgn: Option<String>,
         prev_move: Option<Option<Move>>,
         move_reward_tiger: Option<Vec<f32>>,
@@ -48,7 +51,13 @@ impl Baghchal {
         };
 
         if game_history.is_some() {
-            obj.inner.game_history = game_history.unwrap();
+            Python::with_gil(|py| {
+                obj.inner.game_history = game_history
+                    .unwrap()
+                    .into_iter()
+                    .map(|item| depythonize(item.as_ref(py)).unwrap())
+                    .collect::<Vec<GameStateInstance>>();
+            })
         };
 
         if pgn.is_some() {
@@ -91,6 +100,11 @@ impl Baghchal {
     #[staticmethod]
     pub fn pgn_unit_to_coord(pgn: String) -> Move {
         return BaghchalRS::pgn_unit_to_coord(pgn);
+    }
+
+    #[staticmethod]
+    pub fn coord_to_png_unit(source: Option<[i8; 2]>, destination: [i8; 2]) -> String {
+        return BaghchalRS::coord_to_png_unit(source, destination);
     }
 
     pub fn to_str(&self) -> String {
@@ -170,8 +184,10 @@ impl Baghchal {
         source: Option<[i8; 2]>,
         target: [i8; 2],
         eval_res: Option<MoveCheckResult>,
-    ) -> MoveCheckResult {
-        return self.inner.make_move(source, target, eval_res);
+    ) -> PyObject {
+        Python::with_gil(|py| {
+            return pythonize(py, &self.inner.make_move(source, target, eval_res)).unwrap();
+        })
     }
 
     pub fn get_possible_moves(&self) -> Vec<PossibleMove> {
