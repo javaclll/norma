@@ -1,12 +1,15 @@
 import os
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
+
 import yaml
-from pydantic import BaseSettings, PostgresDsn, validator, AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseSettings, PostgresDsn, validator
 
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TestApp"
     DEV_MODE: bool
+
+    ENGINE_IDENT: str
 
     POSTGRES_SERVER: Optional[str]
     POSTGRES_USER: Optional[str]
