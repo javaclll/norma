@@ -112,16 +112,16 @@ class GameConnectionManager:
                 "type": 10,
                 "game": {
                     "game_id": game_instance.game_id,
-                    "turn": game_instance.game.turn,
-                    "goat_counter": game_instance.game.goat_counter,
-                    "goat_captured": game_instance.game.goat_captured,
+                    "turn": game_instance.game.turn(),
+                    "goat_counter": game_instance.game.goat_counter(),
+                    "goat_captured": game_instance.game.goat_captured(),
                     "game_history": list(
                         map(
                             lambda item: json.loads(item.to_str()),
                             game_instance.game.game_history(),
                         )
                     ),
-                    "pgn": game_instance.game.pgn,
+                    "pgn": game_instance.game.pgn(),
                 },
             }
             await websocket.send_json(message)
@@ -225,10 +225,10 @@ class GameConnectionManager:
 
                 message = {
                     "type": 7,
-                    "pgn": game.game.pgn,
-                    "turn": game.game.turn,
-                    "captured_goats": game.game.goat_captured,
-                    "placed_goats": game.game.goat_counter,
+                    "pgn": game.game.pgn(),
+                    "turn": game.game.turn(),
+                    "captured_goats": game.game.goat_captured(),
+                    "placed_goats": game.game.goat_counter(),
                     "history": list(
                         map(
                             lambda item: json.loads(item.to_str()),
@@ -397,16 +397,16 @@ class GameConnectionManager:
                 "type": 10,
                 "game": {
                     "game_id": game.game_id,
-                    "turn": game.game.turn,
-                    "goat_counter": game.game.goat_counter,
-                    "goat_captured": game.game.goat_captured,
+                    "turn": game.game.turn(),
+                    "goat_counter": game.game.goat_counter(),
+                    "goat_captured": game.game.goat_captured(),
                     "game_history": list(
                         map(
                             lambda item: json.loads(item.to_str()),
                             game.game.game_history(),
                         )
                     ),
-                    "pgn": game.game.pgn,
+                    "pgn": game.game.pgn(),
                 },
             }
             await random.choice(self.norma_executors).send_json(message)
@@ -426,7 +426,12 @@ class GameConnectionManager:
 
         source, destination = Baghchal.pgn_unit_to_coord(move)
 
-        game_instance.game.make_move(source, destination, None)
+        move_result = game_instance.game.make_move(source, destination, None)
+
+        print(move_result)
+
+        if not move_result["is_valid"]:
+            raise ManagerException(message="Invalid move!")
 
         game_status = game_instance.game.game_status_check()
 
