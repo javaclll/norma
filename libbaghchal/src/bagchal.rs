@@ -362,14 +362,22 @@ impl BaghchalRS {
         let status_after_move = self.game_status_check();
 
         if status_after_move.decided {
-            if status_after_move.won_by == -1 {
-                self.game_state = GameStatus::TigerWon;
-                *self.move_reward_tiger.last_mut().unwrap() += constants::T_WIN;
-                *self.move_reward_goat.last_mut().unwrap() += constants::G_LOSE;
-            } else {
-                self.game_state = GameStatus::GoatWon;
-                *self.move_reward_goat.last_mut().unwrap() += constants::G_WIN;
-                *self.move_reward_tiger.last_mut().unwrap() += constants::T_LOSE;
+            match status_after_move.won_by {
+                -1 => {
+                    self.game_state = GameStatus::TigerWon;
+                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_WIN;
+                    *self.move_reward_goat.last_mut().unwrap() += constants::G_LOSE;
+                }
+                1 => {
+                    self.game_state = GameStatus::GoatWon;
+                    *self.move_reward_goat.last_mut().unwrap() += constants::G_WIN;
+                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_LOSE;
+                }
+                _ => {
+                    self.game_state = GameStatus::Draw;
+                    *self.move_reward_goat.last_mut().unwrap() += constants::G_DRAW;
+                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_DRAW;
+                }
             }
         }
 
@@ -642,6 +650,11 @@ impl BaghchalRS {
             return GameStatusCheckResult {
                 decided: true,
                 won_by: -1,
+            };
+        } else if self.move_count() >= 100 {
+            return GameStatusCheckResult {
+                decided: true,
+                won_by: 0,
             };
         } else {
             return GameStatusCheckResult {
