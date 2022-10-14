@@ -1,9 +1,6 @@
 import sys
 from .connector import launch_executor
 from .model import load_model
-from bagchal import Bagchal
-
-
 
 
 if len(sys.argv) == 1:

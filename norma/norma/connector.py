@@ -3,7 +3,9 @@ import json
 import numpy
 import rel
 import websocket
-from bagchal import Bagchal
+
+# from bagchal import Bagchal
+from libbaghchal import Baghchal as Bagchal
 
 from .model import model
 
@@ -19,9 +21,12 @@ def get_best_move_pgn(bagchal: Bagchal):
 
     best_move_index = predication.argmax()
 
-    move = possible_moves[best_move_index]["resulting_state"].prev_move
+    move = possible_moves[best_move_index].resulting_state.prev_move()
 
-    return Bagchal.coord_to_png_unit(*move)
+    if move:
+        return Bagchal.coord_to_png_unit(*move)
+    else:
+        return None
 
 
 def on_message(ws, msg):
@@ -29,12 +34,13 @@ def on_message(ws, msg):
 
     if message["type"] == 10:
         try:
-            game = Bagchal.new()
-            game.turn = message["game"]["turn"]
-            game.goat_counter = message["game"]["goat_counter"]
-            game.goat_captured = message["game"]["goat_captured"]
-            game.game_history = message["game"]["game_history"]
-            game.pgn = message["game"]["pgn"]
+            game = Bagchal(
+                turn=message["game"]["turn"],
+                goat_counter=message["game"]["goat_counter"],
+                goat_captured=message["game"]["goat_captured"],
+                game_history=message["game"]["game_history"],
+                pgn=message["game"]["pgn"],
+            )
 
             pgn_unit = get_best_move_pgn(game)
 
@@ -49,6 +55,7 @@ def on_message(ws, msg):
             )
         except Exception as e:
             import traceback
+
             print(traceback.format_exc())
             print(e)
             raise e

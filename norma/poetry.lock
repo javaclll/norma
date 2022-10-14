@@ -182,18 +182,6 @@ pep8 = ["flake8"]
 tests = ["Pillow", "keras", "pandas", "pytest", "pytest-cov", "pytest-xdist", "tensorflow"]
 
 [[package]]
-name = "libbaghchal"
-version = "0.1.0"
-description = ""
-category = "main"
-optional = false
-python-versions = ">=3.7"
-
-[package.source]
-type = "file"
-url = "../libbaghchal/target/wheels/libbaghchal-0.1.0-cp39-cp39-macosx_11_0_arm64.whl"
-
-[[package]]
 name = "libclang"
 version = "14.0.6"
 description = "Clang Python Bindings, mirrored from the official LLVM repo: https://github.com/llvm/llvm-project/tree/main/clang/bindings/python, to make the installation process easier."
@@ -611,7 +599,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.10"
-content-hash = "a6b814f181bcf515c2cc737c4f7b52f8dd564c14d004d9f7ad786692cb2f11c3"
+content-hash = "157ba87e813947e609979276e0b1b99e627cc8b286571fc6c34e265ac44086b1"
 
 [metadata.files]
 absl-py = [
@@ -737,9 +725,6 @@ keras = [
 keras-preprocessing = [
     {file = "Keras_Preprocessing-1.1.2-py2.py3-none-any.whl", hash = "sha256:7b82029b130ff61cc99b55f3bd27427df4838576838c5b2f65940e4fcec99a7b"},
     {file = "Keras_Preprocessing-1.1.2.tar.gz", hash = "sha256:add82567c50c8bc648c14195bf544a5ce7c1f76761536956c3d2978970179ef3"},
-]
-libbaghchal = [
-    {file = "libbaghchal-0.1.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c2abb97bffa90bc618dbfa5a56601981df224935d6309832a141d56911d4564e"},
 ]
 libclang = [
     {file = "libclang-14.0.6-py2.py3-none-macosx_10_9_x86_64.whl", hash = "sha256:8791cf3c3b087c373a6d61e9199da7a541da922c9ddcfed1122090586b996d6e"},
