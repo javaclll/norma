@@ -1,1 +1,0 @@
-MODELPATH = "savedModels/normaModel"
