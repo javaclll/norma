@@ -497,15 +497,15 @@ class Bagchal:
             for i in range(5):
                 for j in range(5):
                     if self.board[i][j] == -1:  # type: ignore
-                        for k in range(5):
-                            for l in range(5):
-                                this_move = self.check_move([i, j], [k, l])
+                        for k in range(-2, 3):
+                            for l in range(-2, 3):
+                                this_move = self.check_move([i, j], [i + k, j + l])
                                 if this_move["isValid"]:
                                     new_move_state = deepcopy(self)
-                                    new_move_state.move([i, j], [k, l], this_move)
+                                    new_move_state.move([i, j], [i + k, j + l], this_move)
                                     moves.append(  # type: ignore
                                         {
-                                            "move": [[i, j], [k, l]],
+                                            "move": [[i, j], [i + k, j + l]],
                                             "resulting_state": new_move_state,
                                         }
                                     )
@@ -537,7 +537,7 @@ class Bagchal:
 
                             moves.append(
                                 {
-                                    "move": [[0, 0], [i, j]],
+                                    "move": [None, [i, j]],
                                     "resulting_state": new_move_state,
                                 }
                             )
