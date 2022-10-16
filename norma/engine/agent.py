@@ -29,24 +29,33 @@ class Agent:
             move = possibleMoves[randint(0, maxMoves)]["move"]
 
         else: 
-            predictions = []
+            moves = []
             for move in possibleMoves:
 
-                source = np.zeros((5,5))
+                sourceX = np.zeros(5)
+                sourceY = np.zeros(5)
+
+                targetX = np.zeros(5)
+                targetY = np.zeros(5)
 
                 target = np.zeros((5,5))
 
-                target[move["move"][1][0]][move["move"][1][1]] = 1
+                targetX[move["move"][1][0]] = 1
+                targetY[move["move"][1][1]] = 1
                 
 
                 if move["move"][0] is not None:
-                    source[move["move"][0][0]][move["move"][0][1]] = 1
+                    sourceX[move["move"][0][0]] = 1
+                    sourceY[move["move"][0][1]] = 1
                         
-                # model.predict(state, action) => get reward
-                predictions.append(self.model.predict(game.board, source, target))
-                # find the max reward and use that move in the game
 
-            maxIndex = np.argmax(predictions)
+                source = {"x": sourceX, "y": sourceY}
+                target = {"x": targetX, "y": targetY}
+                # model.predict(state, action) => get reward
+                moves.append({"game": game,"source": source, "target": target})
+                # find the max reward and use that move in the game
+            prediction = self.model.predict(moves)
+            maxIndex = np.argmax(prediction)
             
             move = possibleMoves[maxIndex]["move"]
 

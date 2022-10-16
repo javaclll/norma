@@ -27,25 +27,34 @@ def get_best_move_pgn(bagchal: Bagchal):
 
     predictionModel = Model(savedModel=savedModel)
 
-    predictions = []
-
+    moves = []
     for move in possibleMoves:
 
-        source = np.zeros((5,5))
+        sourceX = np.zeros(5)
+        sourceY = np.zeros(5)
+
+        targetX = np.zeros(5)
+        targetY = np.zeros(5)
 
         target = np.zeros((5,5))
 
-        target[move["move"][1][0]][move["move"][1][1]] = 1
+        targetX[move["move"][1][0]] = 1
+        targetY[move["move"][1][1]] = 1
         
 
         if move["move"][0] is not None:
-            source[move["move"][0][0]][move["move"][0][1]] = 1
+            sourceX[move["move"][0][0]] = 1
+            sourceY[move["move"][0][1]] = 1
                 
-        # model.predict(state, action) => get reward
-        predictions.append(predictionModel.predict(bagchal.board, source, target))
-        # find the max reward and use that move in the gam
 
-    bestMoveIndex = np.argmax(predictions)
+        source = {"x": sourceX, "y": sourceY}
+        target = {"x": targetX, "y": targetY}
+        # model.predict(state, action) => get reward
+        moves.append({"game": bagchal, "source": source, "target": target})
+                # find the max reward and use that move in the game
+    prediction = predictionModel.predict(moves)
+
+    bestMoveIndex = np.argmax(prediction)
 
     move = possibleMoves[bestMoveIndex]["resulting_state"].prev_move
 
