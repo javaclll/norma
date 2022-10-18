@@ -1,6 +1,5 @@
 import sys
 from .connector import launch_executor
-from .model import load_model
 
 
 if len(sys.argv) == 1:
@@ -9,10 +8,16 @@ if len(sys.argv) == 1:
     exit(0)
 
 if sys.argv[1] == "train":
-    if len(sys.argv == 2) and (sys.argv[2] == "clean"):
-        pass
+    if len(sys.argv) == 3:
+        if sys.argv[2] == "clean":
+            from .train import training_loop
+            training_loop()
     else:
+        from .train import training_loop
+        from .model import load_model
+
         load_model()
+        training_loop()
 
 elif sys.argv[1] == "serve":
     launch_executor()
