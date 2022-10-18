@@ -20,15 +20,16 @@ class Agent:
         possibleMoves = []
         
         possibleMoves = game.get_possible_moves()
-        
-        if self.model is None or random() < 0.15:
-            print(self.model)
+
+        randomNumber = random()
+        if self.model is None or randomNumber< 0.25:
             print("Random")
             maxMoves = len(possibleMoves) - 1
 
             move = possibleMoves[randint(0, maxMoves)]["move"]
 
-        else: 
+        else:
+            print("Not Random")
             moves = []
             for move in possibleMoves:
 

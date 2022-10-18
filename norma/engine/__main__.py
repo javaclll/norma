@@ -2,7 +2,7 @@ import sys
 from .connector import launch_executor
 from .gamesimulation import simulate
 import os
-from .constants import MODELPATH 
+from .constants import GOATMODELPATH, TIGERMODELPATH 
 from .agent import Agent
 from bagchal import Bagchal
 
@@ -16,7 +16,7 @@ if sys.argv[1] == "train":
         if (sys.argv[2] == "clean"):
             simulate()
     else: 
-        if not os.path.exists(MODELPATH):
+        if not os.path.exists(GOATMODELPATH) or not os.path.exists(TIGERMODELPATH):
             simulate()
 
 elif sys.argv[1] == "serve":
