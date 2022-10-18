@@ -1,4 +1,4 @@
-from .constants import MODELPATH, GOATMODELPATH, TIGERMODELPATH
+from .constants import MODELPATH
 from .model import Model
 from .gamesimulation import simulate
 import json
@@ -8,35 +8,21 @@ from bagchal import Bagchal
 import os
 import tensorflow
 import numpy as np
+from random import randint, random
 
-def loadModel(modelLoad):
-   
-    if modelLoad == 1:
-        if os.path.exists(GOATMODELPATH):
-            savedModel = tensorflow.keras.models.load_model(GOATMODELPATH)
-        else:
-            savedModel, _ = simulate()
-        
-        print("Goat Model Loaded")
+def loadModel():
+    if os.path.exists(MODELPATH):
+        savedModel = tensorflow.keras.models.load_model(MODELPATH)
+    else:
+        savedModel = simulate()
 
-        return savedModel
-        
-    elif modelLoad == -1:
-        if os.path.exists(TIGERMODELPATH):
-            savedModel = tensorflow.keras.models.load_model(TIGERMODELPATH)
-        else:
-            _, savedModel = simulate()
-        print("Tiger Model Loaded")
-        
-        return savedModel
-   
-
+    return savedModel
 
 def get_best_move_pgn(bagchal: Bagchal):
 
     possibleMoves = bagchal.get_possible_moves()
 
-    savedModel = loadModel(modelLoad = bagchal.turn)
+    savedModel = loadModel()
 
     predictionModel = Model(savedModel=savedModel)
 

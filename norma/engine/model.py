@@ -79,7 +79,7 @@ class Model:
 
             print("Counter: ", count, " Loss: ", startLoss)
 
-            if count > trainingfactor and startLoss < 0.09:
+            if count > trainingfactor:
                 break
 
         print("Counter: ", count, " Final Loss: ", startLoss)
