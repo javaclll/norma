@@ -1,7 +1,7 @@
 from bagchal import AgentType, GameState, Bagchal
 from .agent import Agent
 from .model import Model
-from .constants import MODELPATH
+from .constants import GOATMODELPATH, TIGERMODELPATH
 
 from functools import reduce
 import numpy as np
@@ -17,6 +17,9 @@ G_GOAT_CAPTURED = -2
 G_TIGER_TRAP = 1
 G_TIGER_ESCAPE = -0.5
 
+#Common 
+WIN_REWARD = 5
+
 
 class Simulator:
 
@@ -24,7 +27,8 @@ class Simulator:
         self.agentGoat = agentGoat
         self.agentTiger = agentTiger
         self.game = Bagchal.new()
-        self.stateMemory = np.zeros((0, 105))
+        self.stateGoatMemory = np.zeros((0, 105))
+        self.stateTigerMemory = np.zeros((0,105))
 
     def rewardPropagation(self, noOfPlays):
 
@@ -82,34 +86,38 @@ class Simulator:
                 target = target.flatten()
                 
                 flattenBoard = np.concatenate((goatBoard, tigerBoard, source, target, prevTrapTiger, prevGoatCapture, placedGoat, turn, indivReward), axis=None).reshape((1,-1))
-
-                self.stateMemory = np.concatenate((self.stateMemory, flattenBoard), axis = 0)
+                
+                if turn == 1:
+                    self.stateGoatMemory = np.concatenate((self.stateGoatMemory, flattenBoard), axis = 0)
+                else:
+                    self.stateTigerMemory = np.concatenate((self.stateTigerMemory, flattenBoard), axis = 0)
                 
                 if len(self.game.game_history) > 100:
                     break
 
-            previousGameNo = previousGameNo + noOfStates
+            previousGameNo = previousGameNo + int(noOfStates/2)
 
             noOfStates = len(self.game.game_history) - 1            
-
-            totalReward = (200 - noOfStates) * 2
+            print("No Of States", noOfStates)
+            totalReward = WIN_REWARD
             
             if self.game.game_state == GameState.TIGER_WON.value:
                 totalReward = -1 * totalReward 
             
             if self.game.game_state == GameState.DRAW.value:
-                totalReward = totalReward / 3
+                totalReward = totalReward / 2
                 for k in range(noOfStates):
                     if k % 2 == 0:
-                        self.stateMemory[previousGameNo + k][104] = self.stateMemory[previousGameNo + k][104] - (totalReward / (noOfStates - k))
+                        self.stateGoatMemory[previousGameNo + int(k/2)][104] = self.stateGoatMemory[previousGameNo + int(k/2)][104] - (totalReward / (noOfStates - k))
                     else:
-                        self.stateMemory[previousGameNo + k][104] = self.stateMemory[previousGameNo + k][104] - (totalReward / (noOfStates - k))
-            else:
+                        self.stateTigerMemory[previousGameNo + int(k/2)][104] = self.stateTigerMemory[previousGameNo + int(k/2)][104] - (totalReward / (noOfStates - k))
+            
+            elif self.game.game_state == GameState.TIGER_WON.value or self.game.game_state == GameState.GOAT_WON.value:
                 for k in range(noOfStates):
                     if k % 2 == 0:
-                        self.stateMemory[previousGameNo + k][104] = self.stateMemory[previousGameNo + k][104] + (totalReward / (noOfStates - k))
+                        self.stateGoatMemory[previousGameNo + int(k/2)][104] = self.stateGoatMemory[previousGameNo + int(k/2)][104] + (totalReward / (noOfStates - k))
                     else:
-                        self.stateMemory[previousGameNo + k][104] = self.stateMemory[previousGameNo + k][104] - (totalReward / (noOfStates - k))
+                        self.stateTigerMemory[previousGameNo + int(k/2)][104] = self.stateTigerMemory[previousGameNo + int(k/2)][104] - (totalReward / (noOfStates - k))
 
 
             self.game = Bagchal.new()
@@ -117,28 +125,43 @@ class Simulator:
         return {"Simulation End": True}
 
 
-def simulate(noOfSims = 25, prevModel = None, currentModel = None):
+def simulate(noOfSims = 50, goatModel = None, tigerModel = None):
 
-    for simNo in range(noOfSims):
+    for simNo in range(noOfSims - 1):
 
-        if random() < 0.5:
-            agentGoat = Agent(type = AgentType.GOAT.value, model = prevModel)
-            agentTiger = Agent(type = AgentType.TIGER.value, model = currentModel)
-        else:
-            agentGoat = Agent(type = AgentType.GOAT.value, model = currentModel)
-            agentTiger = Agent(type = AgentType.TIGER.value, model = prevModel)
-
+        agentGoat = Agent(type = AgentType.GOAT.value, model = goatModel)
+        agentTiger = Agent(type = AgentType.TIGER.value, model = tigerModel)
+       
         gameSimulation = Simulator(agentGoat = agentGoat, agentTiger = agentTiger)
-
-        simulationResult = gameSimulation.rewardPropagation(noOfPlays = 50)
+        
+        simulationResult = gameSimulation.rewardPropagation(noOfPlays = 400)
         
         if simulationResult["Simulation End"]:
-            prevModel = currentModel 
-            currentModel = Model()
+            goatModel = Model()
+            tigerModel = Model()
 
-            currentModel.training(flattendData = gameSimulation.stateMemory, trainingfactor = min([(simNo + 1) * 100, 3000]))
-            
-    if currentModel != None:
-        currentModel.model.save(MODELPATH) #save to a location
+            goatModel.training(flattendData = gameSimulation.stateGoatMemory, trainingfactor = min([(simNo + 1) * 100, 3000]))
+            tigerModel.training(flattendData = gameSimulation.stateTigerMemory, trainingfactor = min([(simNo + 1) * 100, 3000]))
 
-    return currentModel.model
+    agentGoat = Agent(type = AgentType.GOAT.value, model = goatModel)
+    agentTiger = Agent(type = AgentType.TIGER.value, model = tigerModel)
+       
+    gameSimulation = Simulator(agentGoat = agentGoat, agentTiger = agentTiger)
+        
+    simulationResult = gameSimulation.rewardPropagation(noOfPlays = 1000)
+
+    if simulationResult["Simulation End"]:
+            goatModel = Model()
+            tigerModel = Model()
+
+            goatModel.training(flattendData = gameSimulation.stateGoatMemory, trainingfactor = min([(simNo + 1) * 100, 3000]))
+            tigerModel.training(flattendData = gameSimulation.stateTigerMemory, trainingfactor = min([(simNo + 1) * 100, 3000]))
+    if goatModel != None:
+
+        goatModel.model.save(GOATMODELPATH)   #save to a location
+
+    if tigerModel != None:
+
+        goatModel.model.save(TIGERMODELPATH)
+    
+    return goatModel.model, tigerModel.model

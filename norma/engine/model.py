@@ -72,13 +72,14 @@ class Model:
         count = 0
 
         while startLoss > 0.02:
-            self.model.fit(trainX, trainY, epochs = 10, batch_size = 256, verbose = 2)
+            # self.model.fit(trainX, trainY, epochs = 10, batch_size = 256, verbose = 2)
+            self.model.train_on_batch(trainX, trainY)
             startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)[0]
             count += 1
 
             print("Counter: ", count, " Loss: ", startLoss)
 
-            if count > trainingfactor:
+            if count > trainingfactor and startLoss < 0.09:
                 break
 
         print("Counter: ", count, " Final Loss: ", startLoss)
