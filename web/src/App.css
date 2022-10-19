@@ -63,7 +63,22 @@
 .move-number {
   display: inline-block;
   margin-right: 20px;
+  height: 20px;
+  width: 30px;
   font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  /* display: none; <- Crashes Chrome on hover */
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
 }
 
 .forward {
