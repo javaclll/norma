@@ -35,6 +35,23 @@ class Baghchal:
     def coord_to_png_unit(source: Optional[List[int]], destination: List[int]) -> str:
         ...
 
+    def set_rewards(
+        self,
+        t_goat_capture,
+        t_got_trapped,
+        t_trap_escape,
+        t_win,
+        t_lose,
+        t_draw,
+        g_goat_captured,
+        g_tiger_trap,
+        g_tiger_escape,
+        g_win,
+        g_lose,
+        g_draw,
+    ):
+        ...
+
     def to_str(self) -> str:
         ...
 

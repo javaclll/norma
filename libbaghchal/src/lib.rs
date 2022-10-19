@@ -107,6 +107,37 @@ impl Baghchal {
         return BaghchalRS::coord_to_png_unit(source, destination);
     }
 
+    pub fn set_rewards(
+        &mut self,
+        t_goat_capture: f32,
+        t_got_trapped: f32,
+        t_trap_escape: f32,
+        t_win: f32,
+        t_lose: f32,
+        t_draw: f32,
+        g_goat_captured: f32,
+        g_tiger_trap: f32,
+        g_tiger_escape: f32,
+        g_win: f32,
+        g_lose: f32,
+        g_draw: f32,
+    ) {
+        return self.inner.set_rewards(
+            t_goat_capture,
+            t_got_trapped,
+            t_trap_escape,
+            t_win,
+            t_lose,
+            t_draw,
+            g_goat_captured,
+            g_tiger_trap,
+            g_tiger_escape,
+            g_win,
+            g_lose,
+            g_draw,
+        );
+    }
+
     pub fn to_str(&self) -> String {
         return serde_json::to_string(&self).unwrap();
     }

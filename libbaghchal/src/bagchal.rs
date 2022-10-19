@@ -1,4 +1,3 @@
-use crate::constants;
 use crate::types::{
     GameStateInstance, GameStatus, GameStatusCheckResult, Move, MoveCheckResult, PossibleMove,
 };
@@ -19,6 +18,21 @@ pub struct BaghchalRS {
     pub move_reward_tiger: Vec<f32>,
     pub move_reward_goat: Vec<f32>,
     pub trapped_tiger: i8,
+
+    pub t_goat_capture: f32,
+    pub t_got_trapped: f32,
+    pub t_trap_escape: f32,
+    pub t_win: f32,
+    pub t_lose: f32,
+    pub t_draw: f32,
+
+    // For Goat
+    pub g_goat_captured: f32,
+    pub g_tiger_trap: f32,
+    pub g_tiger_escape: f32,
+    pub g_win: f32,
+    pub g_lose: f32,
+    pub g_draw: f32,
 }
 
 impl Default for BaghchalRS {
@@ -34,6 +48,18 @@ impl Default for BaghchalRS {
             move_reward_tiger: [].to_vec(),
             move_reward_goat: [].to_vec(),
             trapped_tiger: 0,
+            t_goat_capture: 0.0,
+            t_got_trapped: 0.0,
+            t_trap_escape: 0.0,
+            t_win: 0.0,
+            t_lose: 0.0,
+            t_draw: 0.0,
+            g_goat_captured: 0.0,
+            g_tiger_trap: 0.0,
+            g_tiger_escape: 0.0,
+            g_win: 0.0,
+            g_lose: 0.0,
+            g_draw: 0.0,
         }
     }
 }
@@ -51,6 +77,35 @@ impl BaghchalRS {
 
     pub fn move_count(&self) -> i8 {
         return (self.game_history.len() - 1) as i8;
+    }
+
+    pub fn set_rewards(
+        &mut self,
+        t_goat_capture: f32,
+        t_got_trapped: f32,
+        t_trap_escape: f32,
+        t_win: f32,
+        t_lose: f32,
+        t_draw: f32,
+        g_goat_captured: f32,
+        g_tiger_trap: f32,
+        g_tiger_escape: f32,
+        g_win: f32,
+        g_lose: f32,
+        g_draw: f32,
+    ) {
+        self.t_goat_capture = t_goat_capture;
+        self.t_got_trapped = t_got_trapped;
+        self.t_trap_escape = t_trap_escape;
+        self.t_win = t_win;
+        self.t_lose = t_lose;
+        self.t_draw = t_draw;
+        self.g_goat_captured = g_goat_captured;
+        self.g_tiger_trap = g_tiger_trap;
+        self.g_tiger_escape = g_tiger_escape;
+        self.g_win = g_win;
+        self.g_lose = g_lose;
+        self.g_draw = g_draw;
     }
 
     pub fn cord_to_char(num: i8) -> char {
@@ -345,17 +400,17 @@ impl BaghchalRS {
 
         // Goats captured check
         if prev_captured != self.goat_captured {
-            *self.move_reward_goat.last_mut().unwrap() += constants::G_GOAT_CAPTURED;
-            *self.move_reward_tiger.last_mut().unwrap() += constants::T_GOAT_CAPTURE;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_goat_captured;
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_goat_capture;
         }
 
         // Trapped tiger check
         if prev_trapped < self.trapped_tiger {
-            *self.move_reward_goat.last_mut().unwrap() += constants::G_TIGER_TRAP;
-            *self.move_reward_tiger.last_mut().unwrap() += constants::T_GOT_TRAPPED;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_trap;
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_got_trapped;
         } else if prev_trapped > self.trapped_tiger {
-            *self.move_reward_goat.last_mut().unwrap() += constants::G_TIGER_ESCAPE;
-            *self.move_reward_tiger.last_mut().unwrap() += constants::T_TRAP_ESCAPE;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_escape;
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_trap_escape;
         }
 
         // Has game been decided check
@@ -365,18 +420,18 @@ impl BaghchalRS {
             match status_after_move.won_by {
                 -1 => {
                     self.game_state = GameStatus::TigerWon;
-                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_WIN;
-                    *self.move_reward_goat.last_mut().unwrap() += constants::G_LOSE;
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_win;
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_lose;
                 }
                 1 => {
                     self.game_state = GameStatus::GoatWon;
-                    *self.move_reward_goat.last_mut().unwrap() += constants::G_WIN;
-                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_LOSE;
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_win;
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_lose;
                 }
                 _ => {
                     self.game_state = GameStatus::Draw;
-                    *self.move_reward_goat.last_mut().unwrap() += constants::G_DRAW;
-                    *self.move_reward_tiger.last_mut().unwrap() += constants::T_DRAW;
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_draw;
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_draw;
                 }
             }
         }
