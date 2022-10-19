@@ -51,6 +51,7 @@ export const GameProvider = ({ children }) => {
   const [game, setGame] = useState(startingLayout);
 
   const nextMove = () => {
+    try {
     let nextGameState = moveHistory[moveCounter + 1];
     setGame(nextGameState.game);
     setGoatCounter(nextGameState.goatCount);
@@ -59,14 +60,17 @@ export const GameProvider = ({ children }) => {
     // setTurn(
     //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
     // );
+    } catch (_) {}
   };
 
   const previousMove = () => {
+    try {
     let prevGameState = moveHistory[moveCounter - 1];
     setGame(prevGameState.game);
     setGoatCounter(prevGameState.goatCount);
     setGoatsCaptured(prevGameState.goatsCaptured);
     setMoveCounter(moveCounter - 1);
+    } catch (_) {}
     // setTurn(
     //   moveHistory[moveCounter - 1].turn === 0 ? ItemTypes.Goat : ItemTypes.TIGER
     // );

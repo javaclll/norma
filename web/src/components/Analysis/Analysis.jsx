@@ -330,12 +330,20 @@ const Analysis = () => {
     } catch (_) {}
   }, [pgnAutoLoad]);
 
-  const [moveCountField, setMoveCountField] = useState();
-
   return (
     <>
       <DndProvider backend={HTML5Backend}>
-        <div className="main-container">
+        <div
+          className="main-container no-select"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key == "ArrowLeft") {
+              previousMove();
+            } else if (e.key == "ArrowRight") {
+              nextMove();
+            }
+          }}
+        >
           <div className="left-box">
             <div className="left-box-content">
               <div className="button-panel">
@@ -349,7 +357,7 @@ const Analysis = () => {
                 <input
                   type="number"
                   className="move-number text"
-                  value={moveCountField ? moveCountField : moveCounter}
+                  value={moveCounter}
                   onClick={(e) => {
                     e.target.select();
                   }}
