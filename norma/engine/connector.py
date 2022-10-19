@@ -1,6 +1,6 @@
-from .constants import MODELPATH
+from .constants import MODELPATH, TARGETMODELPATH
 from .model import Model
-from .gamesimulation import simulate
+from .gamesimulation import Simulator
 import json
 import rel
 import websocket
@@ -8,14 +8,15 @@ from bagchal import Bagchal
 import os
 import tensorflow
 import numpy as np
-from random import randint, random
 
 def loadModel():
     if os.path.exists(MODELPATH):
-        savedModel = tensorflow.keras.models.load_model(MODELPATH)
+        savedModel = tensorflow.keras.models.load_model(TARGETMODELPATH)
     else:
-        savedModel = simulate()
-
+        simulator = Simulator()
+        simulator.simulate()
+        savedModel = simulator.targetModel.model
+        
     return savedModel
 
 def get_best_move_pgn(bagchal: Bagchal):
