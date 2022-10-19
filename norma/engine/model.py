@@ -1,9 +1,12 @@
-from re import S
+from abc import abstractmethod
+from tabnanny import verbose
 import numpy as np
 import tensorflow as tf 
 from tensorflow import keras
 from functools import reduce
 import os
+import random
+from .constants import DISCOUNTFACTOR
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.disable_eager_execution()
@@ -17,7 +20,7 @@ class Model:
             self.model = savedModel
         else:
 
-            self.optimizer = keras.optimizers.Adam(learning_rate=0.01)
+            self.optimizer = keras.optimizers.Adam(learning_rate=0.001)
 
             self.model = keras.models.Sequential()
 
@@ -38,46 +41,22 @@ class Model:
 
             # self.model.add(keras.layers.Flatten(input_shape=(5,5,4)))
 
-            self.model.add(keras.layers.InputLayer(input_shape = (104,)))
-            self.model.add(keras.layers.Dense(10, kernel_initializer = keras.initializers.HeUniform()))
+            self.model.add(keras.layers.InputLayer(input_shape = (74,)))
+            self.model.add(keras.layers.Dense(74, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(7, kernel_initializer = keras.initializers.HeUniform()))
+            self.model.add(keras.layers.Dense(8, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(3,  kernel_initializer = keras.initializers.HeUniform()))
+            self.model.add(keras.layers.Dense(3, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            
             self.model.add(keras.layers.Dense(1, activation='linear'))
             self.model.compile(optimizer= self.optimizer, loss=keras.losses.Huber(), metrics=['mae'])
 
             self.model.summary()
 
-    def stateToTensor(self, flatStateMove):
-        xTensor = flatStateMove[:,:-1]
-        yTensor = flatStateMove[:,-1]
-
-        return xTensor, yTensor
-
-
-    def training(self, flattendData, startLoss = 30, epochs = 50):
-        noOfData = flattendData.shape[0]
-        print(noOfData)
-        trainX = np.zeros((noOfData, 104))
-        trainY = np.zeros((noOfData,1))
-        for index, data in enumerate(flattendData):
-            xTensor, yTensor = self.stateToTensor(data.reshape((1,-1)))
-            trainX[index, :] = xTensor
-            trainY[index, :] = yTensor
-
-
-        self.model.fit(trainX, trainY, epochs = epochs, batch_size = noOfData, verbose = 2)
-        startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)[0]
-
-        print("Loss: ", startLoss)
-
     def predict(self, moves, batch = True):
         if batch:
             noOfMoves = len(moves)
-            predictTensor = np.zeros((0, 104))
+            predictTensor = np.zeros((0, 74))
 
             for i in range(noOfMoves):
 
@@ -90,24 +69,15 @@ class Model:
                 targetX = moves[i]["target"]["x"]
                 targetY = moves[i]["target"]["y"]
 
-                goatCaptured = np.zeros(6)
-                goatCaptured[moves[i]["game"].goat_captured] = 1
+                goatCaptured = moves[i]["game"].goat_captured
 
-                goatCounter = np.zeros(21)
-                goatCounter[moves[i]["game"].goat_counter] = 1
+                goatCounter = moves[i]["game"].goat_counter
 
-                tigerTrap = np.zeros(5)
-                tigerTrap[moves[i]["game"].trapped_tiger] = 1
+                tigerTrap = moves[i]["game"].trapped_tiger
 
-                gameTurn = np.zeros(2)
-
-                if moves[i]["game"].turn == 1:
-                    gameTurn[0] = 1
-                elif moves[i]["game"].turn == -1:
-                    gameTurn[1] = 1
+                gameTurn = moves[i]["game"].turn
 
                 flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceX, sourceY, targetX, targetY, goatCaptured, goatCounter, tigerTrap, gameTurn), axis=None)
-
                 predictTensor = np.concatenate((predictTensor, flattenBoard.reshape((1,-1))), axis = 0)
 
             predictedValue = self.model.predict_on_batch(predictTensor)
@@ -128,26 +98,62 @@ class Model:
                 targetX = moves[i]["target"]["x"]
                 targetY = moves[i]["target"]["y"]
 
-                goatCaptured = np.zeros(6)
-                goatCaptured[moves[i]["game"].goat_captured] = 1
+                goatCaptured = moves[i]["game"].goat_captured
 
-                goatCounter = np.zeros(21)
-                goatCounter[moves[i]["game"].goat_counter] = 1
+                goatCounter = moves[i]["game"].goat_counter
 
-                tigerTrap = np.zeros(5)
-                tigerTrap[moves[i]["game"].trapped_tiger] = 1
+                tigerTrap = moves[i]["game"].trapped_tiger
 
-                gameTurn = np.zeros(2)
-
-                if moves[i]["game"].turn == 1:
-                    gameTurn[0] = 1
-                elif moves[i]["game"].turn == -1:
-                    gameTurn[1] = 1
+                gameTurn = moves[i]["game"].turn
 
                 flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceX, sourceY, targetX, targetY, goatCaptured, goatCounter, tigerTrap, gameTurn), axis=None)
 
                 predictedValue.append(self.model.predict(flattenBoard))
 
-            
             return predictedValue
+
+    @abstractmethod
+    def training(replayMemory, mainModel, targetModel, done):
+
+        print("Here")
+        noOfData = len(replayMemory)
+
+        affectFactor = 0.7
+        MINREPLAYSIZE = 1000
+        print(noOfData)
+        if noOfData < MINREPLAYSIZE:
+            return
+
+        print("Here3")
+        print("Here3")
+        
+        batchSize = 128
+
+        miniBatch = random.sample(replayMemory, batchSize)
+
+        currentState = np.array([data[0:74] for data in miniBatch])
+        currentRewardList = mainModel.model.predict(currentState)
+    
+        newStates = np.array([data[74:148] for data in miniBatch])
+        futureRewardList = mainModel.model.predict(newStates)
+
+        trainX = np.zeros((batchSize, 74))
+        trainY = np.zeros((batchSize,1))
+
+        for index, data in enumerate(miniBatch):
+            print("Here 2")
+            if not data[-1]:
+                maxFutureReward = data[-2] + DISCOUNTFACTOR * futureRewardList[index]
+            else:
+                maxFutureReward = data[-2]
+
+            currentReward = (1 - affectFactor) * currentRewardList[index] + affectFactor * maxFutureReward
+
+            trainX[index, :] = data[0:74]
+            trainY[index, :] = currentReward
+        
+        # mainModel.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
+
+
+
         
