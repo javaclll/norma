@@ -39,17 +39,16 @@ class Model:
             # self.model.add(keras.layers.Flatten(input_shape=(5,5,4)))
 
             self.model.add(keras.layers.InputLayer(input_shape = (104,)))
-            self.model.add(keras.layers.Dense(104))
+            self.model.add(keras.layers.Dense(10, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(10))
+            self.model.add(keras.layers.Dense(7, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(7))
+            self.model.add(keras.layers.Dense(3,  kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(3))
-            self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-
+            
             self.model.add(keras.layers.Dense(1, activation='linear'))
-            self.model.compile(optimizer=self.optimizer, loss='mean_squared_error', metrics=['accuracy'])
+            self.model.compile(optimizer= self.optimizer, loss=keras.losses.Huber(), metrics=['mae'])
+
             self.model.summary()
 
     def stateToTensor(self, flatStateMove):
@@ -59,9 +58,9 @@ class Model:
         return xTensor, yTensor
 
 
-    def training(self, flattendData, trainingfactor = 10, startLoss = 30):
+    def training(self, flattendData, startLoss = 30, epochs = 50):
         noOfData = flattendData.shape[0]
-
+        print(noOfData)
         trainX = np.zeros((noOfData, 104))
         trainY = np.zeros((noOfData,1))
         for index, data in enumerate(flattendData):
@@ -69,59 +68,86 @@ class Model:
             trainX[index, :] = xTensor
             trainY[index, :] = yTensor
 
-        count = 0
 
-        while startLoss > 0.02:
-            # self.model.fit(trainX, trainY, epochs = 10, batch_size = 256, verbose = 2)
-            self.model.train_on_batch(trainX, trainY)
-            startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)[0]
-            count += 1
+        self.model.fit(trainX, trainY, epochs = epochs, batch_size = noOfData, verbose = 2)
+        startLoss = self.model.evaluate(trainX, trainY, batch_size=256, verbose=2)[0]
 
-            print("Counter: ", count, " Loss: ", startLoss)
+        print("Loss: ", startLoss)
 
-            if count > trainingfactor:
-                break
+    def predict(self, moves, batch = True):
+        if batch:
+            noOfMoves = len(moves)
+            predictTensor = np.zeros((0, 104))
 
-        print("Counter: ", count, " Final Loss: ", startLoss)
+            for i in range(noOfMoves):
 
-    def predict(self, moves):
+                flattenBoard = np.array(reduce(lambda z, y :z + y, moves[i]["game"].board))
+                goatBoard = (flattenBoard == 1) * 1
+                tigerBoard = (flattenBoard == -1) * 1
+                sourceX = moves[i]["source"]["x"]
+                sourceY = moves[i]["source"]["y"]
 
-        noOfMoves = len(moves)
-        predictTensor = np.zeros((0, 104))
+                targetX = moves[i]["target"]["x"]
+                targetY = moves[i]["target"]["y"]
 
-        for i in range(noOfMoves):
+                goatCaptured = np.zeros(6)
+                goatCaptured[moves[i]["game"].goat_captured] = 1
 
-            flattenBoard = np.array(reduce(lambda z, y :z + y, moves[i]["game"].board))
-            goatBoard = (flattenBoard == 1) * 1
-            tigerBoard = (flattenBoard == -1) * 1
-            sourceX = moves[i]["source"]["x"]
-            sourceY = moves[i]["source"]["y"]
+                goatCounter = np.zeros(21)
+                goatCounter[moves[i]["game"].goat_counter] = 1
 
-            targetX = moves[i]["target"]["x"]
-            targetY = moves[i]["target"]["y"]
+                tigerTrap = np.zeros(5)
+                tigerTrap[moves[i]["game"].trapped_tiger] = 1
 
-            goatCaptured = np.zeros(6)
-            goatCaptured[moves[i]["game"].goat_captured] = 1
+                gameTurn = np.zeros(2)
 
-            goatCounter = np.zeros(21)
-            goatCounter[moves[i]["game"].goat_counter] = 1
+                if moves[i]["game"].turn == 1:
+                    gameTurn[0] = 1
+                elif moves[i]["game"].turn == -1:
+                    gameTurn[1] = 1
 
-            tigerTrap = np.zeros(5)
-            tigerTrap[moves[i]["game"].trapped_tiger] = 1
+                flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceX, sourceY, targetX, targetY, goatCaptured, goatCounter, tigerTrap, gameTurn), axis=None)
 
-            gameTurn = np.zeros(2)
+                predictTensor = np.concatenate((predictTensor, flattenBoard.reshape((1,-1))), axis = 0)
 
-            if moves[i]["game"].turn == 1:
-                gameTurn[0] = 1
-            elif moves[i]["game"].turn == -1:
-                gameTurn[1] = 1
+            predictedValue = self.model.predict_on_batch(predictTensor)
 
-            flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceX, sourceY, targetX, targetY, goatCaptured, goatCounter, tigerTrap, gameTurn), axis=None)
+            return predictedValue
+        else:
+            noOfMoves = len(moves)
 
-            predictTensor = np.concatenate((predictTensor, flattenBoard.reshape((1,-1))), axis = 0)
+            predictedValue = [] 
 
-        predictedValue = self.model.predict_on_batch(predictTensor)
+            for i in range(noOfMoves):
+                flattenBoard = np.array(reduce(lambda z, y :z + y, moves[i]["game"].board))
+                goatBoard = (flattenBoard == 1) * 1
+                tigerBoard = (flattenBoard == -1) * 1
+                sourceX = moves[i]["source"]["x"]
+                sourceY = moves[i]["source"]["y"]
 
-        return predictedValue
+                targetX = moves[i]["target"]["x"]
+                targetY = moves[i]["target"]["y"]
 
-       
+                goatCaptured = np.zeros(6)
+                goatCaptured[moves[i]["game"].goat_captured] = 1
+
+                goatCounter = np.zeros(21)
+                goatCounter[moves[i]["game"].goat_counter] = 1
+
+                tigerTrap = np.zeros(5)
+                tigerTrap[moves[i]["game"].trapped_tiger] = 1
+
+                gameTurn = np.zeros(2)
+
+                if moves[i]["game"].turn == 1:
+                    gameTurn[0] = 1
+                elif moves[i]["game"].turn == -1:
+                    gameTurn[1] = 1
+
+                flattenBoard = np.concatenate((goatBoard, tigerBoard, sourceX, sourceY, targetX, targetY, goatCaptured, goatCounter, tigerTrap, gameTurn), axis=None)
+
+                predictedValue.append(self.model.predict(flattenBoard))
+
+            
+            return predictedValue
+        
