@@ -44,11 +44,11 @@ class Model:
             self.model.add(keras.layers.InputLayer(input_shape = (74,)))
             self.model.add(keras.layers.Dense(74, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(8, kernel_initializer = keras.initializers.HeUniform()))
+            self.model.add(keras.layers.Dense(10, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(3, kernel_initializer = keras.initializers.HeUniform()))
+            self.model.add(keras.layers.Dense(10, kernel_initializer = keras.initializers.HeUniform()))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(1, activation='linear'))
+            self.model.add(keras.layers.Dense(121, activation='linear'))
             self.model.compile(optimizer= self.optimizer, loss=keras.losses.Huber(), metrics=['mae'])
 
             self.model.summary()
@@ -152,7 +152,7 @@ class Model:
             trainX[index, :] = data[0:74]
             trainY[index, :] = currentReward
         
-        # mainModel.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
+        mainModel.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
 
 
 
