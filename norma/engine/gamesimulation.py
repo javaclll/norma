@@ -162,7 +162,7 @@ class Simulator:
                     totalTrainingReward += 1
 
                     if targetUpdate >= 100:
-                        self.targetModel = self.mainModel.model.get_weights()
+                        self.targetModel.model.set_weights(self.mainModel.model.get_weights())
                         
                         self.targetModel.model.save(TARGETMODELPATH)
                         print(f"Target Model Saved at {targetUpdate} targets and {simNo} sims")
@@ -211,7 +211,8 @@ class Simulator:
                 moves.append({"game": self.game,"source": source, "target": target})
                 # find the max reward and use that move in the game
             
-            prediction = self.targetModel.predict(moves)
+            prediction = self.mainModel.predict(moves)
+            print(prediction)
             action = np.argmax(prediction)
             
             move = possibleMoves[action]
@@ -227,38 +228,42 @@ class Simulator:
         possibleMoves = self.game.get_possible_moves()
 
         moves = []
-        
-        for move in possibleMoves:
-            sourceX = np.zeros(5)
-            sourceY = np.zeros(5)
 
-            targetX = np.zeros(5)
-            targetY = np.zeros(5)
+        if len(possibleMoves) != 0:
+            for move in possibleMoves:
+                sourceX = np.zeros(5)
+                sourceY = np.zeros(5)
 
-            target = np.zeros((5,5))
+                targetX = np.zeros(5)
+                targetY = np.zeros(5)
 
-            targetX[move["move"][1][0]] = 1
-            targetY[move["move"][1][1]] = 1
+                target = np.zeros((5,5))
+
+                targetX[move["move"][1][0]] = 1
+                targetY[move["move"][1][1]] = 1
+                
+
+                if move["move"][0] is not None:
+                    sourceX[move["move"][0][0]] = 1
+                    sourceY[move["move"][0][1]] = 1
+                        
+
+                source = {"x": sourceX, "y": sourceY}
+                target = {"x": targetX, "y": targetY}
+                # model.predict(state, action) => get reward
+                moves.append({"game": self.game, "source": source, "target": target})
+                # find the max reward and use that move in the game
             
+            prediction = self.mainModel.predict(moves)
+            print(prediction)
 
-            if move["move"][0] is not None:
-                sourceX[move["move"][0][0]] = 1
-                sourceY[move["move"][0][1]] = 1
-                    
+            action = np.argmax(prediction)
+            
+            move = possibleMoves[action]
+        else:
+            move = None
+            action = None
 
-            source = {"x": sourceX, "y": sourceY}
-            target = {"x": targetX, "y": targetY}
-            # model.predict(state, action) => get reward
-            moves.append({"game": self.game, "source": source, "target": target})
-            # find the max reward and use that move in the game
-        
-        prediction = self.targetModel.predict(moves)
-        print(prediction)
-
-        action = np.argmax(prediction)
-        
-        move = possibleMoves[action]
-        
         return move, action
 
         #find the predicted values for the moves ....
