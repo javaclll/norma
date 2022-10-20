@@ -115,44 +115,47 @@ class Model:
     @abstractmethod
     def training(replayMemory, mainModel, targetModel, done):
 
-        print("Here")
         noOfData = len(replayMemory)
 
         affectFactor = 0.7
-        MINREPLAYSIZE = 1000
-        print(noOfData)
+        MINREPLAYSIZE = 1500
         if noOfData < MINREPLAYSIZE:
             return
 
-        print("Here3")
-        print("Here3")
         
-        batchSize = 128
+        batchSize = 1000
 
         miniBatch = random.sample(replayMemory, batchSize)
 
-        currentState = np.array([data[0:74] for data in miniBatch])
+        for data in miniBatch:
+            print("Current : ", data[0][0:74])
+            print("Future :", data[0][74:148])
+            print("Reward, Done : ", data[0][-2:])
+        
+        currentState = np.array([data[0][0:74] for data in miniBatch])
         currentRewardList = mainModel.model.predict(currentState)
-    
-        newStates = np.array([data[74:148] for data in miniBatch])
+
+        newStates = np.array([data[0][74:148] for data in miniBatch])
         futureRewardList = mainModel.model.predict(newStates)
 
         trainX = np.zeros((batchSize, 74))
         trainY = np.zeros((batchSize,1))
 
         for index, data in enumerate(miniBatch):
-            print("Here 2")
-            if not data[-1]:
-                maxFutureReward = data[-2] + DISCOUNTFACTOR * futureRewardList[index]
+            if not data[0][-1]:
+                maxFutureReward = data[0][-2] - DISCOUNTFACTOR * futureRewardList[index]
             else:
-                maxFutureReward = data[-2]
+                maxFutureReward = data[0][-2]
+            
+            print("Max Future Reward: ", maxFutureReward)
 
             currentReward = (1 - affectFactor) * currentRewardList[index] + affectFactor * maxFutureReward
+            print("Current Reward: ", currentReward)
 
-            trainX[index, :] = data[0:74]
+            trainX[index, :] = data[0][0:74]
             trainY[index, :] = currentReward
         
-        # mainModel.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
+        mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
 
 
 
