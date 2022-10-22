@@ -5,7 +5,7 @@ from random import random, randint
 from functools import reduce
 import numpy as np
 from collections import deque
-from .helpers import movestoAction, actionToDoableMove
+from .helpers import movestoAction
 import math
 
 #Length for DeQue
@@ -30,10 +30,14 @@ G_LOSE = -10
 class Simulator:
     def __init__(self, targetModel = Model(), mainModel = Model()):
         self.game = Bagchal.new()
-        self.replayMemory = deque(maxlen= MAXLEN)
-        self.epsilon = 1
+        self.replayMemory = []
+        self.goatEpsilon = 1
+        self.tigerEpsilon = 1
         self.mainModel = mainModel
         self.targetModel = targetModel
+        self.goatWins = 0
+        self.draws = 0
+        self.tigerWins = 0
 
     def rewardCalculator(self):
 
@@ -43,7 +47,7 @@ class Simulator:
         prevTrapTiger = self.game.trapped_tiger
         prevGoatCapture = self.game.goat_captured
 
-        move, action, possibleActions = self.move()
+        move, action = self.move()
         
         currentTrapTiger = self.game.trapped_tiger
         currentGoatCapture = self.game.goat_captured
@@ -67,38 +71,53 @@ class Simulator:
                 indivReward += T_TRAP_ESCAPE
 
         if self.game.game_state == GameState.GOAT_WON.value:
+            self.goatWins += 1
             if turn == 1:
                 indivReward += G_WIN
             else:
                 indivReward += T_LOSE
         
         elif self.game.game_state == GameState.TIGER_WON.value:
+            self.tigerWins += 1
             if turn == 1:
                 indivReward += G_LOSE
             else:
                 indivReward += T_WIN
 
+        elif self.game.game_state == GameState.DRAW.value:
+            self.draws += 1
 
-        return action, indivReward, possibleActions
 
-    def simulate(self, noOfSims = NUMSIMS):
+        return action, indivReward
 
+    def simulate(self, noOfSims = NUMSIMS, targetModel = None, startSimNo = 0):
         maxEpsilon = 1
         minEpsilon = 0.01
-        decay = 0.01
+        goatDecay = 0.0025
+        tigerDecay = 0.01
 
-        self.targetModel.model.set_weights(self.mainModel.model.get_weights())
+        if targetModel == None:
+            self.targetModel.model.set_weights(self.mainModel.model.get_weights())
+        else:
+            self.targetModel.model.set_weights(targetModel.get_weights())
+            self.mainModel.model.set_weights(self.targetModel.model.get_weights())
+
+            self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * simNo)
+            self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * simNo)  
 
         targetUpdate = 0
-        
-        for simNo in range(noOfSims):
+        noOfSims += startSimNo
+
+        for simNo in range(startSimNo, noOfSims):
             totalTrainingReward = 0
+
             self.game = Bagchal.new()
 
+            goatWon = False
             done = False
-
+            prevSelfreplay = len(self.replayMemory)
             while not done:
-                print(f"No of Sims: {simNo}")
+                print(f"No of Sims: {simNo + 1}")
                 print(f"Target Update: {targetUpdate}")
                 print()
 
@@ -124,10 +143,15 @@ class Simulator:
                 prevGoatCapture = np.zeros(5)
                 prevGoatCapture[self.game.goat_captured - 1] = 1
 
-                action, indivReward, possibleActions = self.rewardCalculator()
+                action, indivReward = self.rewardCalculator()
                 
                 if self.game.game_status_check()["decided"] or len(self.game.game_history) > 100:
                     done = True
+                    
+                    if self.game.game_state == GameState.GOAT_WON.value:
+                        goatWon = True
+                
+                print(f"Total Goat Win, Tiger Wins, Draws: {self.goatWins, self.tigerWins, self.draws} in {simNo + 1} Simulations.")
 
                 futureBoard = np.array(reduce(lambda z, y :z + y, self.game.board))
                 futureGoatBoard = (futureBoard == 1) * 1
@@ -154,13 +178,19 @@ class Simulator:
                     (goatBoard, tigerBoard, prevTrapTiger, prevGoatCapture, placedGoat, turn, action, futureGoatBoard, futureTigerBoard, futureTrapTiger, futureGoatCapture, futureplacedGoat, futureTurn, 
                     indivReward, done), axis=None).reshape((1,-1))
                 
-                self.replayMemory.append([possibleMoves, flattenBoard, possibleActions])
+                self.replayMemory.append([possibleMoves, flattenBoard])
                 
+                if goatWon:
+                    self.replayMemory.extend(self.replayMemory[prevSelfreplay - len(self.replayMemory):])
+                    self.replayMemory.extend(self.replayMemory[prevSelfreplay - len(self.replayMemory):])
+                    self.replayMemory.extend(self.replayMemory[prevSelfreplay - len(self.replayMemory):])
+                    self.replayMemory.extend(self.replayMemory[prevSelfreplay - len(self.replayMemory):])
+
                 if targetUpdate % 4 == 0 or done:
                     Model.training(replayMemory = self.replayMemory, mainModel = self.mainModel, targetModel= self.targetModel, done = done)
 
                 totalTrainingReward += indivReward
-                print(f"Total Training Rewards: {totalTrainingReward} after {simNo} steps.")
+                print(f"Total Training Rewards: {totalTrainingReward} after {simNo + 1} steps.")
 
                 if done:
                     totalTrainingReward += 1
@@ -169,38 +199,38 @@ class Simulator:
                         self.targetModel.model.set_weights(self.mainModel.model.get_weights())
                         
                         self.targetModel.model.save(TARGETMODELPATH)
-                        print(f"Target Model Saved at {targetUpdate} targets and {simNo} sims")
+                        print(f"Target Model Saved at {targetUpdate} targets and {simNo + 1} sims")
 
                         targetUpdate = 0
                     break
             
-            self.epsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-decay * simNo)
+            self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * simNo)
+            self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * simNo)
         
 
 
     def moveState(self):
            
         possibleMoves = self.game.get_possible_moves()
-
-        if random() < self.epsilon:
+        
+        randNumber = random()
+        
+        if (randNumber < self.goatEpsilon and self.game.turn == 1) or (randNumber < self.tigerEpsilon and self.game.turn == -1):
 
             maxMoves = len(possibleMoves) - 1
 
             move = possibleMoves[randint(0, maxMoves)]
-            print(move["move"])
 
             action = movestoAction(move["move"][0], move["move"][1])
             
         else:
             actions = []
+            for move in possibleMoves:
+                actions.append(movestoAction(move["move"][0], move["move"][1]))
+
             prediction = self.mainModel.predict(self.game)[0]
             
             action = np.argmax(prediction)
-
-            for move in possibleMoves:
-                print(move["move"])
-
-                actions.append(movestoAction(move["move"][0], move["move"][1]))
             
             while action not in actions:
 
@@ -211,7 +241,7 @@ class Simulator:
             
             move = possibleMoves[moveIndex]
         
-        return move, action, actions
+        return move, action
 
         #find the predicted values for the moves ....
         #get the next board state from the current board state
@@ -252,7 +282,7 @@ class Simulator:
 
     def move(self):
 
-        move, action, possibleActions = self.moveState()
+        move, action = self.moveState()
         self.game.move(move["move"][0], move["move"][1])
         
-        return move, action, possibleActions
+        return move, action

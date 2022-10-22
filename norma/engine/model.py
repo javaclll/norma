@@ -58,7 +58,7 @@ class Model:
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
             self.model.add(keras.layers.Dense(30, kernel_initializer = initializer))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense(ACTIONSPACE, activation='linear', kernel_initializer = initializer))
+            self.model.add(keras.layers.Dense((ACTIONSPACEACTIONSPACE, activation='linear', kernel_initializer = initializer))
             self.model.compile(optimizer= optimizer, loss=keras.losses.Huber(), metrics=['accuracy'])
     
             self.model.summary()
@@ -102,17 +102,14 @@ class Model:
 
         miniBatch = random.sample(replayMemory, batchSize)
         miniBatchPossibleMoves = []
-        miniBatchActions = []
         miniBatchMemory = []
 
         for data in miniBatch:
             miniBatchPossibleMoves.append(data[0])
             miniBatchMemory.append(data[1])
-            miniBatchActions(data[2])
         
         currentState = np.array([data[0][0:OBSERVATIONSPACE] for data in miniBatchMemory])
         currentActionList = mainModel.model.predict(currentState)
-
 
         newStates = np.array([data[0][OBSERVATIONSPACE + 1:OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
         futureActionList = mainModel.model.predict(newStates)
@@ -126,6 +123,7 @@ class Model:
                 action = np.argmax(futureActionList[index])
 
                 for move in miniBatchPossibleMoves[index]:
+
                     actions.append(movestoAction(move["move"][0], move["move"][1]))
 
                 while action not in actions:
@@ -134,15 +132,14 @@ class Model:
                 
                 predictedTargetFuture = targetModel.model.predict(data[0][OBSERVATIONSPACE + 1: (OBSERVATIONSPACE * 2) + 1].reshape(1, -1))[0][action]
                 maxFutureReward = data[0][-2] - DISCOUNTFACTOR * predictedTargetFuture
-
+            
             else:
                 maxFutureReward = data[0][-2]
             
+
             currentReward = currentActionList[index]
 
-            for currentAction in miniBatchActions[index]:
-                currentReward[currentAction] = -math.inf
-            
+
             currentReward[int(data[0][OBSERVATIONSPACE])] = (1 - affectFactor) * currentReward[int(data[0][OBSERVATIONSPACE])] + affectFactor * maxFutureReward
 
             trainX[index, :] = data[0][0:OBSERVATIONSPACE]

@@ -12,13 +12,14 @@ import math
 import tensorflow
 
 def loadModel():
-    if os.path.exists(MODELPATH):
+    if os.path.exists(TARGETMODELPATH):
         savedModel = tensorflow.keras.models.load_model(TARGETMODELPATH)
     else:
         simulator = Simulator()
         simulator.simulate()
         savedModel = simulator.targetModel.model
-        
+    
+    print("Model Loaded")
     return savedModel
 
 def get_best_move_pgn(bagchal: Bagchal):
