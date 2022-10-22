@@ -58,7 +58,7 @@ class Model:
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
             self.model.add(keras.layers.Dense(30, kernel_initializer = initializer))
             self.model.add(keras.layers.LeakyReLU(alpha=0.3))
-            self.model.add(keras.layers.Dense((ACTIONSPACE, activation='linear', kernel_initializer = initializer))
+            self.model.add(keras.layers.Dense(ACTIONSPACE, activation='linear', kernel_initializer = initializer))
             self.model.compile(optimizer= optimizer, loss=keras.losses.Huber(), metrics=['accuracy'])
     
             self.model.summary()
