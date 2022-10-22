@@ -1,3 +1,4 @@
+from .helpers import movestoAction
 from .constants import MODELPATH, TARGETMODELPATH
 from .model import Model
 from .gamesimulation import Simulator
@@ -6,8 +7,9 @@ import rel
 import websocket
 from bagchal import Bagchal
 import os
-import tensorflow
 import numpy as np
+import math
+import tensorflow
 
 def loadModel():
     if os.path.exists(MODELPATH):
@@ -27,36 +29,22 @@ def get_best_move_pgn(bagchal: Bagchal):
 
     predictionModel = Model(savedModel=savedModel)
 
-    moves = []
+    actions = []
+       
+    prediction = predictionModel.predict(bagchal)[0]
+
+    action = np.argmax(prediction)
+
     for move in possibleMoves:
+        actions.append(movestoAction(move["move"][0], move["move"][1]))
+            
+    while action not in actions:
+        prediction[action] = - math.inf
+        action = np.argmax(prediction)
 
-        sourceX = np.zeros(5)
-        sourceY = np.zeros(5)
-
-        targetX = np.zeros(5)
-        targetY = np.zeros(5)
-
-        target = np.zeros((5,5))
-
-        targetX[move["move"][1][0]] = 1
-        targetY[move["move"][1][1]] = 1
-        
-
-        if move["move"][0] is not None:
-            sourceX[move["move"][0][0]] = 1
-            sourceY[move["move"][0][1]] = 1
-                
-
-        source = {"x": sourceX, "y": sourceY}
-        target = {"x": targetX, "y": targetY}
-        # model.predict(state, action) => get reward
-        moves.append({"game": bagchal, "source": source, "target": target})
-                # find the max reward and use that move in the game
-    prediction = predictionModel.predict(moves)
-
-    bestMoveIndex = np.argmax(prediction)
-
-    move = possibleMoves[bestMoveIndex]["resulting_state"].prev_move
+    moveIndex = actions.index(action)
+            
+    move = possibleMoves[moveIndex]["resulting_state"].prev_move
 
     return Bagchal.coord_to_png_unit(*move)
 

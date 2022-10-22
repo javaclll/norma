@@ -5,7 +5,8 @@ from random import random, randint
 from functools import reduce
 import numpy as np
 from collections import deque
-from helpers import movestoAction
+from .helpers import movestoAction, actionToDoableMove
+import math
 
 #Length for DeQue
 MAXLEN = 50000
@@ -42,7 +43,7 @@ class Simulator:
         prevTrapTiger = self.game.trapped_tiger
         prevGoatCapture = self.game.goat_captured
 
-        move, action = self.move()
+        move, action, possibleActions = self.move()
         
         currentTrapTiger = self.game.trapped_tiger
         currentGoatCapture = self.game.goat_captured
@@ -78,7 +79,7 @@ class Simulator:
                 indivReward += T_WIN
 
 
-        return action, indivReward
+        return action, indivReward, possibleActions
 
     def simulate(self, noOfSims = NUMSIMS):
 
@@ -102,8 +103,9 @@ class Simulator:
                 print()
 
                 targetUpdate += 1
-
+                
                 flattenBoard = np.array(reduce(lambda z, y :z + y, self.game.board))
+
                 goatBoard = (flattenBoard == 1) * 1
                 tigerBoard = (flattenBoard == -1) * 1
 
@@ -122,7 +124,7 @@ class Simulator:
                 prevGoatCapture = np.zeros(5)
                 prevGoatCapture[self.game.goat_captured - 1] = 1
 
-                action, indivReward = self.rewardCalculator()
+                action, indivReward, possibleActions = self.rewardCalculator()
                 
                 if self.game.game_status_check()["decided"] or len(self.game.game_history) > 100:
                     done = True
@@ -145,12 +147,14 @@ class Simulator:
                 
                 futureGoatCapture = np.zeros(5)
                 futureGoatCapture[self.game.goat_captured - 1] = 1
+                
+                possibleMoves = self.game.get_possible_moves()
 
                 flattenBoard = np.concatenate(
                     (goatBoard, tigerBoard, prevTrapTiger, prevGoatCapture, placedGoat, turn, action, futureGoatBoard, futureTigerBoard, futureTrapTiger, futureGoatCapture, futureplacedGoat, futureTurn, 
                     indivReward, done), axis=None).reshape((1,-1))
                 
-                self.replayMemory.append(flattenBoard)
+                self.replayMemory.append([possibleMoves, flattenBoard, possibleActions])
                 
                 if targetUpdate % 4 == 0 or done:
                     Model.training(replayMemory = self.replayMemory, mainModel = self.mainModel, targetModel= self.targetModel, done = done)
@@ -183,41 +187,31 @@ class Simulator:
             maxMoves = len(possibleMoves) - 1
 
             move = possibleMoves[randint(0, maxMoves)]
+            print(move["move"])
 
-            action = movestoAction(move["move"][0], move["move"][0])
-
+            action = movestoAction(move["move"][0], move["move"][1])
+            
         else:
-            moves = []
-            for move in possibleMoves:
-
-                sourceX = np.zeros(5)
-                sourceY = np.zeros(5)
-
-                targetX = np.zeros(5)
-                targetY = np.zeros(5)
-
-                targetX[move["move"][1][0]] = 1
-                targetY[move["move"][1][1]] = 1
-                
-
-                if move["move"][0] is not None:
-                    sourceX[move["move"][0][0]] = 1
-                    sourceY[move["move"][0][1]] = 1
-                        
-
-                source = {"x": sourceX, "y": sourceY}
-                target = {"x": targetX, "y": targetY}
-                # model.predict(state, action) => get reward
-                moves.append({"game": self.game,"source": source, "target": target})
-                # find the max reward and use that move in the game
+            actions = []
+            prediction = self.mainModel.predict(self.game)[0]
             
-            prediction = self.mainModel.predict(moves)
-            print(prediction)
             action = np.argmax(prediction)
+
+            for move in possibleMoves:
+                print(move["move"])
+
+                actions.append(movestoAction(move["move"][0], move["move"][1]))
             
-            move = possibleMoves[action]
+            while action not in actions:
+
+                prediction[action] = - math.inf
+                action = np.argmax(prediction)
+
+            moveIndex = actions.index(action)
+            
+            move = possibleMoves[moveIndex]
         
-        return move, action
+        return move, action, actions
 
         #find the predicted values for the moves ....
         #get the next board state from the current board state
@@ -227,39 +221,25 @@ class Simulator:
    
         possibleMoves = self.game.get_possible_moves()
 
-        moves = []
-
         if len(possibleMoves) != 0:
-            for move in possibleMoves:
-                sourceX = np.zeros(5)
-                sourceY = np.zeros(5)
 
-                targetX = np.zeros(5)
-                targetY = np.zeros(5)
-
-                target = np.zeros((5,5))
-
-                targetX[move["move"][1][0]] = 1
-                targetY[move["move"][1][1]] = 1
-                
-
-                if move["move"][0] is not None:
-                    sourceX[move["move"][0][0]] = 1
-                    sourceY[move["move"][0][1]] = 1
-                        
-
-                source = {"x": sourceX, "y": sourceY}
-                target = {"x": targetX, "y": targetY}
-                # model.predict(state, action) => get reward
-                moves.append({"game": self.game, "source": source, "target": target})
-                # find the max reward and use that move in the game
+            actions = []
+            prediction = self.mainModel.predict(self.game)[0]
             
-            prediction = self.mainModel.predict(moves)
-            print(prediction)
-
             action = np.argmax(prediction)
+
+            for move in possibleMoves:
+                actions.append(movestoAction(move["move"][0], move["move"][1]))
             
-            move = possibleMoves[action]
+            while action not in actions:
+
+                prediction[action] = - math.inf
+                action = np.argmax(prediction)
+
+            moveIndex = actions.index(action)
+            
+            move = possibleMoves[moveIndex]
+        
         else:
             move = None
             action = None
@@ -272,7 +252,7 @@ class Simulator:
 
     def move(self):
 
-        move, action = self.moveState()
+        move, action, possibleActions = self.moveState()
         self.game.move(move["move"][0], move["move"][1])
         
-        return move, action
+        return move, action, possibleActions
