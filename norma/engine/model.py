@@ -96,7 +96,6 @@ class Model:
         batchSize = 1000
         if noOfData < batchSize:
             return
-
         
         batchSize = 1000
 
@@ -137,6 +136,65 @@ class Model:
                 maxFutureReward = data[0][-2]
             
 
+            currentReward = currentActionList[index]
+
+
+            currentReward[int(data[0][OBSERVATIONSPACE])] = (1 - affectFactor) * currentReward[int(data[0][OBSERVATIONSPACE])] + affectFactor * maxFutureReward
+
+            trainX[index, :] = data[0][0:OBSERVATIONSPACE]
+            trainY[index, :] = currentReward
+        
+        mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
+
+
+    @abstractmethod
+    def goatTraining(replayMemory, mainModel, targetModel, done):
+
+        noOfData = len(replayMemory)
+
+        affectFactor = 1
+        batchSize = 1000
+        if noOfData < batchSize:
+            return
+        
+        batchSize = 1000
+
+        miniBatch = random.sample(replayMemory, batchSize)
+        miniBatchPossibleMoves = []
+        miniBatchMemory = []
+
+        for data in miniBatch:
+            miniBatchPossibleMoves.append(data[0])
+            miniBatchMemory.append(data[1])
+        
+        currentState = np.array([data[0][0:OBSERVATIONSPACE] for data in miniBatchMemory])
+        currentActionList = mainModel.model.predict(currentState)
+
+        newStates = np.array([data[0][OBSERVATIONSPACE + 1:OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
+        futureActionList = mainModel.model.predict(newStates)
+
+        trainX = np.zeros((batchSize, OBSERVATIONSPACE))
+        trainY = np.zeros((batchSize, ACTIONSPACE))
+
+        for index, data in enumerate(miniBatchMemory):
+            if not data[0][-1]:
+                actions = []
+                action = np.argmax(futureActionList[index])
+
+                for move in miniBatchPossibleMoves[index]:
+
+                    actions.append(movestoAction(move["move"][0], move["move"][1]))
+
+                while action not in actions:
+                    futureActionList[index][action] = - math.inf
+                    action = np.argmax(futureActionList[index])
+                
+                predictedTargetFuture = targetModel.model.predict(data[0][OBSERVATIONSPACE + 1: (OBSERVATIONSPACE * 2) + 1].reshape(1, -1))[0][action]
+                maxFutureReward = data[0][-2] + DISCOUNTFACTOR * predictedTargetFuture
+            
+            else:
+                maxFutureReward = data[0][-2]
+            
             currentReward = currentActionList[index]
 
 

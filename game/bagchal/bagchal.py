@@ -5,20 +5,20 @@ from .enums import GameState
 from .exception import GameException
 
 # For Tiger
-T_GOAT_CAPTURE = 2
-T_GOT_TRAPPED = -1
-T_TRAP_ESCAPE = 0.5
+T_GOAT_CAPTURE = 4
+T_GOT_TRAPPED = -2
+T_TRAP_ESCAPE = 2
 T_WIN = 5
 T_LOSE = -5
-T_DRAW = -3
+T_DRAW = 0
 
 # For Goat
-G_GOAT_CAPTURED = -2
-G_TIGER_TRAP = 1
-G_TIGER_ESCAPE = -0.5
-G_WIN = 5
-G_LOSE = -5
-G_DRAW = -3
+G_GOAT_CAPTURED = -4
+G_TIGER_TRAP = 5
+G_TIGER_ESCAPE = -1
+G_WIN = 10
+G_LOSE = -10
+G_DRAW = 0
 
 # Max Moves
 MAX_MOVES = 100

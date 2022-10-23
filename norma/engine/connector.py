@@ -1,5 +1,5 @@
 from .helpers import movestoAction
-from .constants import MODELPATH, TARGETMODELPATH
+from .constants import GOATMODELPATH, MODELPATH, TARGETMODELPATH
 from .model import Model
 from .gamesimulation import Simulator
 import json
@@ -11,14 +11,14 @@ import numpy as np
 import math
 import tensorflow
 
-def loadModel():
-    if os.path.exists(TARGETMODELPATH):
-        savedModel = tensorflow.keras.models.load_model(TARGETMODELPATH)
+def loadModel(path):
+    if os.path.exists(path):
+        savedModel = tensorflow.keras.models.load_model(path)
     else:
         simulator = Simulator()
         simulator.simulate()
         savedModel = simulator.targetModel.model
-    
+    print(path)
     print("Model Loaded")
     return savedModel
 
@@ -26,7 +26,10 @@ def get_best_move_pgn(bagchal: Bagchal):
 
     possibleMoves = bagchal.get_possible_moves()
 
-    savedModel = loadModel()
+    if bagchal.turn == 1:
+        savedModel = loadModel(GOATMODELPATH)
+    else:
+        savedModel = loadModel(TARGETMODELPATH)
 
     predictionModel = Model(savedModel=savedModel)
 

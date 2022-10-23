@@ -1,4 +1,6 @@
 import sys
+
+from .model import Model
 from .connector import launch_executor
 from .gamesimulation import Simulator
 import os
@@ -16,6 +18,12 @@ if sys.argv[1] == "train":
         if (sys.argv[2] == "clean"):
             simulator = Simulator()
             simulator.simulate()
+
+        elif (sys.argv[2] == "goat"):
+            tigerModel = Model()
+            tigerModel.model.set_weights(tensorflow.keras.models.load_model(TARGETMODELPATH).get_weights())
+            simulator = Simulator(tigerModel=tigerModel)
+            simulator.goatsimulate()
     else: 
         if not os.path.exists(TARGETMODELPATH):
             simulator = Simulator()
@@ -23,7 +31,7 @@ if sys.argv[1] == "train":
         else:
             loadModel = tensorflow.keras.models.load_model(TARGETMODELPATH)
             simulator = Simulator()
-            simulator.simulate(targetModel= loadModel, startSimNo= 533)
+            simulator.simulate(targetModel= loadModel)
         
 
 elif sys.argv[1] == "serve":
