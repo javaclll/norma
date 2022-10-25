@@ -23,8 +23,8 @@ G_TIGER_ESCAPE = -1
 
 #Common 
 G_WIN = 10
-T_WIN = 5
-T_LOSE = -5
+T_WIN = 10
+T_LOSE = -10
 G_LOSE = -10
 
 
@@ -98,7 +98,7 @@ class Simulator:
 
         maxEpsilon = 1
         minEpsilon = 0.01
-        goatDecay = 0.0025
+        goatDecay = 0.01
         tigerDecay = 0.01
 
         self.targetGoatModel.model.set_weights(self.mainGoatModel.model.get_weights())
