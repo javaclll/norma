@@ -69,36 +69,31 @@ class Model:
             goatBoard = (flattenBoard == 1) * 1
             tigerBoard = (flattenBoard == -1) * 1
             
-            goatCaptured = np.zeros(5)
+            goatCaptured = np.zeros(6)
             
-            goatCaptured[game.goat_captured - 1] = 1
+            goatCaptured[game.goat_captured] = 1
 
-            goatCounter = np.zeros(20)
-            goatCounter[game.goat_counter - 1] = 1
+            goatCounter = np.zeros(21)
+            goatCounter[game.goat_counter] = 1
 
-            tigerTrap = np.zeros(4)
-            tigerTrap[game.trapped_tiger - 1] = 1
+            tigerTrap = np.zeros(5)
+            tigerTrap[game.trapped_tiger] = 1
 
-            gameTurn = np.zeros(2)
-            gameTurn[game.turn - 1] = 1
-
-            predictTensor = np.concatenate((goatBoard, tigerBoard, tigerTrap, goatCaptured, goatCounter, gameTurn), axis=None)
+            predictTensor = np.concatenate((goatBoard, tigerBoard, tigerTrap, goatCaptured, goatCounter), axis=None)
 
             predictedValue = self.model.predict(predictTensor.reshape(1,-1))
             return predictedValue
 
     @abstractmethod
-    def training(replayMemory, mainModel, targetModel, done):
+    def training(replayMemory, mainModel, opponentTargetModel, done):
 
         noOfData = len(replayMemory)
 
         affectFactor = 0.7
-        batchSize = 1000
+        batchSize = 512
         if noOfData < batchSize:
             return
         
-        batchSize = 1000
-
         miniBatch = random.sample(replayMemory, batchSize)
         miniBatchPossibleMoves = []
         miniBatchMemory = []
@@ -106,12 +101,14 @@ class Model:
         for data in miniBatch:
             miniBatchPossibleMoves.append(data[0])
             miniBatchMemory.append(data[1])
-        
+        print(miniBatch[0][1][0][0:OBSERVATIONSPACE])
+        print(miniBatch[0][1][0][OBSERVATIONSPACE + 1:(OBSERVATIONSPACE * 2) + 1])
+
         currentState = np.array([data[0][0:OBSERVATIONSPACE] for data in miniBatchMemory])
         currentActionList = mainModel.model.predict(currentState)
 
-        newStates = np.array([data[0][OBSERVATIONSPACE + 1:OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
-        futureActionList = mainModel.model.predict(newStates)
+        newStates = np.array([data[0][OBSERVATIONSPACE + 1 : OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
+        futureActionList = opponentTargetModel.model.predict(newStates)
 
         trainX = np.zeros((batchSize, OBSERVATIONSPACE))
         trainY = np.zeros((batchSize, ACTIONSPACE))
@@ -129,15 +126,13 @@ class Model:
                     futureActionList[index][action] = - math.inf
                     action = np.argmax(futureActionList[index])
                 
-                predictedTargetFuture = targetModel.model.predict(data[0][OBSERVATIONSPACE + 1: (OBSERVATIONSPACE * 2) + 1].reshape(1, -1))[0][action]
+                predictedTargetFuture = futureActionList[index][action]
                 maxFutureReward = data[0][-2] - DISCOUNTFACTOR * predictedTargetFuture
             
             else:
                 maxFutureReward = data[0][-2]
             
-
             currentReward = currentActionList[index]
-
 
             currentReward[int(data[0][OBSERVATIONSPACE])] = (1 - affectFactor) * currentReward[int(data[0][OBSERVATIONSPACE])] + affectFactor * maxFutureReward
 
@@ -147,63 +142,63 @@ class Model:
         mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
 
 
-    @abstractmethod
-    def goatTraining(replayMemory, mainModel, targetModel, done):
+    # @abstractmethod
+    # def goatTraining(replayMemory, mainModel, targetModel, done):
 
-        noOfData = len(replayMemory)
+    #     noOfData = len(replayMemory)
 
-        affectFactor = 1
-        batchSize = 1000
-        if noOfData < batchSize:
-            return
+    #     affectFactor = 1
+    #     batchSize = 1000
+    #     if noOfData < batchSize:
+    #         return
         
-        batchSize = 1000
+    #     batchSize = 1000
 
-        miniBatch = random.sample(replayMemory, batchSize)
-        miniBatchPossibleMoves = []
-        miniBatchMemory = []
+    #     miniBatch = random.sample(replayMemory, batchSize)
+    #     miniBatchPossibleMoves = []
+    #     miniBatchMemory = []
 
-        for data in miniBatch:
-            miniBatchPossibleMoves.append(data[0])
-            miniBatchMemory.append(data[1])
+    #     for data in miniBatch:
+    #         miniBatchPossibleMoves.append(data[0])
+    #         miniBatchMemory.append(data[1])
         
-        currentState = np.array([data[0][0:OBSERVATIONSPACE] for data in miniBatchMemory])
-        currentActionList = mainModel.model.predict(currentState)
+    #     currentState = np.array([data[0][0:OBSERVATIONSPACE] for data in miniBatchMemory])
+    #     currentActionList = mainModel.model.predict(currentState)
 
-        newStates = np.array([data[0][OBSERVATIONSPACE + 1:OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
-        futureActionList = mainModel.model.predict(newStates)
+    #     newStates = np.array([data[0][OBSERVATIONSPACE + 1:OBSERVATIONSPACE + OBSERVATIONSPACE + 1] for data in miniBatchMemory])
+    #     futureActionList = mainModel.model.predict(newStates)
 
-        trainX = np.zeros((batchSize, OBSERVATIONSPACE))
-        trainY = np.zeros((batchSize, ACTIONSPACE))
+    #     trainX = np.zeros((batchSize, OBSERVATIONSPACE))
+    #     trainY = np.zeros((batchSize, ACTIONSPACE))
 
-        for index, data in enumerate(miniBatchMemory):
-            if not data[0][-1]:
-                actions = []
-                action = np.argmax(futureActionList[index])
+    #     for index, data in enumerate(miniBatchMemory):
+    #         if not data[0][-1]:
+    #             actions = []
+    #             action = np.argmax(futureActionList[index])
 
-                for move in miniBatchPossibleMoves[index]:
+    #             for move in miniBatchPossibleMoves[index]:
 
-                    actions.append(movestoAction(move["move"][0], move["move"][1]))
+    #                 actions.append(movestoAction(move["move"][0], move["move"][1]))
 
-                while action not in actions:
-                    futureActionList[index][action] = - math.inf
-                    action = np.argmax(futureActionList[index])
+    #             while action not in actions:
+    #                 futureActionList[index][action] = - math.inf
+    #                 action = np.argmax(futureActionList[index])
                 
-                predictedTargetFuture = targetModel.model.predict(data[0][OBSERVATIONSPACE + 1: (OBSERVATIONSPACE * 2) + 1].reshape(1, -1))[0][action]
-                maxFutureReward = data[0][-2] + DISCOUNTFACTOR * predictedTargetFuture
+    #             predictedTargetFuture = targetModel.model.predict(data[0][OBSERVATIONSPACE + 1: (OBSERVATIONSPACE * 2) + 1].reshape(1, -1))[0][action]
+    #             maxFutureReward = data[0][-2] + DISCOUNTFACTOR * predictedTargetFuture
             
-            else:
-                maxFutureReward = data[0][-2]
+    #         else:
+    #             maxFutureReward = data[0][-2]
             
-            currentReward = currentActionList[index]
+    #         currentReward = currentActionList[index]
 
 
-            currentReward[int(data[0][OBSERVATIONSPACE])] = (1 - affectFactor) * currentReward[int(data[0][OBSERVATIONSPACE])] + affectFactor * maxFutureReward
+    #         currentReward[int(data[0][OBSERVATIONSPACE])] = (1 - affectFactor) * currentReward[int(data[0][OBSERVATIONSPACE])] + affectFactor * maxFutureReward
 
-            trainX[index, :] = data[0][0:OBSERVATIONSPACE]
-            trainY[index, :] = currentReward
+    #         trainX[index, :] = data[0][0:OBSERVATIONSPACE]
+    #         trainY[index, :] = currentReward
         
-        mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
+    #     mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
 
 
 

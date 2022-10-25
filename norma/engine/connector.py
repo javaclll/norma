@@ -1,5 +1,5 @@
 from .helpers import movestoAction
-from .constants import GOATMODELPATH, MODELPATH, TARGETMODELPATH
+from .constants import GOATMODELPATH, MODELPATH, TARGETMODELPATH, TIGERMODELPATH
 from .model import Model
 from .gamesimulation import Simulator
 import json
@@ -29,7 +29,7 @@ def get_best_move_pgn(bagchal: Bagchal):
     if bagchal.turn == 1:
         savedModel = loadModel(GOATMODELPATH)
     else:
-        savedModel = loadModel(TARGETMODELPATH)
+        savedModel = loadModel(TIGERMODELPATH)
 
     predictionModel = Model(savedModel=savedModel)
 
