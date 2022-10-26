@@ -10,16 +10,16 @@ from .helpers import movestoAction
 import math
 
 #Length for DeQue
-MAXLEN = 50000
+MAXLEN = 25000
 # For Tiger
-T_GOAT_CAPTURED = 4
-T_GOT_TRAPPED = -2
+T_GOAT_CAPTURED = 5
+T_GOT_TRAPPED = -5
 T_TRAP_ESCAPE = 2
 
 # For Goat
-G_GOAT_CAPTURED = -4
-G_TIGER_TRAP = 5
-G_TIGER_ESCAPE = -1
+G_GOAT_CAPTURED = -5
+G_TIGER_TRAP = 7
+G_TIGER_ESCAPE = -2
 
 #Common 
 G_WIN = 10
@@ -27,12 +27,14 @@ T_WIN = 10
 T_LOSE = -10
 G_LOSE = -10
 
+DRAW = -5
+
 
 class Simulator:
     def __init__(self, targetGoatModel = Model(), mainGoatModel = Model(), targetTigerModel = Model(), mainTigerModel = Model()):
         self.game = Bagchal.new()
-        self.replayGoatMemory = []
-        self.replayTigerMemory = []
+        self.replayGoatMemory = deque(maxlen = MAXLEN)
+        self.replayTigerMemory = deque(maxlen = MAXLEN)
         self.goatEpsilon = 1
         self.tigerEpsilon = 1
         self.mainGoatModel = mainGoatModel
@@ -90,6 +92,7 @@ class Simulator:
 
         elif self.game.game_state == GameState.DRAW.value:
             self.draws += 1
+            indivReward += DRAW
 
 
         return action, indivReward
@@ -141,9 +144,6 @@ class Simulator:
                 
                 if self.game.game_status_check()["decided"] or len(self.game.game_history) > 100:
                     done = True
-                    
-                    if self.game.game_state == GameState.GOAT_WON.value:
-                        goatWon = True
                 
                 print(f"Total Goat Win, Tiger Wins, Draws: {self.goatWins, self.tigerWins, self.draws} in {simNo + 1} Simulations.")
 

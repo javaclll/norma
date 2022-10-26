@@ -19,11 +19,13 @@ if sys.argv[1] == "train":
             simulator = Simulator()
             simulator.simulate()
 
-        elif (sys.argv[2] == "goat"):
-            tigerModel = Model()
-            tigerModel.model.set_weights(tensorflow.keras.models.load_model(TARGETMODELPATH).get_weights())
-            simulator = Simulator(tigerModel=tigerModel)
-            simulator.goatsimulate()
+        elif (sys.argv[2] == "additional"):
+            tigerTModel = Model()
+            goatTModel = Model()
+            tigerTModel.model.set_weights(tensorflow.keras.models.load_model(TIGERMODELPATH).get_weights())
+            goatTModel.model.set_weights(tensorflow.keras.models.load_model(GOATMODELPATH).get_weights())
+            simulator = Simulator(mainGoatModel= goatTModel, mainTigerModel= tigerTModel)
+            simulator.simulate()
     else: 
         if not os.path.exists(TARGETMODELPATH):
             simulator = Simulator()
