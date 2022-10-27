@@ -25,7 +25,7 @@ if sys.argv[1] == "train":
             tigerTModel.model.set_weights(tensorflow.keras.models.load_model(TIGERMODELPATH).get_weights())
             goatTModel.model.set_weights(tensorflow.keras.models.load_model(GOATMODELPATH).get_weights())
             simulator = Simulator(mainGoatModel= goatTModel, mainTigerModel= tigerTModel)
-            simulator.simulate()
+            simulator.simulate(simStart = 18247)
     else: 
         if not os.path.exists(TARGETMODELPATH):
             simulator = Simulator()

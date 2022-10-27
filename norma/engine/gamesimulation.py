@@ -97,7 +97,7 @@ class Simulator:
 
         return action, indivReward
 
-    def simulate(self, noOfSims = NUMSIMS):
+    def simulate(self, noOfSims = NUMSIMS, simStart = 0):
 
         maxEpsilon = 1
         minEpsilon = 0.01
@@ -107,9 +107,12 @@ class Simulator:
         self.targetGoatModel.model.set_weights(self.mainGoatModel.model.get_weights())
         self.targetTigerModel.model.set_weights(self.mainTigerModel.model.get_weights())
 
+        self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * simStart)
+        self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * simStart)
+
         targetUpdate = 0
 
-        for simNo in range(noOfSims):
+        for simNo in range(simStart, noOfSims):
             totalTrainingReward = 0
 
             self.game = Bagchal.new()
@@ -198,8 +201,8 @@ class Simulator:
                         targetUpdate = 0
                     break
             
-            self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * simNo)
-            self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * simNo)
+            self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * (simNo + 1))
+            self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * (simNo + 1))
         
     def moveState(self):
            
