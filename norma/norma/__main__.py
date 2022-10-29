@@ -10,8 +10,9 @@ if len(sys.argv) == 1:
 if sys.argv[1] == "train":
     if len(sys.argv) == 3:
         if sys.argv[2] == "clean":
-            from .train import training_loop
-            training_loop()
+            print("Clean train disabled. Delete model and run to clean train!")
+            # from .train import training_loop
+            # training_loop()
     else:
         from .train import training_loop
         from .model import load_model
@@ -20,4 +21,6 @@ if sys.argv[1] == "train":
         training_loop()
 
 elif sys.argv[1] == "serve":
+    from .model import load_model
+    load_model()
     launch_executor()

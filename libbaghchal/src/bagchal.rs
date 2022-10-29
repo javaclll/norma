@@ -19,12 +19,14 @@ pub struct BaghchalRS {
     pub move_reward_goat: Vec<f32>,
     pub trapped_tiger: i8,
 
+    // For tiger
     pub t_goat_capture: f32,
     pub t_got_trapped: f32,
     pub t_trap_escape: f32,
     pub t_win: f32,
     pub t_lose: f32,
     pub t_draw: f32,
+    pub t_move: f32,
 
     // For Goat
     pub g_goat_captured: f32,
@@ -33,6 +35,7 @@ pub struct BaghchalRS {
     pub g_win: f32,
     pub g_lose: f32,
     pub g_draw: f32,
+    pub g_move: f32,
 }
 
 impl Default for BaghchalRS {
@@ -54,12 +57,14 @@ impl Default for BaghchalRS {
             t_win: 0.0,
             t_lose: 0.0,
             t_draw: 0.0,
+            t_move: 0.0,
             g_goat_captured: 0.0,
             g_tiger_trap: 0.0,
             g_tiger_escape: 0.0,
             g_win: 0.0,
             g_lose: 0.0,
             g_draw: 0.0,
+            g_move: 0.0,
         }
     }
 }
@@ -87,12 +92,14 @@ impl BaghchalRS {
         t_win: f32,
         t_lose: f32,
         t_draw: f32,
+        t_move: f32,
         g_goat_captured: f32,
         g_tiger_trap: f32,
         g_tiger_escape: f32,
         g_win: f32,
         g_lose: f32,
         g_draw: f32,
+        g_move: f32,
     ) {
         self.t_goat_capture = t_goat_capture;
         self.t_got_trapped = t_got_trapped;
@@ -100,12 +107,14 @@ impl BaghchalRS {
         self.t_win = t_win;
         self.t_lose = t_lose;
         self.t_draw = t_draw;
+        self.t_move = t_move;
         self.g_goat_captured = g_goat_captured;
         self.g_tiger_trap = g_tiger_trap;
         self.g_tiger_escape = g_tiger_escape;
         self.g_win = g_win;
         self.g_lose = g_lose;
         self.g_draw = g_draw;
+        self.g_move = g_move;
     }
 
     pub fn cord_to_char(num: i8) -> char {
@@ -434,6 +443,14 @@ impl BaghchalRS {
                     *self.move_reward_tiger.last_mut().unwrap() += self.t_draw;
                 }
             }
+        }
+
+        // Move Cost
+        // Note: turn is already changed so inverted
+        if self.turn == -1 {
+            *self.move_reward_goat.last_mut().unwrap() += self.g_move;
+        } else {
+            *self.move_reward_goat.last_mut().unwrap() += self.t_move;
         }
 
         return move_eval;

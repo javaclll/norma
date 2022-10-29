@@ -6,56 +6,36 @@ import tensorflow as tf
 
 
 class NormaModel(tf.keras.Sequential):
-    # def train_step(self, data, y_pred=None):
-    #     # Unpack the data. Its structure depends on your model and
-    #     # on what you pass to `fit()`.
-    #     x, y = data
-    #
-    #     print("Hollas")
-    #
-    #     with tf.GradientTape() as tape:
-    #         if not y_pred:
-    #             y_pred = self(x, training=True)  # Forward pass
-    #         # Compute the loss value
-    #         # (the loss function is configured in `compile()`)
-    #         loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses) # type: ignore
-    #
-    #     # Compute gradients
-    #     trainable_vars = self.trainable_variables
-    #     gradients = tape.gradient(loss, trainable_vars)
-    #     # Update weights
-    #     self.optimizer.apply_gradients(zip(gradients, trainable_vars))
-    #     # Update metrics (includes the metric that tracks the loss)
-    #     self.compiled_metrics.update_state(y, y_pred)  # type: ignore
-    #     # Return a dict mapping metric names to current value
-    #     return {m.name: m.result() for m in self.metrics}
     pass
 
 
 model = NormaModel(
     [
         tf.keras.layers.Dense(
-            128,
-            activation="relu",
+            121,
+            activation="leaky_relu",
             input_shape=(72,),
             kernel_initializer="random_normal",
             bias_initializer="zeros",
         ),
+        tf.keras.layers.Reshape((11, 11, 1)),
+        tf.keras.layers.Conv2D(8, kernel_size=(6, 6), activation="leaky_relu"),
+        tf.keras.layers.Reshape((288,)),
         tf.keras.layers.Dense(
-            128,
-            activation="relu",
+            (128),
+            activation="leaky_relu",
             kernel_initializer="random_normal",
             bias_initializer="zeros",
         ),
         tf.keras.layers.Dense(
-            128,
-            activation="relu",
+            64,
+            activation="leaky_relu",
             kernel_initializer="random_normal",
             bias_initializer="zeros",
         ),
         tf.keras.layers.Dense(
-            128,
-            activation="relu",
+            32,
+            activation="leaky_relu",
             kernel_initializer="random_normal",
             bias_initializer="zeros",
         ),
@@ -69,10 +49,11 @@ model = NormaModel(
 
 
 model.compile(
-    optimizer="adam",
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=["accuracy"],
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    loss="mean_squared_error",
 )
+
+model.summary()
 
 
 def load_model():

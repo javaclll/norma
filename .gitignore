@@ -3,6 +3,7 @@
 .idea/
 .mypy_cache/
 __pycache__/
+.ipynb_checkpoints/
 weights/
 .DS_Store
 app.egg-info

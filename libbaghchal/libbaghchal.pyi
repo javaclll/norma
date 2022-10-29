@@ -43,12 +43,14 @@ class Baghchal:
         t_win,
         t_lose,
         t_draw,
+        t_move,
         g_goat_captured,
         g_tiger_trap,
         g_tiger_escape,
         g_win,
         g_lose,
         g_draw,
+        g_move,
     ):
         ...
 

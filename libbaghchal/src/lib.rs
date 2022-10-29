@@ -115,12 +115,14 @@ impl Baghchal {
         t_win: f32,
         t_lose: f32,
         t_draw: f32,
+        t_move: f32,
         g_goat_captured: f32,
         g_tiger_trap: f32,
         g_tiger_escape: f32,
         g_win: f32,
         g_lose: f32,
         g_draw: f32,
+        g_move: f32,
     ) {
         return self.inner.set_rewards(
             t_goat_capture,
@@ -129,12 +131,14 @@ impl Baghchal {
             t_win,
             t_lose,
             t_draw,
+            t_move,
             g_goat_captured,
             g_tiger_trap,
             g_tiger_escape,
             g_win,
             g_lose,
             g_draw,
+            g_move,
         );
     }
 
