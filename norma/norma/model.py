@@ -12,14 +12,14 @@ class NormaModel(tf.keras.Sequential):
 model = NormaModel(
     [
         tf.keras.layers.Dense(
-            121,
+            64,
             activation="leaky_relu",
-            input_shape=(72,),
+            input_shape=(64,),
             kernel_initializer="random_normal",
             bias_initializer="zeros",
         ),
-        tf.keras.layers.Reshape((11, 11, 1)),
-        tf.keras.layers.Conv2D(8, kernel_size=(6, 6), activation="leaky_relu"),
+        tf.keras.layers.Reshape((8, 8, 1)),
+        tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
         tf.keras.layers.Reshape((288,)),
         tf.keras.layers.Dense(
             (128),

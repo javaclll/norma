@@ -166,6 +166,20 @@ impl BaghchalRS {
         return vector;
     }
 
+    /*
+
+    Board: 25 position = 25 + 15 padders = 40
+    Source: 5 in X dirn and 5 in y dirn  = 10
+    Destination: 5 in X dirn and 5 in y dirn  = 10
+    Goat Placement Complete: 1
+    Turn: 1
+    Padder: 2
+    ---------------------------------------------------
+    Total: 64 : 8*8
+
+
+
+    */
     pub fn state_as_inputs(&self, possible_moves_pre: Option<Vec<PossibleMove>>) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -181,26 +195,28 @@ impl BaghchalRS {
             let pos = neighbours.resulting_state;
             let mut input = Vec::<i8>::new();
 
-            // Board positions
+            let board = pos.board();
+
+            // Goat positions
             for i in 0i8..5 {
                 for j in 0i8..5 {
-                    let piece = pos.board()[i as usize][j as usize];
+                    let piece = board[i as usize][j as usize];
 
                     match piece {
                         1 => {
                             input.push(1);
-                            input.push(0);
                         }
                         -1 => {
-                            input.push(0);
-                            input.push(1);
+                            input.push(-1);
                         }
                         _ => {
-                            input.push(0);
                             input.push(0);
                         }
                     }
                 }
+                input.push(0);
+                input.push(0);
+                input.push(0);
             }
 
             let move_ = neighbours.r#move;
@@ -221,6 +237,10 @@ impl BaghchalRS {
             } else {
                 input.push(0)
             };
+
+            // Padders
+            input.push(0);
+            input.push(0);
 
             vector_list.push(input);
         }
@@ -809,20 +829,7 @@ mod tests {
         let mut b = BaghchalRS::default();
         b.load_game("XXA3-A5B5-XXA2-E1E2-XXA4-A1B1-XXA5-B1C2-XXA1-C2B1-XXB3-B1C2-XXB2-C2B1-XXB4-B5C4-XXB5-B1C2-XXC5-C2C1-XXD5-C1C2-XXB1-C2C1-XXE1-C1C2-XXC1-C2C3-XXC2-C3D2-XXC3".to_string());
 
-        println!("{:?}", b.board()[0]);
-        println!("{:?}", b.board()[1]);
-        println!("{:?}", b.board()[2]);
-        println!("{:?}", b.board()[3]);
-        println!("{:?}", b.board()[4]);
-
-        println!("{:?}", b.make_move_pgn("E2D1".to_string()));
-
-        println!("{:?}", b.board()[0]);
-        println!("{:?}", b.board()[1]);
-        println!("{:?}", b.board()[2]);
-        println!("{:?}", b.board()[3]);
-        println!("{:?}", b.board()[4]);
-
+        println!("{:?}", b.state_as_inputs(None));
         // println!("{:?}",b.make_move_pgn("D1C1".to_string()));
         //
         // println!("{:?}", b.board()[0]);

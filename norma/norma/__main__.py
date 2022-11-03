@@ -24,3 +24,7 @@ elif sys.argv[1] == "serve":
     from .model import load_model
     load_model()
     launch_executor()
+
+elif sys.argv[1] == "test":
+    from .train import test
+    test()

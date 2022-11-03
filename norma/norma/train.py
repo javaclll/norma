@@ -4,27 +4,30 @@ import numpy
 import random
 from typing import List, Tuple, List, Any, Optional, TypeVar
 from livelossplot import PlotLossesKeras
+from copy import deepcopy
 
 GOAT_EXPLORATION_FACTOR = 0.2
 TIGER_EXPLORATION_FACTOR = 0.2
-DISCOUNT_FACTOR = 0.20
+DISCOUNT_FACTOR = 0.50
 
 
-def get_best_move(input_vectors) -> Tuple[int, Optional[float]]:
-    if input_vectors[0][-1] == 1:
-        EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
-    else:
-        EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
-
+def get_best_move(input_vectors, exploration=True) -> Tuple[int, Optional[float]]:
     inputs = numpy.asarray(input_vectors)
 
-    if random.uniform(0, 1) < EXPLORATION_FACTOR:
-        index = random.randint(0, len(input_vectors) - 1)
-        return (index, None)
-    else:
-        predication = model.predict_on_batch(inputs)
-        max_index = predication.argmax()
-        return (max_index, predication[max_index][0])
+    if exploration:
+        # FIXME: Position of turn in vector is not at the end
+        if input_vectors[0][-1] == 1:
+            EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
+        else:
+            EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
+
+        if random.uniform(0, 1) < EXPLORATION_FACTOR:
+            index = random.randint(0, len(input_vectors) - 1)
+            return (index, None)
+
+    predication = model.predict_on_batch(inputs)
+    max_index = predication.argmax()
+    return (max_index, predication[max_index][0])
 
 
 def reward_discounter(rewards):
@@ -32,7 +35,7 @@ def reward_discounter(rewards):
 
     for (index, value) in enumerate(rewards[::-1]):
         for i in range(n - index - 1):
-            rewards[n - i - 2 - index] += value * pow(DISCOUNT_FACTOR, i + 1)
+            rewards[n - i - 2 - index] += value * pow(1 - DISCOUNT_FACTOR, i + 1)
 
     return rewards
 
@@ -57,13 +60,13 @@ def two_in_one_merge(items):
 
 
 def reward_transformer(rewards_g, rewards_t):
-    rewards_g = reward_discounter(rewards_g)
-    rewards_t = reward_discounter(rewards_t)
-
     rewards_t.pop(0)
 
     rewards_g = two_in_one_merge(rewards_g)
     rewards_t = two_in_one_merge(rewards_t)
+
+    rewards_g = reward_discounter(rewards_g)
+    rewards_t = reward_discounter(rewards_t)
 
     rewards = []
 
@@ -80,9 +83,36 @@ def reward_transformer(rewards_g, rewards_t):
     return rewards
 
 
-def play_game():
+def test():
+    goat = [0, 0, 2, 0, -4, 8]
+    tiger = [0, 1, 2, -2, 0, -8]
+
+    # tiger.pop(0)
+    #
+    # rewards_g = two_in_one_merge(goat)
+    # rewards_t = two_in_one_merge(tiger)
+    #
+    # print(f"Goat: {rewards_g}")
+    # print(f"Tiger: {rewards_t}")
+    #
+    #
+    # rewards_g = reward_discounter(rewards_g)
+    # rewards_t = reward_discounter(rewards_t)
+    #
+    # print(f"Goat: {rewards_g}")
+    # print(f"Tiger: {rewards_t}")
+
+    print(f"Transformed: {reward_transformer(deepcopy(goat), deepcopy(tiger))}")
+    # tiger.pop(0)
+    # print(f"Goat: {reward_discounter(goat)}")
+    # print(f"Tiger: {reward_discounter(tiger)}")
+
+
+def play_game(exploration=True):
     states = []
     y_preds = []
+
+    exploration_moves = []
 
     bagchal = Baghchal.default()
     bagchal.set_rewards(
@@ -102,21 +132,31 @@ def play_game():
         g_move=-0.15,
     )
 
-    while not bagchal.game_status_check().decided:
+    for i in range(100):
+        # while not bagchal.game_status_check().decided:
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(possible_moves)
 
-        best_move_index, pred_y = get_best_move(input_vectors)
+        best_move_index, pred_y = get_best_move(input_vectors, exploration)
 
-        states.append(input_vectors[best_move_index])
-        y_preds.append(pred_y)
+        if pred_y:
+            states.append(input_vectors[best_move_index])
+            y_preds.append(pred_y)
+        else:
+            exploration_moves.append(i)
 
         bagchal = possible_moves[best_move_index].resulting_state
+
+        if bagchal.game_status_check().decided:
+            break
 
     rewards = reward_transformer(
         bagchal.move_reward_goat(), bagchal.move_reward_tiger()
     )
+
+    for superindex, index in enumerate(exploration_moves):
+        rewards.pop(index - superindex)
 
     return (states, y_preds, rewards, bagchal)
 
@@ -149,7 +189,7 @@ def training_loop():
             y_preds,
             actual_rewards,
             bagchal,
-        ) = play_game()
+        ) = play_game(exploration=game_counter % 20 != 0)
 
         # new_state = states[::2]
         # new_actual_rewards = states[::2]
