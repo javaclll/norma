@@ -198,8 +198,12 @@ impl Baghchal {
         return self.inner.move_reward_goat.clone();
     }
 
-    pub fn state_as_inputs(&self, possible_moves_pre: Option<Vec<PossibleMove>>) -> Vec<Vec<i8>> {
-        return self.inner.state_as_inputs(possible_moves_pre);
+    pub fn state_as_inputs(
+        &self,
+        possible_moves_pre: Option<Vec<PossibleMove>>,
+        mode: Option<i8>,
+    ) -> Vec<Vec<i8>> {
+        return self.inner.state_as_inputs(possible_moves_pre, mode);
     }
 
     pub fn clear_game(&mut self) {

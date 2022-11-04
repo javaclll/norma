@@ -97,7 +97,9 @@ class Baghchal:
         ...
 
     def state_as_inputs(
-        self, possible_moves_pre: Optional[List[PossibleMove]]
+        self,
+        possible_moves_pre: Optional[List[PossibleMove]],
+        mode: Optional[int] = None,
     ) -> List[List[int]]:
         ...
 
