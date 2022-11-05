@@ -1,10 +1,12 @@
-from libbaghchal import Baghchal, GameStatus
-from .model import model
-import numpy
 import random
-from typing import List, Tuple, List, Any, Optional, TypeVar
-from livelossplot import PlotLossesKeras
 from copy import deepcopy
+from typing import Any, List, Optional, Tuple, TypeVar
+
+import numpy
+from libbaghchal import Baghchal, GameStatus
+from livelossplot import PlotLossesKeras
+
+from .model import model
 
 GOAT_EXPLORATION_FACTOR = 0.2
 TIGER_EXPLORATION_FACTOR = 0.2
@@ -83,68 +85,53 @@ def reward_transformer(rewards_g, rewards_t):
     return rewards
 
 
-def test():
-    goat = [0, 0, 2, 0, -4, 8]
-    tiger = [0, 1, 2, -2, 0, -8]
-
-    # tiger.pop(0)
-    #
-    # rewards_g = two_in_one_merge(goat)
-    # rewards_t = two_in_one_merge(tiger)
-    #
-    # print(f"Goat: {rewards_g}")
-    # print(f"Tiger: {rewards_t}")
-    #
-    #
-    # rewards_g = reward_discounter(rewards_g)
-    # rewards_t = reward_discounter(rewards_t)
-    #
-    # print(f"Goat: {rewards_g}")
-    # print(f"Tiger: {rewards_t}")
-
-    print(f"Transformed: {reward_transformer(deepcopy(goat), deepcopy(tiger))}")
-    # tiger.pop(0)
-    # print(f"Goat: {reward_discounter(goat)}")
-    # print(f"Tiger: {reward_discounter(tiger)}")
-
-
-def play_game(exploration=True):
+def play_game(exploration=True, only_record=None, record_explorations=True):
     states = []
     y_preds = []
 
-    exploration_moves = []
+    moves_to_exclude = []
 
     bagchal = Baghchal.default()
     bagchal.set_rewards(
-        t_goat_capture=2.0,
-        t_got_trapped=-1.0,
-        t_trap_escape=0.5,
-        t_win=5.0,
-        t_lose=-5.0,
-        t_draw=-3.0,
+        t_goat_capture=6.0,
+        t_got_trapped=-4.0,
+        t_trap_escape=3.0,
+        t_win=10.0,
+        t_lose=-10.0,
+        t_draw=-2.5,
         t_move=-0.15,
-        g_goat_captured=-7.0,
-        g_tiger_trap=3.0,
+        g_goat_captured=-6.0,
+        g_tiger_trap=4.0,
         g_tiger_escape=-3.0,
         g_win=10.0,
         g_lose=-10.0,
-        g_draw=-0.5,
+        g_draw=-2.5,
         g_move=-0.15,
     )
 
     for i in range(100):
-        # while not bagchal.game_status_check().decided:
         possible_moves = bagchal.get_possible_moves()
 
-        input_vectors = bagchal.state_as_inputs(possible_moves)
+        input_vectors = bagchal.state_as_inputs(possible_moves, mode=2)
 
         best_move_index, pred_y = get_best_move(input_vectors, exploration)
 
-        if pred_y:
-            states.append(input_vectors[best_move_index])
-            y_preds.append(pred_y)
+        # Do not add if move is a exploration move
+        if pred_y or record_explorations:
+            if not only_record:
+                states.append(input_vectors[best_move_index])
+                y_preds.append(pred_y)
+            else:
+                if only_record == -1 and i % 2 == 1:
+                    states.append(input_vectors[best_move_index])
+                    y_preds.append(pred_y)
+                elif only_record == 1 and i % 2 == 0:
+                    states.append(input_vectors[best_move_index])
+                    y_preds.append(pred_y)
+                else:
+                    moves_to_exclude.append(i)
         else:
-            exploration_moves.append(i)
+            moves_to_exclude.append(i)
 
         bagchal = possible_moves[best_move_index].resulting_state
 
@@ -155,15 +142,61 @@ def play_game(exploration=True):
         bagchal.move_reward_goat(), bagchal.move_reward_tiger()
     )
 
-    for superindex, index in enumerate(exploration_moves):
+    for superindex, index in enumerate(moves_to_exclude):
         rewards.pop(index - superindex)
 
     return (states, y_preds, rewards, bagchal)
 
 
+def test():
+    (
+        states,
+        y_preds,
+        actual_rewards,
+        bagchal,
+    ) = play_game(exploration=True, only_record=1)
+
+    print(f"{states}")
+    print(f"{y_preds}")
+    print(f"{actual_rewards}")
+    print(f"{bagchal.pgn()}")
+
+
+def training_step(exploration=True, only_train_on=None):
+    (states, _, actual_rewards, bagchal,) = play_game(
+        exploration=exploration,
+        only_record=only_train_on,
+    )
+
+    positions_count = bagchal.move_count()
+
+    game_state = bagchal.game_state()
+
+    if game_state == GameStatus.GoatWon:
+        print(f"Hello sir! GOAT WON!")
+        print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
+        game_state = 1
+    elif game_state == GameStatus.TigerWon:
+        game_state = -1
+    else:
+        print(f"Draw!!!")
+        game_state = 0
+
+    model.fit(
+        states,
+        actual_rewards,
+        use_multiprocessing=True,
+        batch_size=4,
+    )
+
+    return (game_state, positions_count, len(states))
+
+
 def training_loop():
     game_counter = 0
     positions_counter = 0
+    goat_trained_states = 0
+    tiger_trained_states = 0
 
     goat_wins = 0
     tiger_wins = 0
@@ -179,66 +212,91 @@ def training_loop():
         goat_wins = int(train_stats[2])
         tiger_wins = int(train_stats[3])
         draws = int(train_stats[4])
+        goat_trained_states = int(train_stats[5])
+        tiger_trained_states = int(train_stats[6])
 
     except:
         pass
 
     while True:
-        (
-            states,
-            y_preds,
-            actual_rewards,
-            bagchal,
-        ) = play_game(exploration=game_counter % 20 != 0)
+        before_goat_wins = goat_wins
+        before_tiger_wins = tiger_wins
+        before_draws = draws
+        before_game_counter = game_counter
 
-        # new_state = states[::2]
-        # new_actual_rewards = states[::2]
+        # Goat Training
+        for _ in range(32):
+            (won_by, played_positions, trained_positions) = training_step(
+                only_train_on=1
+            )
 
-        positions_count = bagchal.move_count()
+            if won_by == 1:
+                goat_wins += 1
+            elif won_by == -1:
+                tiger_wins += 1
+            else:
+                draws += 1
 
-        game_state = bagchal.game_state()
+            game_counter += 1
+            positions_counter += played_positions
+            goat_trained_states += trained_positions
 
-        if game_state == GameStatus.GoatWon:
-            print(f"Hello sir! GOAT WON!")
-            print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
-            goat_wins += 1
-        elif game_state == GameStatus.TigerWon:
-            tiger_wins += 1
-        else:
-            print(f"Draw!!!")
-            draws += 1
+        # Tiger Training
+        for _ in range(0):
+            (won_by, played_positions, trained_positions) = training_step(
+                only_train_on=-1
+            )
 
-        # model.fit(
-        #     new_state,
-        #     new_actual_rewards,
-        #     use_multiprocessing=True,
-        #     batch_size=4,
-        # )
+            if won_by == 1:
+                goat_wins += 1
+            elif won_by == -1:
+                tiger_wins += 1
+            else:
+                draws += 1
 
-        model.fit(
-            states,
-            actual_rewards,
-            use_multiprocessing=True,
-            batch_size=4,
+            game_counter += 1
+            positions_counter += played_positions
+            tiger_trained_states += trained_positions
+
+        f = open("weights/train_stats.txt", "w")
+        f.write(
+            f"{game_counter},{positions_counter},{goat_wins},{tiger_wins},{draws},{goat_trained_states},{tiger_trained_states}"
+        )
+        f.close()
+        model.save_weights("weights/magma")
+
+        cw_goat_wins = goat_wins - before_goat_wins
+        cw_tiger_wins = tiger_wins - before_tiger_wins
+        cw_draws = draws - before_draws
+        cw_game_counter = game_counter - before_game_counter
+
+        print(f"---------------------------------------------------")
+        print(f"OVERALL GAME STATS:")
+        print(f"---------------------------------------------------")
+        print(f"Goat: {goat_wins} ({((goat_wins/game_counter)*100):.2f} %)")
+        print(f"Tiger: {tiger_wins} ({((tiger_wins/game_counter)*100):.2f} %)")
+        print(f"Draws: {draws} ({((draws/game_counter)*100):.2f} %)")
+        print(f"---------------------------------------------------")
+        print(f"TRAINING STATS:")
+        print(f"---------------------------------------------------")
+        print(f"Games Played: {game_counter}")
+        print(f"Positions Generated: {positions_counter}")
+        print(f"Goat Trained States: {goat_trained_states}")
+        print(f"Tiger Trained States: {tiger_trained_states}")
+        print(f"Avg moves per game: {(positions_counter/game_counter):.2f}")
+        print(f"---------------------------------------------------")
+        print(f"CURRENT WINDOW GAME STATS:")
+        print(f"---------------------------------------------------")
+        print(f"Goat: {cw_goat_wins} ({((cw_goat_wins/cw_game_counter)*100):.2f} %)")
+        print(f"Tiger: {cw_tiger_wins} ({((cw_tiger_wins/cw_game_counter)*100):.2f} %)")
+        print(f"Draws: {cw_draws} ({((cw_draws/cw_game_counter)*100):.2f} %)")
+
+        (_, _, _, bagchal,) = play_game(
+            exploration=False,
         )
 
-        game_counter += 1
-        positions_counter += positions_count
-
-        if game_counter % 20 == 0:
-            f = open("weights/train_stats.txt", "w")
-            f.write(
-                f"{game_counter},{positions_counter},{goat_wins},{tiger_wins},{draws}"
-            )
-            f.close()
-            model.save_weights("weights/magma")
-
-            print(f"{y_preds}")
-            print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
-            print(f"Goat: {goat_wins} ({((goat_wins/game_counter )*100):.2f} %)")
-            print(f"Tiger: {tiger_wins} ({((tiger_wins/game_counter )*100):.2f} %)")
-            print(f"Draws: {draws} ({( (draws/game_counter )*100):.2f} %)")
-            print(f"Stats for this session:")
-            print(f"Games Played: {game_counter}")
-            print(f"Positions: {positions_counter}")
-            print(f"Avg moves per game: {positions_counter/game_counter}")
+        print(f"---------------------------------------------------")
+        print(f"SAMPLE GAME:")
+        print(f"---------------------------------------------------")
+        print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
+        print(f"---------------------------------------------------")
