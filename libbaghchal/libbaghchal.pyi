@@ -100,6 +100,7 @@ class Baghchal:
         self,
         possible_moves_pre: Optional[List[PossibleMove]],
         mode: Optional[int] = None,
+        rotate_board: Optional[bool] = False,
     ) -> List[List[int]]:
         ...
 

@@ -202,8 +202,9 @@ impl Baghchal {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         mode: Option<i8>,
+        rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
-        return self.inner.state_as_inputs(possible_moves_pre, mode);
+        return self.inner.state_as_inputs(possible_moves_pre, mode, rotate_board);
     }
 
     pub fn clear_game(&mut self) {

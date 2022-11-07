@@ -3,6 +3,7 @@ use crate::types::{
 };
 use crate::Baghchal;
 use pyo3::prelude::*;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -150,6 +151,24 @@ impl BaghchalRS {
         }
     }
 
+    fn rotate_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
+        let mut mat: [[i8; 5]; 5] = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
+
+        for i in 0..5 {
+            for j in 0..5 {
+                mat[j][4 - i] = matrix[i][j];
+            }
+        }
+
+        return mat;
+    }
+
     pub fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
         let mut vector = Vec::<i8>::with_capacity(20);
 
@@ -173,11 +192,12 @@ impl BaghchalRS {
      * Goat Placement Complete : 1
      * Turn : 1
      * -----------------------------------------------
-     * Total : 70
+     * Total : 72
      */
     pub fn state_as_inputs_mode_1(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
+        rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -193,10 +213,20 @@ impl BaghchalRS {
             let pos = neighbours.resulting_state;
             let mut input = Vec::<i8>::new();
 
+            let mut board = self.board();
+
+            if rotate_board == Some(true) {
+                let no_of_rotations = rand::thread_rng().gen_range(0..4);
+
+                for _ in 0..no_of_rotations {
+                    board = Self::rotate_matrix(board);
+                }
+            }
+
             // Board positions
             for i in 0i8..5 {
                 for j in 0i8..5 {
-                    let piece = pos.board()[i as usize][j as usize];
+                    let piece = board[i as usize][j as usize];
 
                     match piece {
                         1 => {
@@ -253,6 +283,7 @@ impl BaghchalRS {
     pub fn state_as_inputs_mode_2(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
+        rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -268,7 +299,15 @@ impl BaghchalRS {
             let pos = neighbours.resulting_state;
             let mut input = Vec::<i8>::new();
 
-            let board = pos.board();
+            let mut board = self.board();
+
+            if rotate_board == Some(true) {
+                let no_of_rotations = rand::thread_rng().gen_range(0..4);
+
+                for _ in 0..no_of_rotations {
+                    board = Self::rotate_matrix(board);
+                }
+            }
 
             // Goat positions
             for i in 0i8..5 {
@@ -325,11 +364,12 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         mode: Option<i8>,
+        rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
         match mode {
-            Some(1) => return self.state_as_inputs_mode_1(possible_moves_pre),
-            Some(2) => return self.state_as_inputs_mode_2(possible_moves_pre),
-            _ => return self.state_as_inputs_mode_1(possible_moves_pre),
+            Some(1) => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
+            Some(2) => return self.state_as_inputs_mode_2(possible_moves_pre, rotate_board),
+            _ => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
         }
     }
 
@@ -911,29 +951,13 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let mut b = BaghchalRS::default();
-        b.load_game("XXA3-A5B5-XXA2-E1E2-XXA4-A1B1-XXA5-B1C2-XXA1-C2B1-XXB3-B1C2-XXB2-C2B1-XXB4-B5C4-XXB5-B1C2-XXC5-C2C1-XXD5-C1C2-XXB1-C2C1-XXE1-C1C2-XXC1-C2C3-XXC2-C3D2-XXC3".to_string());
-
-        println!("{:?}", b.board()[0]);
-        println!("{:?}", b.board()[1]);
-        println!("{:?}", b.board()[2]);
-        println!("{:?}", b.board()[3]);
-        println!("{:?}", b.board()[4]);
-
-        println!("{:?}", b.make_move_pgn("E2D1".to_string()));
-
-        println!("{:?}", b.board()[0]);
-        println!("{:?}", b.board()[1]);
-        println!("{:?}", b.board()[2]);
-        println!("{:?}", b.board()[3]);
-        println!("{:?}", b.board()[4]);
-
-        // println!("{:?}",b.make_move_pgn("D1C1".to_string()));
-        //
-        // println!("{:?}", b.board()[0]);
-        // println!("{:?}", b.board()[1]);
-        // println!("{:?}", b.board()[2]);
-        // println!("{:?}", b.board()[3]);
-        // println!("{:?}", b.board()[4]);
+        let mut test = BaghchalRS::default();
+        test.make_move_pgn("XXA3".to_string());
+        test.make_move_pgn("A1A2".to_string());
+        test.make_move_pgn("XXA4".to_string());
+        test.make_move_pgn("A5B5".to_string());
+        test.make_move_pgn("XXA5".to_string());
+        test.make_move_pgn("B5C5".to_string());
+        test.make_move_pgn("XXA1".to_string());
     }
 }
