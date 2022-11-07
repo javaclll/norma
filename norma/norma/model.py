@@ -9,45 +9,7 @@ class NormaModel(tf.keras.Sequential):
     pass
 
 
-# model = NormaModel(
-#     [
-#         tf.keras.layers.Dense(
-#             64,
-#             activation="leaky_relu",
-#             input_shape=(64,),
-#             kernel_initializer="random_normal",
-#             bias_initializer="zeros",
-#         ),
-#         tf.keras.layers.Reshape((8, 8, 1)),
-#         tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
-#         tf.keras.layers.Reshape((288,)),
-#         tf.keras.layers.Dense(
-#             (128),
-#             activation="leaky_relu",
-#             kernel_initializer="random_normal",
-#             bias_initializer="zeros",
-#         ),
-#         tf.keras.layers.Dense(
-#             64,
-#             activation="leaky_relu",
-#             kernel_initializer="random_normal",
-#             bias_initializer="zeros",
-#         ),
-#         tf.keras.layers.Dense(
-#             32,
-#             activation="leaky_relu",
-#             kernel_initializer="random_normal",
-#             bias_initializer="zeros",
-#         ),
-#         tf.keras.layers.Dense(
-#             1,
-#             kernel_initializer="random_normal",
-#             bias_initializer="zeros",
-#         ),
-#     ]
-# )
-
-model = NormaModel(
+tiger_model = NormaModel(
     [
         tf.keras.layers.Dense(
             64,
@@ -86,16 +48,75 @@ model = NormaModel(
     ]
 )
 
-model.compile(
+tiger_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+    loss="mean_squared_error",
+)
+
+
+print(f"\n-----------------------------------")
+print(f"Goat Model:")
+print(f"-----------------------------------")
+tiger_model.summary()
+
+
+goat_model = NormaModel(
+    [
+        tf.keras.layers.Dense(
+            64,
+            activation="leaky_relu",
+            input_shape=(64,),
+            kernel_initializer="random_normal",
+            bias_initializer="zeros",
+        ),
+        tf.keras.layers.Reshape((8, 8, 1)),
+        tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
+        tf.keras.layers.Reshape((288,)),
+        tf.keras.layers.Dense(
+            (128),
+            activation="leaky_relu",
+            kernel_initializer="random_normal",
+            bias_initializer="zeros",
+        ),
+        tf.keras.layers.Dense(
+            64,
+            activation="leaky_relu",
+            kernel_initializer="random_normal",
+            bias_initializer="zeros",
+        ),
+        tf.keras.layers.Dense(
+            32,
+            activation="leaky_relu",
+            kernel_initializer="random_normal",
+            bias_initializer="zeros",
+        ),
+        tf.keras.layers.Dense(
+            1,
+            activation="linear",
+            kernel_initializer="random_normal",
+            bias_initializer="zeros",
+        ),
+    ]
+)
+
+goat_model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
     loss="mean_squared_error",
 )
 
-model.summary()
+print(f"\n-----------------------------------")
+print(f"Tiger Model:")
+print(f"-----------------------------------")
+goat_model.summary()
 
 
-def load_model():
-    if os.path.exists("weights/magma.index"):
-        model.load_weights("weights/magma")
+def load_model(name="magma"):
+    if os.path.exists(f"weights/{name}/tiger.index"):
+        tiger_model.load_weights(f"weights/{name}/tiger")
     else:
-        model.save_weights("weights/magma")
+        tiger_model.save_weights(f"weights/{name}/tiger")
+
+    if os.path.exists(f"weights/{name}/goat.index"):
+        goat_model.load_weights(f"weights/{name}/goat")
+    else:
+        tiger_model.save_weights(f"weights/{name}/goat")

@@ -6,30 +6,48 @@ import numpy
 from libbaghchal import Baghchal, GameStatus
 from livelossplot import PlotLossesKeras
 
-from .model import model
+from .model import tiger_model, goat_model
 
 GOAT_EXPLORATION_FACTOR = 0.2
 TIGER_EXPLORATION_FACTOR = 0.2
 DISCOUNT_FACTOR = 0.50
 
 
-def get_best_move(input_vectors, exploration=True) -> Tuple[int, Optional[float]]:
-    inputs = numpy.asarray(input_vectors)
+def get_best_move(
+    input_vectors,
+    agent,
+    exploration=True,
+) -> Tuple[int, Optional[float]]:
+    if agent == -1:
+        inputs = numpy.asarray(input_vectors)
 
-    if exploration:
-        # FIXME: Position of turn in vector is not at the end
-        if input_vectors[0][-1] == 1:
+        if exploration:
             EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
-        else:
+
+            if random.uniform(0, 1) < EXPLORATION_FACTOR:
+                index = random.randint(0, len(input_vectors) - 1)
+                return (index, None)
+
+        predication = tiger_model.predict_on_batch(inputs)
+        max_index = predication.argmax()
+        return (max_index, predication[max_index][0])
+
+    elif agent == 1:
+        inputs = numpy.asarray(input_vectors)
+
+        if exploration:
             EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
 
-        if random.uniform(0, 1) < EXPLORATION_FACTOR:
-            index = random.randint(0, len(input_vectors) - 1)
-            return (index, None)
+            if random.uniform(0, 1) < EXPLORATION_FACTOR:
+                index = random.randint(0, len(input_vectors) - 1)
+                return (index, None)
 
-    predication = model.predict_on_batch(inputs)
-    max_index = predication.argmax()
-    return (max_index, predication[max_index][0])
+        predication = goat_model.predict_on_batch(inputs)
+        max_index = predication.argmax()
+        return (max_index, predication[max_index][0])
+
+    else:
+        raise Exception("`agent` parameter for `get_best_move()` must be `-1` or `1`")
 
 
 def reward_discounter(rewards):
@@ -112,11 +130,12 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
     for i in range(100):
         possible_moves = bagchal.get_possible_moves()
 
-        input_vectors = bagchal.state_as_inputs(possible_moves, mode=2)
+        input_vectors = bagchal.state_as_inputs(possible_moves, mode=2, rotate_board=True)
 
-        best_move_index, pred_y = get_best_move(input_vectors, exploration)
+        turn = 1 if i % 2 == 0 else -1
 
-        # Do not add if move is a exploration move
+        best_move_index, pred_y = get_best_move(input_vectors, exploration=exploration, agent=turn)
+
         if pred_y or record_explorations:
             if not only_record:
                 states.append(input_vectors[best_move_index])
@@ -162,10 +181,17 @@ def test():
     print(f"{bagchal.pgn()}")
 
 
-def training_step(exploration=True, only_train_on=None):
+def training_step(exploration=True, train_on=None):
+    if train_on == -1:
+        model = tiger_model
+    elif train_on == 1:
+        model = goat_model
+    else:
+        raise Exception("Must provide `train_on` parameter to `training_step()`")
+
     (states, _, actual_rewards, bagchal,) = play_game(
         exploration=exploration,
-        only_record=only_train_on,
+        only_record=train_on,
     )
 
     positions_count = bagchal.move_count()
@@ -192,7 +218,7 @@ def training_step(exploration=True, only_train_on=None):
     return (game_state, positions_count, len(states))
 
 
-def training_loop():
+def training_loop(model_name="magma"):
     game_counter = 0
     positions_counter = 0
     goat_trained_states = 0
@@ -203,7 +229,7 @@ def training_loop():
     draws = 0
 
     try:
-        f = open("weights/train_stats.txt", "r")
+        f = open(f"weights/{model_name}/train_stats.txt", "r")
 
         train_stats = f.read().split(",")
 
@@ -227,7 +253,7 @@ def training_loop():
         # Goat Training
         for _ in range(32):
             (won_by, played_positions, trained_positions) = training_step(
-                only_train_on=1
+                train_on=1
             )
 
             if won_by == 1:
@@ -242,9 +268,9 @@ def training_loop():
             goat_trained_states += trained_positions
 
         # Tiger Training
-        for _ in range(0):
+        for _ in range(32):
             (won_by, played_positions, trained_positions) = training_step(
-                only_train_on=-1
+                train_on=-1
             )
 
             if won_by == 1:
@@ -258,12 +284,13 @@ def training_loop():
             positions_counter += played_positions
             tiger_trained_states += trained_positions
 
-        f = open("weights/train_stats.txt", "w")
+        f = open(f"weights/{model_name}/train_stats.txt", "w")
         f.write(
             f"{game_counter},{positions_counter},{goat_wins},{tiger_wins},{draws},{goat_trained_states},{tiger_trained_states}"
         )
         f.close()
-        model.save_weights("weights/magma")
+        tiger_model.save_weights(f"weights/{model_name}/tiger")
+        goat_model.save_weights(f"weights/{model_name}/goat")
 
         cw_goat_wins = goat_wins - before_goat_wins
         cw_tiger_wins = tiger_wins - before_tiger_wins

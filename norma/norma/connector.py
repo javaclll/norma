@@ -7,26 +7,40 @@ import websocket
 # from bagchal import Bagchal
 from libbaghchal import Baghchal as Bagchal
 
-from .model import model
+from .model import tiger_model, goat_model
 
 
 def get_best_move_pgn(bagchal: Bagchal):
     possible_moves = bagchal.get_possible_moves()
 
-    input_vectors = bagchal.state_as_inputs(possible_moves)
+    input_vectors = bagchal.state_as_inputs(possible_moves, mode=2)
 
-    inputs = numpy.asarray(input_vectors)
+    if bagchal.turn() == -1:
+        inputs = numpy.asarray(input_vectors)
 
-    predication = model.predict_on_batch(inputs)
+        predication = tiger_model.predict_on_batch(inputs)
 
-    best_move_index = predication.argmax()
+        best_move_index = predication.argmax()
 
-    move = possible_moves[best_move_index].resulting_state.prev_move()
+        move = possible_moves[best_move_index].resulting_state.prev_move()
 
-    if move:
-        return Bagchal.coord_to_png_unit(*move)
-    else:
-        return None
+        if move:
+            return Bagchal.coord_to_png_unit(*move)
+        else:
+            return None
+    elif bagchal.turn() == 1:
+        inputs = numpy.asarray(input_vectors)
+
+        predication = goat_model.predict_on_batch(inputs)
+
+        best_move_index = predication.argmax()
+
+        move = possible_moves[best_move_index].resulting_state.prev_move()
+
+        if move:
+            return Bagchal.coord_to_png_unit(*move)
+        else:
+            return None
 
 
 def on_message(ws, msg):
