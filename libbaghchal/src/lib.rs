@@ -9,6 +9,7 @@ use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use types::*;
 
+
 #[pyclass]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Baghchal {

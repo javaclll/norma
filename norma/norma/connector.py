@@ -13,7 +13,7 @@ from .model import tiger_model, goat_model
 def get_best_move_pgn(bagchal: Bagchal):
     possible_moves = bagchal.get_possible_moves()
 
-    input_vectors = bagchal.state_as_inputs(possible_moves, mode=2)
+    input_vectors = bagchal.state_as_inputs(possible_moves, mode=3)
 
     if bagchal.turn() == -1:
         inputs = numpy.asarray(input_vectors)

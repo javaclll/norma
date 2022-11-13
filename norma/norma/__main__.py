@@ -9,13 +9,13 @@ if len(sys.argv) == 1:
 
 if sys.argv[1] == "train":
     if len(sys.argv) == 3:
-        from .train import training_loop
+        from .q_train import training_loop
         from .model import load_model
 
         load_model(name=sys.argv[2])
         training_loop(model_name=sys.argv[2])
     else:
-        from .train import training_loop
+        from .q_train import training_loop
         from .model import load_model
 
         load_model()

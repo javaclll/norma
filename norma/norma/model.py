@@ -9,103 +9,70 @@ class NormaModel(tf.keras.Sequential):
     pass
 
 
-tiger_model = NormaModel(
-    [
-        tf.keras.layers.Dense(
-            64,
-            activation="leaky_relu",
-            input_shape=(64,),
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Reshape((8, 8, 1)),
-        tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
-        tf.keras.layers.Reshape((288,)),
-        tf.keras.layers.Dense(
-            (128),
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            64,
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            32,
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            1,
-            activation="linear",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-    ]
-)
+def build_model():
+    return NormaModel(
+        [
+            tf.keras.layers.Dense(
+                100,
+                activation="leaky_relu",
+                input_shape=(64,),
+                kernel_initializer="random_normal",
+                bias_initializer="zeros",
+            ),
+            tf.keras.layers.Reshape((10, 10, 1)),
+            tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(
+                128,
+                activation="leaky_relu",
+                kernel_initializer="random_normal",
+                bias_initializer="zeros",
+            ),
+            tf.keras.layers.Dense(
+                64,
+                activation="leaky_relu",
+                kernel_initializer="random_normal",
+                bias_initializer="zeros",
+            ),
+            tf.keras.layers.Dense(
+                32,
+                activation="leaky_relu",
+                kernel_initializer="random_normal",
+                bias_initializer="zeros",
+            ),
+            tf.keras.layers.Dense(
+                1,
+                activation="linear",
+                kernel_initializer="random_normal",
+                bias_initializer="zeros",
+            ),
+        ]
+    )
+
+
+tiger_model = build_model()
 
 tiger_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
     loss="mean_squared_error",
 )
 
 
 print(f"\n-----------------------------------")
-print(f"Goat Model:")
+print(f"Tiger Model:")
 print(f"-----------------------------------")
 tiger_model.summary()
 
 
-goat_model = NormaModel(
-    [
-        tf.keras.layers.Dense(
-            64,
-            activation="leaky_relu",
-            input_shape=(64,),
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Reshape((8, 8, 1)),
-        tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
-        tf.keras.layers.Reshape((288,)),
-        tf.keras.layers.Dense(
-            (128),
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            64,
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            32,
-            activation="leaky_relu",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-        tf.keras.layers.Dense(
-            1,
-            activation="linear",
-            kernel_initializer="random_normal",
-            bias_initializer="zeros",
-        ),
-    ]
-)
+goat_model = build_model()
 
 goat_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
     loss="mean_squared_error",
 )
 
 print(f"\n-----------------------------------")
-print(f"Tiger Model:")
+print(f"Goat Model:")
 print(f"-----------------------------------")
 goat_model.summary()
 

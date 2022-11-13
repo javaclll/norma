@@ -185,6 +185,45 @@ impl BaghchalRS {
         return vector;
     }
 
+    pub fn action_to_vector_25(
+        source: Option<[i8; 2]>,
+        destination: [i8; 2],
+    ) -> ([[i8; 5]; 5], [[i8; 5]; 5]) {
+        let mut vector = (
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+            [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ],
+        );
+
+        // Source
+        match source {
+            Some(value) => {
+                let s1 = value[0] as usize;
+                let s2 = value[1] as usize;
+                vector.0[s1][s2] = 1;
+            }
+            None => {}
+        }
+
+        // Destination
+        let d1 = destination[0] as usize;
+        let d2 = destination[1] as usize;
+        vector.1[d1][d2] = 1;
+
+        return vector;
+    }
+
     /*
      * Board Positions: 25 * 2 bits per postion = 50
      * Source : 5 in X dirn and 5 in Y dirn = 10
@@ -360,6 +399,120 @@ impl BaghchalRS {
         return vector_list;
     }
 
+    /*
+     *  Board: 25 position = 25
+     *  Source: 5 in X dirn and 5 in y dirn  = 25
+     *  Destination: 5 in X dirn and 5 in y dirn  = 25
+     *  Goat Placement Complete: 1
+     *  Goats Captured: 4
+     *  Padder: 20
+     *  ---------------------------------------------------
+     *  Total: 100 : 10 * 10
+     */
+    pub fn state_as_inputs_mode_3(
+        &self,
+        possible_moves_pre: Option<Vec<PossibleMove>>,
+        rotate_board: Option<bool>,
+    ) -> Vec<Vec<i8>> {
+        let possible_moves: Vec<PossibleMove>;
+
+        if possible_moves_pre.is_none() {
+            possible_moves = self.get_possible_moves();
+        } else {
+            possible_moves = possible_moves_pre.unwrap();
+        }
+
+        let mut vector_list = Vec::<[[i8; 10]; 10]>::new();
+
+        for neighbours in possible_moves {
+            let pos = neighbours.resulting_state;
+            let mut input = [
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ];
+
+            let mut board = self.board();
+
+            if rotate_board == Some(true) {
+                let no_of_rotations = rand::thread_rng().gen_range(0..4);
+
+                for _ in 0..no_of_rotations {
+                    board = Self::rotate_matrix(board);
+                }
+            }
+
+            // Board Positions
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    input[i as usize][j as usize] = board[i as usize][j as usize];
+                }
+            }
+
+            let move_ = neighbours.r#move;
+
+            // Source and Destination
+            let (source_array, destination_array) =
+                BaghchalRS::action_to_vector_25(move_.0, move_.1);
+
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    input[i as usize][5 + j as usize] = source_array[i as usize][j as usize];
+                }
+            }
+
+            for i in 0i8..5 {
+                for j in 0i8..5 {
+                    input[5 + i as usize][j as usize] = destination_array[i as usize][j as usize];
+                }
+            }
+
+            // Goat placement complete
+            if pos.goat_counter() >= 20 {
+                input[5][5] = 1;
+            };
+
+            // Number of goats captured
+            match pos.goat_captured() {
+                1 => {
+                    input[5][6] = 1;
+                }
+
+                2 => {
+                    input[5][6] = 1;
+                    input[5][7] = 1;
+                }
+
+                3 => {
+                    input[5][6] = 1;
+                    input[5][7] = 1;
+                    input[5][8] = 1;
+                }
+
+                4 => {
+                    input[5][6] = 1;
+                    input[5][7] = 1;
+                    input[5][8] = 1;
+                    input[5][9] = 1;
+                }
+                _ => {}
+            }
+            vector_list.push(input);
+        }
+
+        return vector_list
+            .iter()
+            .map(|item| item.iter().flatten().cloned().collect::<Vec<i8>>())
+            .collect();
+    }
+
     pub fn state_as_inputs(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
@@ -369,6 +522,7 @@ impl BaghchalRS {
         match mode {
             Some(1) => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
             Some(2) => return self.state_as_inputs_mode_2(possible_moves_pre, rotate_board),
+            Some(3) => return self.state_as_inputs_mode_3(possible_moves_pre, rotate_board),
             _ => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
         }
     }
@@ -595,7 +749,7 @@ impl BaghchalRS {
         if self.turn == -1 {
             *self.move_reward_goat.last_mut().unwrap() += self.g_move;
         } else {
-            *self.move_reward_goat.last_mut().unwrap() += self.t_move;
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_move;
         }
 
         return move_eval;
@@ -959,5 +1113,20 @@ mod tests {
         test.make_move_pgn("XXA5".to_string());
         test.make_move_pgn("B5C5".to_string());
         test.make_move_pgn("XXA1".to_string());
+
+        let a = [
+            [1, 0, -1, 0, -1, 0, 0, 1, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, -1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ];
+
+        println!("{:?}", test.state_as_inputs_mode_3(None, Some(false))[0]);
     }
 }
