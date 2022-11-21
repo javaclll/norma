@@ -108,6 +108,10 @@ impl Baghchal {
         return BaghchalRS::coord_to_png_unit(source, destination);
     }
 
+    pub fn copy(&self) -> Baghchal{
+        return self.clone();
+    }
+
     pub fn set_rewards(
         &mut self,
         t_goat_capture: f32,

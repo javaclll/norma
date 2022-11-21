@@ -54,6 +54,9 @@ class Baghchal:
     ):
         ...
 
+    def copy(self) -> Baghchal:
+        ...
+
     def to_str(self) -> str:
         ...
 
