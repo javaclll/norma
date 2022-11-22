@@ -5,9 +5,16 @@ description = ""
 authors = ["Daze <dazehere@yandex.com>"]
 
 [tool.poetry.dependencies]
-python = "3.9.0"
-tensorflow = "^2.10.0"
-bagchal = {path = "../game", develop = true}
+python = ">=3.9,<3.10"
+websocket-client = "^1.4.1"
+numpy = "^1.23.3"
+rel = "^0.4.7"
+tensorflow-macos = {version = "^2.10.0", platform = "darwin"}
+tensorflow = {version = "^2.10.0", platform = "linux"}
+tensorflow-metal = {version = "^0.6.0", platform = "darwin"}
+jupyterlab = "^3.4.8"
+livelossplot = "^0.5.5"
+ray = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 

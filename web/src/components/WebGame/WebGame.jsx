@@ -19,6 +19,7 @@ import { useLocation } from "react-router-dom";
 import { OnlineGameContext } from "../../context/OnlineGameContext";
 import { WebsocketContext } from "../../utils/WebSocketContext";
 import { OnlineGameProvider } from "../../context/OnlineGameContext";
+import callAPI from "../../utils/API";
 
 const WebGame = () => {
   const {
@@ -77,6 +78,31 @@ const WebGame = () => {
     return secondChar + firstChar + fourthChar + thirdChar;
   };
 
+  const sessionResponseFormatter = (value) => {
+    if (!value.data) {
+      return null;
+    }
+    let _session = {
+      success: value.data.success,
+      ident: value.data.ident,
+    };
+    return _session;
+  };
+
+  useEffect(async () => {
+    const req = await callAPI({
+      endpoint: `/ident`,
+      method: "POST",
+    });
+    const sess = sessionResponseFormatter(req);
+    const currentSess = localStorage.getItem("ident");
+    if (sess && sess.success && !currentSess) {
+      localStorage.setItem("ident", sess.ident);
+      window.location.reload();
+    }
+    console.log(sess);
+  }, []);
+
   const onMessage = (event) => {
     let data = JSON.parse(event.data);
     if (playerType === 0 && data.type === 8) {
@@ -98,6 +124,11 @@ const WebGame = () => {
       setMoveCounter(history.length - 1);
       setMoveHistory(() => history);
       setGame(() => history[history.length - 1].game);
+    } else if (data.type === 6) {
+      setGameResult({
+        decided: true,
+        wonBy: data["won_by"] === -1 ? ItemTypes.TIGER : ItemTypes.GOAT,
+      });
     }
   };
 

@@ -3,7 +3,7 @@ import random
 import uuid
 from typing import List, Optional
 
-from bagchal import Bagchal
+from libbaghchal import Baghchal
 from fastapi import HTTPException, WebSocket, status
 
 from core import settings
@@ -21,6 +21,7 @@ Message Types:
     7 : Game State Broadcast
     8 : Piece Assign Notification
     9 : Request Piece Assign Notification
+    10 : Request next move from norma
 """
 
 
@@ -32,24 +33,24 @@ class GameInstance:
         goat,
         socket,
         game,
-        pgn,
+        is_with_norma,
     ):
         self.game_id = game_id
         self.tiger = tiger
         self.goat = goat
         self.socket = socket
-        self.game: Bagchal = game
-        self.pgn = pgn
+        self.game: Baghchal = game
+        self.is_with_norma = is_with_norma
 
     @staticmethod
     def new():
         return GameInstance(
             game_id=str(uuid.uuid4()),
-            game=Bagchal.new(),
+            game=Baghchal.default(),
             tiger=None,
             goat=None,
             socket=[],
-            pgn="",
+            is_with_norma=False,
         )
 
 
@@ -69,12 +70,8 @@ class GameConnectionManager:
                     "game_id": game_instance.game_id,
                     "tiger": game_instance.tiger,
                     "goat": game_instance.goat,
-                    "turn": game_instance.game.turn,
-                    "goat_counter": game_instance.game.goat_counter,
-                    "goat_captured": game_instance.game.goat_captured,
-                    "game_state": game_instance.game.game_state,
-                    "game_history": game_instance.game.game_history,
-                    "pgn": game_instance.pgn,
+                    "is_with_norma": game_instance.is_with_norma,
+                    "game_serialized": game_instance.game.to_str(),
                 }
             )
 
@@ -96,14 +93,8 @@ class GameConnectionManager:
                     tiger=game.get("tiger"),
                     goat=game.get("goat"),
                     socket=[],
-                    pgn=game.get("pgn"),
-                    game=Bagchal(
-                        turn=game.get("turn"),
-                        goat_counter=game.get("goat_counter"),
-                        goat_captured=game.get("goat_captured"),
-                        game_state=game.get("game_state"),
-                        game_history=game.get("game_history"),
-                    ),
+                    game=Baghchal.from_str(game.get("game_serialized")),
+                    is_with_norma=game.get("is_with_norma"),
                 )
             )
 
@@ -112,6 +103,28 @@ class GameConnectionManager:
             return
 
         await websocket.accept()
+
+        wants_norma = await self.get_wants_norma()
+
+        for game_id in wants_norma:
+            game_instance = self.get_game_by_id(game_id)
+            message = {
+                "type": 10,
+                "game": {
+                    "game_id": game_instance.game_id,
+                    "turn": game_instance.game.turn(),
+                    "goat_counter": game_instance.game.goat_counter(),
+                    "goat_captured": game_instance.game.goat_captured(),
+                    "game_history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game_instance.game.game_history(),
+                        )
+                    ),
+                    "pgn": game_instance.game.pgn(),
+                },
+            }
+            await websocket.send_json(message)
 
         self.norma_executors.append(websocket)
 
@@ -123,6 +136,9 @@ class GameConnectionManager:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Game not found!"
             )
 
+        print(f"Tiger: {game.tiger}")
+        print(f"Goat: {game.goat}")
+        print(f"Client: {ident}")
         if game.tiger == ident:
             piece = -1
         elif game.goat == ident:
@@ -155,11 +171,13 @@ class GameConnectionManager:
 
         message = {
             "type": 7,
-            "pgn": game.pgn,
-            "turn": game.game.turn,
-            "captured_goats": game.game.goat_captured,
-            "placed_goats": game.game.goat_counter,
-            "history": game.game.game_history,
+            "pgn": game.game.pgn(),
+            "turn": game.game.turn(),
+            "captured_goats": game.game.goat_captured(),
+            "placed_goats": game.game.goat_counter(),
+            "history": list(
+                map(lambda item: json.loads(item.to_str()), game.game.game_history())
+            ),
         }
 
         await websocket.send_json(message)
@@ -169,10 +187,15 @@ class GameConnectionManager:
 
         game.socket.remove(socket)
 
-    def create_game(
-        self,
-    ):
+    def executor_disconnect(self, socket):
+        self.norma_executors.remove(socket)
+
+    def create_game(self, with_norma=False):
         game = GameInstance.new()
+
+        if with_norma:
+            game.is_with_norma = True
+
         self.games.append(game)
 
         self.save_to_redis()
@@ -184,6 +207,55 @@ class GameConnectionManager:
 
         for conn in game.socket:  # type: ignore
             await conn.send_json(message)
+
+    async def handle_norma_messages(self, message, ident, ws: WebSocket):
+        message_type = message["type"]
+
+        game_id = message["game_id"]
+
+        if message_type == 1:
+            try:
+                move_result = await self.make_move(
+                    game_id, ident, message["move"].replace(" ", "")
+                )
+
+                self.save_to_redis()
+
+                game = move_result["game"]
+
+                message = {
+                    "type": 7,
+                    "pgn": game.game.pgn(),
+                    "turn": game.game.turn(),
+                    "captured_goats": game.game.goat_captured(),
+                    "placed_goats": game.game.goat_counter(),
+                    "history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
+                }
+
+                wants_norma = json.loads(redis_client.get("wants_norma"))  # type: ignore
+
+                wants_norma.remove(game_id)
+
+                redis_client.set("wants_norma", json.dumps(wants_norma))
+
+                await self.broadcast(game_id, message)
+
+                if move_result["decided"]:
+                    message = {
+                        "type": 6,
+                        "won_by": move_result["won_by"],
+                        "reason": "normal",
+                    }
+                    await self.broadcast(game_id, message)
+
+            except ManagerException as e:
+                message = {"type": 4, "message": e.message}
+                await ws.send_json(message)
 
     async def handle_messages(self, message, ident, game_id, ws: WebSocket):
         message_type = message["type"]
@@ -200,12 +272,18 @@ class GameConnectionManager:
 
                 message = {
                     "type": 7,
-                    "pgn": game.pgn,
-                    "turn": game.game.turn,
-                    "captured_goats": game.game.goat_captured,
-                    "placed_goats": game.game.goat_counter,
-                    "history": game.game.game_history,
+                    "pgn": game.game.pgn(),
+                    "turn": game.game.turn(),
+                    "captured_goats": game.game.goat_captured(),
+                    "placed_goats": game.game.goat_counter(),
+                    "history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
                 }
+
                 await self.broadcast(game_id, message)
 
                 if move_result["decided"]:
@@ -271,6 +349,68 @@ class GameConnectionManager:
             message="Failed to find the game with mathing game_id and ident!"
         )
 
+    async def assign_game_to_engine(self, game_id, ident, piece):
+        self.assign_game(game_id, ident, piece)
+        norma_game_list = redis_client.get("norma_associated_games")
+
+        if norma_game_list:
+            norma_game_list = json.loads(norma_game_list)
+        else:
+            norma_game_list = []
+
+        if piece == 1:
+            await self.append_to_wants_norma(game_id)
+            await self.inform_executors(game_id=game_id)
+
+        norma_game_list.append(
+            {
+                "id": game_id,
+                "piece": piece,
+            }
+        )
+
+        redis_client.set("norma_associated_games", json.dumps(norma_game_list))
+
+    async def append_to_wants_norma(self, game_id):
+        wants_norma = await self.get_wants_norma()
+
+        wants_norma.append(game_id)
+
+        redis_client.set("wants_norma", json.dumps(wants_norma))
+
+    async def get_wants_norma(self):
+        wants_norma = redis_client.get("wants_norma")
+
+        if wants_norma:
+            return json.loads(wants_norma)
+        else:
+            return []
+
+    async def inform_executors(self, game_id=None, game_instance=None):
+        if game_id:
+            game: GameInstance = self.get_game_by_id(game_id)
+        else:
+            game: GameInstance = game_instance  # type: ignore
+
+        if len(self.norma_executors) != 0:
+            message = {
+                "type": 10,
+                "game": {
+                    "game_id": game.game_id,
+                    "turn": game.game.turn(),
+                    "goat_counter": game.game.goat_counter(),
+                    "goat_captured": game.game.goat_captured(),
+                    "game_history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
+                    "pgn": game.game.pgn(),
+                },
+            }
+            await random.choice(self.norma_executors).send_json(message)
+
     async def make_move(self, game_id, ident, move: str):
         game_instance: Optional[GameInstance] = self.get_game_by_id(game_id)
 
@@ -281,26 +421,30 @@ class GameConnectionManager:
         else:
             raise ManagerException(message="Unauthorized user!")
 
-        if ident_piece != game_instance.game.turn:
+        if ident_piece != game_instance.game.turn():
             raise ManagerException(message="Not the player's turn!")
 
-        source, destination = Bagchal.pgn_unit_to_coord(move)
+        source, destination = Baghchal.pgn_unit_to_coord(move)
 
-        game_instance.game.move(source, destination)
+        move_result = game_instance.game.make_move(source, destination, None)
+
+        print(move_result)
+
+        if not move_result["is_valid"]:
+            raise ManagerException(message="Invalid move!")
 
         game_status = game_instance.game.game_status_check()
 
-        if not game_instance.pgn or game_instance.pgn == "":
-            game_instance.pgn = move
-        else:
-            game_instance.pgn = game_instance.pgn + "-" + move
-
-        if game_status["decided"]:
+        if game_status.decided:
             return {
                 "decided": True,
-                "won_by": game_status["won_by"],
+                "won_by": game_status.won_by,
                 "game": game_instance,
             }
+
+        if game_instance.is_with_norma and ident != settings.ENGINE_IDENT:
+            await self.append_to_wants_norma(game_id)
+            await self.inform_executors(game_instance=game_instance)
 
         return {"decided": False, "game": game_instance}
 
@@ -319,7 +463,7 @@ class GameConnectionManager:
         else:
             raise ManagerException(message="Unauthorized user!")
 
-        return resign_resp["won_by"]
+        return resign_resp.won_by
 
     def evict_game(self, game_id):
         for game in self.games:

@@ -57,7 +57,9 @@ const Online = () => {
       method: "POST",
     });
     const sess = sessionResponseFormatter(req);
-    if (sess && sess.success) {
+    const currentSess = localStorage.getItem("ident");
+    console.log(currentSess);
+    if (sess && sess.success && !currentSess) {
       localStorage.setItem("ident", sess.ident);
     }
     console.log(sess);
@@ -68,7 +70,7 @@ const Online = () => {
     const req = await callAPI({
       endpoint: `/create-game`,
       method: "POST",
-      params: { preference: player, ident: localStorage.getItem("ident") },
+      params: { preference: player, ident: localStorage.getItem("ident"), with_norma: true },
     });
     const gameD = gameFormatter(req);
     if (gameD && gameD.success) {
