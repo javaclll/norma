@@ -1,5 +1,5 @@
 import { DndProvider } from "react-dnd";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import board from "../../statics/board.svg";
 import CoRe from "../Common/ConditionalRendering";
@@ -8,7 +8,7 @@ import Intersection from "../Intersection/Intersection.jsx";
 import Tiger from "../Tiger/Tiger.jsx";
 import { GameContext } from "../../context/GameContext";
 import { ItemTypes } from "../../utils/config";
-import { cloneDeep } from "lodash";
+import { cloneDeep, isNaN, parseInt } from "lodash";
 import arrow from "../../statics/arrow.svg";
 import "../Board/styles/board.css";
 import tiger from "../../statics/tiger.svg";
@@ -27,6 +27,7 @@ const Analysis = () => {
     goatCounter,
     nextMove,
     previousMove,
+    setThisMove,
     moveCounter,
     moveHistory,
     setMoveHistory,
@@ -309,10 +310,40 @@ const Analysis = () => {
     return secondChar + firstChar + fourthChar + thirdChar;
   };
   const [notifShow, setNotif] = useState(false);
+  const [pgnAutoLoad, setPGNAutoLoad] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      let string_query = window.location.search;
+      if (string_query.slice(1, 4) == "pgn") {
+        let pgn = string_query.slice(5);
+        console.log(pgn);
+        setLoadPGN(pgn);
+        setPGNAutoLoad(true);
+      }
+    }, 0);
+  }, []);
+
+  useEffect(() => {
+    try {
+      handlePGNLoad(null);
+    } catch (_) {}
+  }, [pgnAutoLoad]);
+
   return (
     <>
       <DndProvider backend={HTML5Backend}>
-        <div className="main-container">
+        <div
+          className="main-container no-select"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key == "ArrowLeft") {
+              previousMove();
+            } else if (e.key == "ArrowRight") {
+              nextMove();
+            }
+          }}
+        >
           <div className="left-box">
             <div className="left-box-content">
               <div className="button-panel">
@@ -323,7 +354,33 @@ const Analysis = () => {
                 >
                   <img className="arrow" src={arrow} />
                 </button>
-                <div className="move-number text">{moveCounter}</div>
+                <input
+                  type="number"
+                  className="move-number text"
+                  value={moveCounter}
+                  onClick={(e) => {
+                    e.target.select();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setThisMove(moveCounter);
+                    }
+                  }}
+                  onChange={(event) => {
+                    let value = event.target.value;
+
+                    if (value) {
+                      value = parseInt(value);
+                    }
+
+                    if (value != moveCounter) {
+                      setMoveCounter(value);
+                    }
+                  }}
+                  onBlur={(event) => {
+                    setThisMove(moveCounter);
+                  }}
+                />
                 <button
                   className="forward button"
                   onClick={nextMove}
@@ -351,7 +408,6 @@ const Analysis = () => {
                 <h2>History Length: {moveHistory.length - 1}</h2>
               </div>
             </div>
-
             {gameResult.decided ? (
               <>
                 <div className="win-screen">

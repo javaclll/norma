@@ -3,7 +3,7 @@ import random
 import uuid
 from typing import List, Optional
 
-from bagchal import Bagchal
+from libbaghchal import Baghchal
 from fastapi import HTTPException, WebSocket, status
 
 from core import settings
@@ -39,14 +39,14 @@ class GameInstance:
         self.tiger = tiger
         self.goat = goat
         self.socket = socket
-        self.game: Bagchal = game
+        self.game: Baghchal = game
         self.is_with_norma = is_with_norma
 
     @staticmethod
     def new():
         return GameInstance(
             game_id=str(uuid.uuid4()),
-            game=Bagchal.new(),
+            game=Baghchal.default(),
             tiger=None,
             goat=None,
             socket=[],
@@ -70,14 +70,8 @@ class GameConnectionManager:
                     "game_id": game_instance.game_id,
                     "tiger": game_instance.tiger,
                     "goat": game_instance.goat,
-                    "prev_move": game_instance.game.prev_move,
-                    "turn": game_instance.game.turn,
-                    "goat_counter": game_instance.game.goat_counter,
-                    "goat_captured": game_instance.game.goat_captured,
-                    "game_state": game_instance.game.game_state,
-                    "game_history": game_instance.game.game_history,
-                    "pgn": game_instance.game.pgn,
                     "is_with_norma": game_instance.is_with_norma,
+                    "game_serialized": game_instance.game.to_str(),
                 }
             )
 
@@ -99,15 +93,7 @@ class GameConnectionManager:
                     tiger=game.get("tiger"),
                     goat=game.get("goat"),
                     socket=[],
-                    game=Bagchal(
-                        turn=game.get("turn"),
-                        goat_counter=game.get("goat_counter"),
-                        goat_captured=game.get("goat_captured"),
-                        game_state=game.get("game_state"),
-                        game_history=game.get("game_history"),
-                        pgn=game.get("pgn"),
-                        prev_move=game.get("prev_move"),
-                    ),
+                    game=Baghchal.from_str(game.get("game_serialized")),
                     is_with_norma=game.get("is_with_norma"),
                 )
             )
@@ -126,11 +112,16 @@ class GameConnectionManager:
                 "type": 10,
                 "game": {
                     "game_id": game_instance.game_id,
-                    "turn": game_instance.game.turn,
-                    "goat_counter": game_instance.game.goat_counter,
-                    "goat_captured": game_instance.game.goat_captured,
-                    "game_history": game_instance.game.game_history,
-                    "pgn": game_instance.game.pgn,
+                    "turn": game_instance.game.turn(),
+                    "goat_counter": game_instance.game.goat_counter(),
+                    "goat_captured": game_instance.game.goat_captured(),
+                    "game_history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game_instance.game.game_history(),
+                        )
+                    ),
+                    "pgn": game_instance.game.pgn(),
                 },
             }
             await websocket.send_json(message)
@@ -145,6 +136,9 @@ class GameConnectionManager:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Game not found!"
             )
 
+        print(f"Tiger: {game.tiger}")
+        print(f"Goat: {game.goat}")
+        print(f"Client: {ident}")
         if game.tiger == ident:
             piece = -1
         elif game.goat == ident:
@@ -177,11 +171,13 @@ class GameConnectionManager:
 
         message = {
             "type": 7,
-            "pgn": game.game.pgn,
-            "turn": game.game.turn,
-            "captured_goats": game.game.goat_captured,
-            "placed_goats": game.game.goat_counter,
-            "history": game.game.game_history,
+            "pgn": game.game.pgn(),
+            "turn": game.game.turn(),
+            "captured_goats": game.game.goat_captured(),
+            "placed_goats": game.game.goat_counter(),
+            "history": list(
+                map(lambda item: json.loads(item.to_str()), game.game.game_history())
+            ),
         }
 
         await websocket.send_json(message)
@@ -229,11 +225,16 @@ class GameConnectionManager:
 
                 message = {
                     "type": 7,
-                    "pgn": game.game.pgn,
-                    "turn": game.game.turn,
-                    "captured_goats": game.game.goat_captured,
-                    "placed_goats": game.game.goat_counter,
-                    "history": game.game.game_history,
+                    "pgn": game.game.pgn(),
+                    "turn": game.game.turn(),
+                    "captured_goats": game.game.goat_captured(),
+                    "placed_goats": game.game.goat_counter(),
+                    "history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
                 }
 
                 wants_norma = json.loads(redis_client.get("wants_norma"))  # type: ignore
@@ -271,11 +272,16 @@ class GameConnectionManager:
 
                 message = {
                     "type": 7,
-                    "pgn": game.game.pgn,
-                    "turn": game.game.turn,
-                    "captured_goats": game.game.goat_captured,
-                    "placed_goats": game.game.goat_counter,
-                    "history": game.game.game_history,
+                    "pgn": game.game.pgn(),
+                    "turn": game.game.turn(),
+                    "captured_goats": game.game.goat_captured(),
+                    "placed_goats": game.game.goat_counter(),
+                    "history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
                 }
 
                 await self.broadcast(game_id, message)
@@ -391,11 +397,16 @@ class GameConnectionManager:
                 "type": 10,
                 "game": {
                     "game_id": game.game_id,
-                    "turn": game.game.turn,
-                    "goat_counter": game.game.goat_counter,
-                    "goat_captured": game.game.goat_captured,
-                    "game_history": game.game.game_history,
-                    "pgn": game.game.pgn,
+                    "turn": game.game.turn(),
+                    "goat_counter": game.game.goat_counter(),
+                    "goat_captured": game.game.goat_captured(),
+                    "game_history": list(
+                        map(
+                            lambda item: json.loads(item.to_str()),
+                            game.game.game_history(),
+                        )
+                    ),
+                    "pgn": game.game.pgn(),
                 },
             }
             await random.choice(self.norma_executors).send_json(message)
@@ -410,19 +421,24 @@ class GameConnectionManager:
         else:
             raise ManagerException(message="Unauthorized user!")
 
-        if ident_piece != game_instance.game.turn:
+        if ident_piece != game_instance.game.turn():
             raise ManagerException(message="Not the player's turn!")
 
-        source, destination = Bagchal.pgn_unit_to_coord(move)
+        source, destination = Baghchal.pgn_unit_to_coord(move)
 
-        game_instance.game.move(source, destination)
+        move_result = game_instance.game.make_move(source, destination, None)
+
+        print(move_result)
+
+        if not move_result["is_valid"]:
+            raise ManagerException(message="Invalid move!")
 
         game_status = game_instance.game.game_status_check()
 
-        if game_status["decided"]:
+        if game_status.decided:
             return {
                 "decided": True,
-                "won_by": game_status["won_by"],
+                "won_by": game_status.won_by,
                 "game": game_instance,
             }
 
@@ -447,7 +463,7 @@ class GameConnectionManager:
         else:
             raise ManagerException(message="Unauthorized user!")
 
-        return resign_resp["won_by"]
+        return resign_resp.won_by
 
     def evict_game(self, game_id):
         for game in self.games:

@@ -70,7 +70,7 @@ const Online = () => {
     const req = await callAPI({
       endpoint: `/create-game`,
       method: "POST",
-      params: { preference: player, ident: localStorage.getItem("ident"), with_norma: true},
+      params: { preference: player, ident: localStorage.getItem("ident"), with_norma: true },
     });
     const gameD = gameFormatter(req);
     if (gameD && gameD.success) {
