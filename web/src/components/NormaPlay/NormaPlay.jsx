@@ -73,7 +73,7 @@ const Online = () => {
       params: {
         preference: player,
         ident: localStorage.getItem("ident"),
-        with_norma: false,
+        with_norma: true,
       },
     });
     const gameD = gameFormatter(req);

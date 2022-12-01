@@ -45,7 +45,7 @@ const StartScreen = () => {
                 <a className="menu_text">Play Online</a>
               </button>
             </Link>
-            <Link to="/analysis">
+            <Link to="/norma">
               <button
                 className="menuButton button_color3"
                 type="button"

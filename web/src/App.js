@@ -2,6 +2,7 @@ import "./App.css";
 import Board from "./components/Board/Board.jsx";
 import StartScreen from "./components/StartScreen/StartScreen.jsx";
 import Analysis from "./components/Analysis/Analysis.jsx";
+import NormaPlay from "./components/NormaPlay/NormaPlay.jsx";
 import Online from "./components/Online/Online.jsx";
 import WebGame from "./components/WebGame/WebGame.jsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -35,6 +36,14 @@ function App() {
           element={
             <GameProvider>
               <Analysis />
+            </GameProvider>
+          }
+        />
+        <Route
+          path="/norma"
+          element={
+            <GameProvider>
+              <NormaPlay />
             </GameProvider>
           }
         />

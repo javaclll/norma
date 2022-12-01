@@ -174,32 +174,6 @@ const Board = () => {
           </div>
         </div>
       </DndProvider>
-
-      {gameResult.decided ? (
-        <>
-          <div className="win-screen">
-            <div className="win-screen-top">
-              <img
-                src={gameResult.wonBy === ItemTypes.GOAT ? goat : tiger}
-                className="win-screen-img"
-              />
-              <a className="win-screen-text">
-                {gameResult.wonBy === ItemTypes.GOAT ? "Goat" : "Tiger"} Wins!
-              </a>
-            </div>
-            <div className="win-screen-bottom">
-              <button
-                className="win-screen-play-again-button"
-                onClick={(e) => onClickHandler(e)}
-              >
-                Play again!
-              </button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <></>
-      )}
     </>
   );
 };

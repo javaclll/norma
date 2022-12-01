@@ -198,7 +198,10 @@ const WebGame = () => {
                   <h2>{turn === ItemTypes.GOAT ? "Goat" : "Tiger"}'s Turn</h2>
                 </CoRe>
                 <CoRe condition={gameResult.decided}>
-                  <h2>{gameResult.wonBy === -1 ? "Tiger" : "Goat"} Won!</h2>
+                  <h2>
+                    {gameResult.wonBy === ItemTypes.GOAT ? "Goat" : "Tiger"}{" "}
+                    Won!
+                  </h2>
                 </CoRe>
                 <h2>Captured Goats: {goatsCaptured}</h2>
                 <h2>Placed Goats: {goatCounter}</h2>
@@ -300,32 +303,6 @@ const WebGame = () => {
           </div>
         </div>
       </DndProvider>
-
-      {gameResult.decided ? (
-        <>
-          <div className="win-screen">
-            <div className="win-screen-top">
-              <img
-                src={gameResult.wonBy === ItemTypes.GOAT ? goat : tiger}
-                className="win-screen-img"
-              />
-              <a className="win-screen-text">
-                {gameResult.wonBy === ItemTypes.GOAT ? "Goat" : "Tiger"} Wins!
-              </a>
-            </div>
-            <div className="win-screen-bottom">
-              <button
-                className="win-screen-play-again-button"
-                onClick={(e) => onClickHandler(e)}
-              >
-                Play again!
-              </button>
-            </div>
-          </div>
-        </>
-      ) : (
-        <></>
-      )}
     </WebsocketContext.Provider>
   );
 };
