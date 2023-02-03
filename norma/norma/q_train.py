@@ -16,13 +16,6 @@ DISCOUNT_FACTOR = 0.50
 TDN = 2
 
 
-ray_env = {
-        
-        "py_modules": [libbaghchal]
-        }
-
-ray.init(num_cpus=8, ignore_reinit_error=True)
-
 ### TODO
 # TEMPORAL DIFFERENCE
 # Randomize training data
@@ -152,7 +145,6 @@ def reward_transformer(rewards_g, rewards_t, states, y_preds):
     return rewards
 
 
-@ray.remote
 def play_game(exploration=True, only_record=None, record_explorations=True):
     states = []
     y_preds = []
@@ -243,20 +235,16 @@ def training_step(exploration=True, train_on=None):
     else:
         raise Exception("Must provide `train_on` parameter to `training_step()`")
 
-    # sar_pairs = []
+    sar_pairs = []
 
-    sar_pairs = ray.get([play_game.remote() for _ in range(100)])
-
-    print(f"{sar_pairs}")
-
-    # while len(sar_pairs) < 2048:
-    #     (sar_pair, _, _,) = play_game(
-    #         exploration=exploration,
-    #         only_record=train_on,
-    #     )
-    #     sar_pairs += sar_pair
-    #     # sar_pairs.append(sar_pair)
-    #     print(f"{len(sar_pairs)}")
+    while len(sar_pairs) < 2048:
+        (sar_pair, _, _,) = play_game(
+            exploration=exploration,
+            only_record=train_on,
+        )
+        sar_pairs += sar_pair
+        # sar_pairs.append(sar_pair)
+        print(f"{len(sar_pairs)}")
 
     positions_count = len(sar_pairs)
     sar_pairs = random.sample(sar_pairs, 512)
@@ -359,7 +347,7 @@ def training_loop(model_name="magma"):
         print(f"Tiger: {cw_tiger_wins} ({((cw_tiger_wins/cw_game_counter)*100):.2f} %)")
         print(f"Draws: {cw_draws} ({((cw_draws/cw_game_counter)*100):.2f} %)")
 
-        (_, _, bagchal,) = play_game.remote(
+        (_, _, bagchal,) = play_game(
             exploration=False,
         )
 

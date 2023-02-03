@@ -21,6 +21,7 @@ def build_model():
             ),
             tf.keras.layers.Reshape((10, 10, 1)),
             tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
+            tf.keras.layers.MaxPooling2D((3, 3)),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(
                 128,
