@@ -2,6 +2,7 @@ import os
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+from keras import layers
 import tensorflow as tf
 
 
@@ -10,44 +11,26 @@ class NormaModel(tf.keras.Sequential):
 
 
 def build_model():
-    return NormaModel(
-        [
-            tf.keras.layers.Dense(
-                100,
-                activation="leaky_relu",
-                input_shape=(64,),
-                kernel_initializer="random_normal",
-                bias_initializer="zeros",
-            ),
-            tf.keras.layers.Reshape((10, 10, 1)),
-            tf.keras.layers.Conv2D(8, kernel_size=(3, 3), activation="leaky_relu"),
-            tf.keras.layers.MaxPooling2D((3, 3)),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(
-                128,
-                activation="leaky_relu",
-                kernel_initializer="random_normal",
-                bias_initializer="zeros",
-            ),
-            tf.keras.layers.Dense(
-                64,
-                activation="leaky_relu",
-                kernel_initializer="random_normal",
-                bias_initializer="zeros",
-            ),
-            tf.keras.layers.Dense(
-                32,
-                activation="leaky_relu",
-                kernel_initializer="random_normal",
-                bias_initializer="zeros",
-            ),
-            tf.keras.layers.Dense(
-                1,
-                activation="linear",
-                kernel_initializer="random_normal",
-                bias_initializer="zeros",
-            ),
-        ]
+    input_board = tf.keras.Input(shape=(5, 5, 3))
+    input_move = tf.keras.Input(shape=(5, 5, 2))
+    input_scalar = tf.keras.Input(shape=(6,))
+
+    conv_board = layers.Conv2D(32, (3, 3), activation="relu")(input_board)
+    conv_board = layers.MaxPooling2D((2, 2))(conv_board)
+    conv_board = layers.Flatten()(conv_board)
+
+    conv_move = layers.Conv2D(32, (3, 3), activation="relu")(input_move)
+    conv_move = layers.MaxPooling2D((2, 2))(conv_move)
+    conv_move = layers.Flatten()(conv_move)
+
+    concat = layers.concatenate([conv_board, conv_move, input_scalar])
+
+    fc1 = layers.Dense(64, activation="relu")(concat)
+    fc2 = layers.Dense(64, activation="relu")(fc1)
+    output = layers.Dense(1, activation="linear")(fc2)
+
+    return tf.keras.Model(
+        inputs=[input_board, input_move, input_scalar], outputs=output
     )
 
 

@@ -1,24 +1,16 @@
 import random
-from copy import deepcopy
-from typing import Any, List, Optional, Tuple, TypeVar
+from typing import Optional, Tuple
 
 import numpy
-from libbaghchal import Baghchal, GameStatus
-from livelossplot import PlotLossesKeras
 import libbaghchal
 
 from .model import goat_model, tiger_model
-import ray
 
 GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
-DISCOUNT_FACTOR = 0.50
+DISCOUNT_FACTOR = 0.90
 TDN = 2
-
-
-### TODO
-# TEMPORAL DIFFERENCE
-# Randomize training data
+SAMPLE_RATE = 0.65
 
 
 def get_best_move(
@@ -152,21 +144,38 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
     moves_to_exclude = []
 
     bagchal = libbaghchal.Baghchal.default()
+    # bagchal.set_rewards(
+    #     t_goat_capture=6.0,
+    #     t_got_trapped=-4.0,
+    #     t_trap_escape=3.0,
+    #     t_win=10.0,
+    #     t_lose=-10.0,
+    #     t_draw=-2.5,
+    #     t_move=-0.15,
+    #     g_goat_captured=-6.0,
+    #     g_tiger_trap=4.0,
+    #     g_tiger_escape=-3.0,
+    #     g_win=10.0,
+    #     g_lose=-10.0,
+    #     g_draw=-2.5,
+    #     g_move=-0.15,
+    # )
+
     bagchal.set_rewards(
-        t_goat_capture=6.0,
-        t_got_trapped=-4.0,
-        t_trap_escape=3.0,
-        t_win=10.0,
-        t_lose=-10.0,
-        t_draw=-2.5,
-        t_move=-0.15,
-        g_goat_captured=-6.0,
-        g_tiger_trap=4.0,
-        g_tiger_escape=-3.0,
-        g_win=10.0,
-        g_lose=-10.0,
-        g_draw=-2.5,
-        g_move=-0.15,
+        t_goat_capture=10.0,
+        t_got_trapped=0,
+        t_trap_escape=0,
+        t_win=0,
+        t_lose=0,
+        t_draw=0,
+        t_move=0,
+        g_goat_captured=0,
+        g_tiger_trap=0,
+        g_tiger_escape=0,
+        g_win=0,
+        g_lose=0,
+        g_draw=0,
+        g_move=0,
     )
 
     for i in range(100):
@@ -215,19 +224,18 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
     return (sar_pair, y_preds, bagchal)
 
 
-def test():
-    (
-        states,
-        y_preds,
-        bagchal,
-    ) = play_game(exploration=True, only_record=1)
-
-    print(f"{states}")
-    print(f"{y_preds}")
-    print(f"{bagchal.pgn()}")
-
-
-def training_step(exploration=True, train_on=None):
+# params: exploration, train_on
+# returns: (
+#   number_of_positions,
+#   number_of_trained_positions,
+#   games_played,
+#   goat_wons,
+#   tiger_wons,
+#   draws
+# )
+def training_step(
+    exploration=True, train_on=None
+) -> Tuple[int, int, int, int, int, int]:
     if train_on == -1:
         model = tiger_model
     elif train_on == 1:
@@ -237,17 +245,31 @@ def training_step(exploration=True, train_on=None):
 
     sar_pairs = []
 
-    while len(sar_pairs) < 2048:
-        (sar_pair, _, _,) = play_game(
+    games_played = 0
+    tiger_wons = 0
+    goat_wons = 0
+    draws = 0
+
+    while len(sar_pairs) < 512:
+        (sar_pair, _, game_obj,) = play_game(
             exploration=exploration,
             only_record=train_on,
         )
+
+        games_played += 1
+        if game_obj.game_state() == libbaghchal.GameStatus.GoatWon:
+            goat_wons += 1
+        elif game_obj.game_state() == libbaghchal.GameStatus.TigerWon:
+            tiger_wons += 1
+        else:
+            draws += 1
+
         sar_pairs += sar_pair
-        # sar_pairs.append(sar_pair)
-        print(f"{len(sar_pairs)}")
 
     positions_count = len(sar_pairs)
-    sar_pairs = random.sample(sar_pairs, 512)
+
+    number_of_pairs_to_choose = int(len(sar_pairs) * SAMPLE_RATE)
+    sar_pairs = random.sample(sar_pairs, number_of_pairs_to_choose)
 
     states = []
     rewards = []
@@ -262,7 +284,7 @@ def training_step(exploration=True, train_on=None):
         batch_size=8,
     )
 
-    return (positions_count, len(sar_pairs))
+    return (positions_count, len(sar_pairs), games_played, goat_wons, tiger_wons, draws)
 
 
 def training_loop(model_name="magma"):
@@ -298,20 +320,40 @@ def training_loop(model_name="magma"):
         before_game_counter = game_counter
 
         # Goat Training
-        for _ in range(2):
-            (played_positions, trained_positions) = training_step(train_on=1)
+        for _ in range(0):
+            (
+                played_positions,
+                trained_positions,
+                t_games,
+                t_goat_wons,
+                t_tiger_wons,
+                t_draws,
+            ) = training_step(train_on=1)
 
-            game_counter += 1
             positions_counter += played_positions
             goat_trained_states += trained_positions
+            game_counter += t_games
+            goat_wins += t_goat_wons
+            tiger_wins += t_tiger_wons
+            draws += t_draws
 
         # Tiger Training
         for _ in range(1):
-            (played_positions, trained_positions) = training_step(train_on=-1)
+            (
+                played_positions,
+                trained_positions,
+                t_games,
+                t_goat_wons,
+                t_tiger_wons,
+                t_draws,
+            ) = training_step(train_on=-1)
 
-            game_counter += 1
             positions_counter += played_positions
-            tiger_trained_states += trained_positions
+            goat_trained_states += trained_positions
+            game_counter += t_games
+            goat_wins += t_goat_wons
+            tiger_wins += t_tiger_wons
+            draws += t_draws
 
         f = open(f"weights/{model_name}/train_stats.txt", "w")
         f.write(
