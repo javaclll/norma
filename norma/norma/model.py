@@ -11,33 +11,35 @@ class NormaModel(tf.keras.Sequential):
 
 
 def build_model():
-    input_board = tf.keras.Input(shape=(5, 5, 3))
-    input_move = tf.keras.Input(shape=(5, 5, 2))
-    input_scalar = tf.keras.Input(shape=(6,))
+    inputs = tf.keras.Input(shape=(131,))
 
-    conv_board = layers.Conv2D(32, (3, 3), activation="relu")(input_board)
-    conv_board = layers.MaxPooling2D((2, 2))(conv_board)
+    board = tf.keras.layers.Reshape((5, 5, 3))(inputs[:, :75])  # type: ignore
+    move = tf.keras.layers.Reshape((5, 5, 2))(inputs[:, 75:125])  # type: ignore
+    scalar = tf.keras.layers.Reshape((6,))(inputs[:, 125:])  # type: ignore
+
+    conv_board = layers.Conv2D(64, (3, 3), activation="relu")(board)
+    conv_board = layers.Conv2D(64, (3, 3), activation="relu")(conv_board)
+    conv_board = layers.MaxPooling2D((2, 2), padding="same")(conv_board)
     conv_board = layers.Flatten()(conv_board)
 
-    conv_move = layers.Conv2D(32, (3, 3), activation="relu")(input_move)
-    conv_move = layers.MaxPooling2D((2, 2))(conv_move)
+    conv_move = layers.Conv2D(64, (3, 3), activation="relu")(move)
+    conv_move = layers.Conv2D(64, (3, 3), activation="relu")(conv_move)
+    conv_move = layers.MaxPooling2D((2, 2), padding="same")(conv_move)
     conv_move = layers.Flatten()(conv_move)
 
-    concat = layers.concatenate([conv_board, conv_move, input_scalar])
+    concat = layers.concatenate([conv_board, conv_move, scalar])
 
-    fc1 = layers.Dense(64, activation="relu")(concat)
+    fc1 = layers.Dense(128, activation="relu")(concat)
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
-    return tf.keras.Model(
-        inputs=[input_board, input_move, input_scalar], outputs=output
-    )
+    return tf.keras.Model(inputs=inputs, outputs=output)
 
 
 tiger_model = build_model()
 
 tiger_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
     loss="mean_squared_error",
 )
 
@@ -51,7 +53,7 @@ tiger_model.summary()
 goat_model = build_model()
 
 goat_model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
     loss="mean_squared_error",
 )
 

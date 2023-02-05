@@ -10,7 +10,7 @@ GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
 DISCOUNT_FACTOR = 0.90
 TDN = 2
-SAMPLE_RATE = 0.65
+SAMPLE_RATE = 0.90
 
 
 def get_best_move(
@@ -144,45 +144,63 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
     moves_to_exclude = []
 
     bagchal = libbaghchal.Baghchal.default()
+
+    bagchal.set_rewards(
+        t_goat_capture=6.0,
+        t_got_trapped=-4.0,
+        t_trap_escape=3.0,
+        t_win=10.0,
+        t_lose=-10.0,
+        t_draw=-2.5,
+        t_move=-0.15,
+        g_goat_captured=-6.0,
+        g_tiger_trap=6.0,
+        g_tiger_escape=-3.0,
+        g_win=10.0,
+        g_lose=-10.0,
+        g_draw=-2.5,
+        g_move=-0.15,
+    )
+
     # bagchal.set_rewards(
     #     t_goat_capture=6.0,
-    #     t_got_trapped=-4.0,
-    #     t_trap_escape=3.0,
+    #     t_got_trapped=0.0,
+    #     t_trap_escape=0.0,
     #     t_win=10.0,
     #     t_lose=-10.0,
     #     t_draw=-2.5,
     #     t_move=-0.15,
     #     g_goat_captured=-6.0,
-    #     g_tiger_trap=4.0,
+    #     g_tiger_trap=6.0,
     #     g_tiger_escape=-3.0,
     #     g_win=10.0,
     #     g_lose=-10.0,
-    #     g_draw=-2.5,
+    #     g_draw=-1.5,
     #     g_move=-0.15,
     # )
 
-    bagchal.set_rewards(
-        t_goat_capture=10.0,
-        t_got_trapped=0,
-        t_trap_escape=0,
-        t_win=0,
-        t_lose=0,
-        t_draw=0,
-        t_move=0,
-        g_goat_captured=0,
-        g_tiger_trap=0,
-        g_tiger_escape=0,
-        g_win=0,
-        g_lose=0,
-        g_draw=0,
-        g_move=0,
-    )
+    # bagchal.set_rewards(
+    #     t_goat_capture=10.0,
+    #     t_got_trapped=0,
+    #     t_trap_escape=0,
+    #     t_win=0,
+    #     t_lose=0,
+    #     t_draw=0,
+    #     t_move=0,
+    #     g_goat_captured=0,
+    #     g_tiger_trap=0,
+    #     g_tiger_escape=0,
+    #     g_win=0,
+    #     g_lose=0,
+    #     g_draw=0,
+    #     g_move=0,
+    # )
 
     for i in range(100):
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=2, rotate_board=True
+            possible_moves, mode=4, rotate_board=True
         )
 
         turn = 1 if i % 2 == 0 else -1
@@ -251,6 +269,7 @@ def training_step(
     draws = 0
 
     while len(sar_pairs) < 512:
+        print(f"Training Step: {len(sar_pairs)}/512")
         (sar_pair, _, game_obj,) = play_game(
             exploration=exploration,
             only_record=train_on,
@@ -320,7 +339,7 @@ def training_loop(model_name="magma"):
         before_game_counter = game_counter
 
         # Goat Training
-        for _ in range(0):
+        for _ in range(3):
             (
                 played_positions,
                 trained_positions,
@@ -349,7 +368,7 @@ def training_loop(model_name="magma"):
             ) = training_step(train_on=-1)
 
             positions_counter += played_positions
-            goat_trained_states += trained_positions
+            tiger_trained_states += trained_positions
             game_counter += t_games
             goat_wins += t_goat_wons
             tiger_wins += t_tiger_wons
