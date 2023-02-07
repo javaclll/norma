@@ -13,15 +13,47 @@ class NormaModel(tf.keras.Sequential):
 def build_model():
     inputs = tf.keras.Input(shape=(131,))
 
-    board = tf.keras.layers.Reshape((5, 5, 5))(inputs[:, :125])  # type: ignore
+    tiger_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, :25])  # type: ignore
+    goat_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 25:50])  # type: ignore
+    blank_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 50:75])  # type: ignore
+    source_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 75:100])  # type: ignore
+    destination_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 100:125])  # type: ignore
     scalar = tf.keras.layers.Reshape((6,))(inputs[:, 125:])  # type: ignore
 
-    conv_board = layers.Conv2D(256, (3, 3), activation="relu")(board)
-    conv_board = layers.Conv2D(128, (3, 3), activation="relu")(conv_board)
-    conv_board = layers.MaxPooling2D((2, 2), padding="same")(conv_board)
-    conv_board = layers.Flatten()(conv_board)
+    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(goat_board)
+    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_goat_board)
+    conv_goat_board = layers.Flatten()(conv_goat_board)
 
-    concat = layers.concatenate([conv_board, scalar])
+    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(tiger_board)
+    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_tiger_board)
+    conv_tiger_board = layers.Flatten()(conv_tiger_board)
+
+    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(blank_board)
+    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_blank_board)
+    conv_blank_board = layers.Flatten()(conv_blank_board)
+
+    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(source_board)
+    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_source_board)
+    conv_source_board = layers.Flatten()(conv_source_board)
+
+    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
+        destination_board
+    )
+    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
+        conv_destination_board
+    )
+    conv_destination_board = layers.Flatten()(conv_destination_board)
+
+    concat = layers.concatenate(
+        [
+            conv_goat_board,
+            conv_tiger_board,
+            conv_blank_board,
+            conv_source_board,
+            conv_destination_board,
+            scalar,
+        ]
+    )
 
     fc1 = layers.Dense(128, activation="relu")(concat)
     fc2 = layers.Dense(64, activation="relu")(fc1)
