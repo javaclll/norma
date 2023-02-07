@@ -200,7 +200,7 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=4, rotate_board=True
+            possible_moves, mode=5, rotate_board=True
         )
 
         turn = 1 if i % 2 == 0 else -1
