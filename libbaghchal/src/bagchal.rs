@@ -169,6 +169,100 @@ impl BaghchalRS {
         return mat;
     }
 
+    fn y_reflect_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
+        let mut mat: [[i8; 5]; 5] = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
+
+        for i in 0..5 {
+            for j in 0..5 {
+                mat[i][4 - j] = matrix[i][j];
+            }
+        }
+
+        return mat;
+    }
+
+    fn x_reflect_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
+        let mut mat: [[i8; 5]; 5] = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
+
+        for i in 0..5 {
+            for j in 0..5 {
+                mat[4 - i][j] = matrix[i][j];
+            }
+        }
+
+        return mat;
+    }
+
+    fn origin_reflect_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
+        let mut mat: [[i8; 5]; 5] = [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0],
+        ];
+
+        for i in 0..5 {
+            for j in 0..5 {
+                mat[j][i] = matrix[i][j];
+            }
+        }
+
+        return mat;
+    }
+
+    fn get_transformed_boards(
+        matrix: [[i8; 5]; 5],
+        source_map: [[i8; 5]; 5],
+        destination_map: [[i8; 5]; 5],
+    ) -> [([[i8; 5]; 5], [[i8; 5]; 5], [[i8; 5]; 5]); 7] {
+        return [
+            (matrix, source_map, destination_map),
+            (
+                Self::rotate_matrix(matrix),
+                Self::rotate_matrix(source_map),
+                Self::rotate_matrix(destination_map),
+            ),
+            (
+                Self::rotate_matrix(Self::rotate_matrix(matrix)),
+                Self::rotate_matrix(Self::rotate_matrix(source_map)),
+                Self::rotate_matrix(Self::rotate_matrix(destination_map)),
+            ),
+            (
+                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(matrix))),
+                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(source_map))),
+                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(destination_map))),
+            ),
+            (
+                Self::x_reflect_matrix(matrix),
+                Self::x_reflect_matrix(source_map),
+                Self::x_reflect_matrix(destination_map),
+            ),
+            (
+                Self::y_reflect_matrix(matrix),
+                Self::y_reflect_matrix(source_map),
+                Self::y_reflect_matrix(destination_map),
+            ),
+            (
+                Self::origin_reflect_matrix(matrix),
+                Self::origin_reflect_matrix(source_map),
+                Self::origin_reflect_matrix(destination_map),
+            ),
+        ];
+    }
+
     pub fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
         let mut vector = Vec::<i8>::with_capacity(20);
 
@@ -739,7 +833,7 @@ impl BaghchalRS {
     pub fn state_as_inputs_mode_6(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
-        rotate_board: Option<bool>,
+        rotate_board: bool,
     ) -> Vec<Vec<i8>> {
         // Tiger Map (25) = [
         //      1, 0, 0, 0, 1,
@@ -798,56 +892,55 @@ impl BaghchalRS {
         let mut vector_list = Vec::<Vec<i8>>::new();
 
         for neighbours in possible_moves {
-            let pos = neighbours.resulting_state;
-            let mut board = self.board();
-
-            if rotate_board == Some(true) {
-                let no_of_rotations = rand::thread_rng().gen_range(0..4);
-
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
-            }
-
-            let mut vector_map: [i8; 131] = [0; 131];
-
-            // Board Positions
-            for i in 0usize..5 {
-                for j in 0usize..5 {
-                    match board[i as usize][j as usize] {
-                        1 => vector_map[i * 5 + j] = 1,
-                        -1 => vector_map[25 + i * 5 + j] = 1,
-                        _ => vector_map[50 + i * 5 + j] = 1,
-                    };
-                }
-            }
-
             let move_ = neighbours.r#move;
 
             // Source and Destination
-            let (source_map, destination_map) = BaghchalRS::action_to_vector_25(move_.0, move_.1);
+            let (source_orig, dest_orig) = BaghchalRS::action_to_vector_25(move_.0, move_.1);
 
-            for i in 0usize..25 {
-                vector_map[75 + i] = source_map[i / 5][i % 5];
-                vector_map[100 + i] = destination_map[i / 5][i % 5];
+            let boards;
+            if rotate_board {
+                boards =
+                    Self::get_transformed_boards(self.board(), source_orig, dest_orig).to_vec();
+            } else {
+                boards = [(self.board(), source_orig, dest_orig)].to_vec();
             }
 
-            // Goat placement complete
-            if pos.goat_counter() >= 20 {
-                vector_map[125] = 1;
-            };
+            for (board, source_map, destination_map) in boards {
+                let mut vector_map: [i8; 131] = [0; 131];
 
-            // Number of goats captured
-            if pos.goat_captured() != 0 {
-                vector_map[126 + pos.goat_captured() as usize - 1] = 1;
+                // Board Positions
+                for i in 0usize..5 {
+                    for j in 0usize..5 {
+                        match board[i as usize][j as usize] {
+                            1 => vector_map[i * 5 + j] = 1,
+                            -1 => vector_map[25 + i * 5 + j] = 1,
+                            _ => vector_map[50 + i * 5 + j] = 1,
+                        };
+                    }
+                }
+
+                for i in 0usize..25 {
+                    vector_map[75 + i] = source_map[i / 5][i % 5];
+                    vector_map[100 + i] = destination_map[i / 5][i % 5];
+                }
+
+                // Goat placement complete
+                if self.goat_counter >= 20 {
+                    vector_map[125] = 1;
+                };
+
+                // Number of goats captured
+                if self.goat_captured != 0 {
+                    vector_map[126 + self.goat_captured as usize - 1] = 1;
+                }
+
+                // Turn
+                if self.turn == -1 {
+                    vector_map[130] = 1;
+                }
+
+                vector_list.push(vector_map.to_vec());
             }
-
-            // Turn
-            if pos.turn() == -1 {
-                vector_map[130] = 1;
-            }
-
-            vector_list.push(vector_map.to_vec());
         }
 
         return vector_list;
@@ -865,7 +958,10 @@ impl BaghchalRS {
             Some(3) => return self.state_as_inputs_mode_3(possible_moves_pre, rotate_board),
             Some(4) => return self.state_as_inputs_mode_4(possible_moves_pre, rotate_board),
             Some(5) => return self.state_as_inputs_mode_5(possible_moves_pre, rotate_board),
-            Some(6) => return self.state_as_inputs_mode_6(possible_moves_pre, rotate_board),
+            Some(6) => {
+                return self
+                    .state_as_inputs_mode_6(possible_moves_pre, rotate_board.unwrap_or(false))
+            }
             _ => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
         }
     }
@@ -1467,7 +1563,8 @@ mod tests {
         test.make_move_pgn("XXC2".to_string());
         test.make_move_pgn("B2D4".to_string());
         test.make_move_pgn("XXB3".to_string());
+        test.load_game("XXA3-A5B5-XXA4-B5C5-XXB5-C5A5-XXA2-A5B5-XXA5-B5C5-XXB5-C5C4-XXC5-C4C3-XXB4-C3C2-XXB3-C2C1-XXB2-C1B1-XXC2-B1C1-XXC3-C1B1-XXC4-B1C1-XXD5-E5E4-XXE5-E4E3-XXD4-E3E2-XXE4-E2D2-XXD3-D2D1-XXE3-C1B1-XXD2".to_string());
 
-        println!("{:?}", test.state_as_inputs_mode_6(None, Some(false))[0]);
+        println!("{:?}", test.state_as_inputs_mode_6(None, false).len());
     }
 }
