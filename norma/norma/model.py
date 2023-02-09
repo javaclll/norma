@@ -6,10 +6,6 @@ from keras import layers
 import tensorflow as tf
 
 
-class NormaModel(tf.keras.Sequential):
-    pass
-
-
 def build_model():
     inputs = tf.keras.Input(shape=(131,))
 
@@ -20,26 +16,34 @@ def build_model():
     destination_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 100:125])  # type: ignore
     scalar = tf.keras.layers.Reshape((6,))(inputs[:, 125:])  # type: ignore
 
-    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(goat_board)
-    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_goat_board)
+    conv_goat_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(goat_board)
+    conv_goat_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
+        conv_goat_board
+    )
     conv_goat_board = layers.Flatten()(conv_goat_board)
 
-    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(tiger_board)
-    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_tiger_board)
+    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(tiger_board)
+    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
+        conv_tiger_board
+    )
     conv_tiger_board = layers.Flatten()(conv_tiger_board)
 
-    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(blank_board)
-    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_blank_board)
+    conv_blank_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(blank_board)
+    conv_blank_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
+        conv_blank_board
+    )
     conv_blank_board = layers.Flatten()(conv_blank_board)
 
-    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(source_board)
-    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_source_board)
+    conv_source_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(source_board)
+    conv_source_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
+        conv_source_board
+    )
     conv_source_board = layers.Flatten()(conv_source_board)
 
-    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
+    conv_destination_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
         destination_board
     )
-    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
+    conv_destination_board = layers.Conv2D(32, (3, 3), activation="leaky_relu")(
         conv_destination_board
     )
     conv_destination_board = layers.Flatten()(conv_destination_board)
@@ -55,8 +59,8 @@ def build_model():
         ]
     )
 
-    fc1 = layers.Dense(128, activation="relu")(concat)
-    fc2 = layers.Dense(64, activation="relu")(fc1)
+    fc1 = layers.Dense(128, activation="leaky_relu")(concat)
+    fc2 = layers.Dense(64, activation="leaky_relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
     return tf.keras.Model(inputs=inputs, outputs=output)

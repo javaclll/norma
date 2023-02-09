@@ -107,7 +107,9 @@ def reward_transformer(rewards_g, rewards_t):
     return rewards
 
 
-def play_game(exploration=True, only_record=None, record_explorations=True):
+def play_game(
+    exploration=True, only_record=None, record_explorations=True, rotate_board=True
+):
     states = []
     y_preds = []
 
@@ -135,14 +137,21 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=4, rotate_board=True
+            possible_moves,
+            mode=6,
+            rotate_board=rotate_board,
         )
 
         turn = 1 if i % 2 == 0 else -1
 
         best_move_index, pred_y = get_best_move(
-            input_vectors, exploration=exploration, agent=turn
+            input_vectors,
+            exploration=exploration,
+            agent=turn,
         )
+
+        if rotate_board:
+            best_move_index = best_move_index // 7
 
         if pred_y or record_explorations:
             if not only_record:

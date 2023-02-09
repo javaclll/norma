@@ -1,8 +1,8 @@
 import random
 from typing import Optional, Tuple
 
-import numpy
 import libbaghchal
+import numpy
 
 from .model import goat_model, tiger_model
 
@@ -50,7 +50,7 @@ def get_best_move(
         raise Exception("`agent` parameter for `get_best_move()` must be `-1` or `1`")
 
 
-def reward_discounter(rewards, states):
+def reward_discounter(rewards):
     n = len(rewards)
 
     for (index, value) in enumerate(rewards[::-1]):
@@ -86,7 +86,7 @@ def two_in_one_merge(items):
     return merged_list
 
 
-def reward_transformer(rewards_g, rewards_t, states, y_preds):
+def td_reward_transformer(rewards_g, rewards_t, states, y_preds, rotate_board=True):
     rewards_t.pop(0)
 
     rewards_g = two_in_one_merge(rewards_g)
@@ -134,10 +134,59 @@ def reward_transformer(rewards_g, rewards_t, states, y_preds):
         if ith_re_t != None:
             rewards.append(ith_re_t)
 
-    return rewards
+    if rotate_board:
+        return [x for x in rewards for _ in range(7)]
+    else:
+        return rewards
 
 
-def play_game(exploration=True, only_record=None, record_explorations=True):
+def reward_transformer(rewards_g, rewards_t, rotate_board=True):
+    rewards_t.pop(0)
+
+    rewards_g = two_in_one_merge(rewards_g)
+    rewards_t = two_in_one_merge(rewards_t)
+
+    for index in range(len(rewards_g)):
+        beyond_first = 0
+
+        for i in range(len(rewards_g)):
+            beyond_first += get_or_zero(rewards_g, index + i + 1) * pow(
+                DISCOUNT_FACTOR, i + 1
+            )
+
+        rewards_g[index] += beyond_first
+
+    for index in range(len(rewards_t)):
+        beyond_first = 0
+
+        for i in range(len(rewards_t)):
+            beyond_first += get_or_zero(rewards_t, index + i + 1) * pow(
+                DISCOUNT_FACTOR, i + 1
+            )
+
+        rewards_t[index] += beyond_first
+
+    rewards = []
+
+    for i in range(len(rewards_g)):
+        ith_re_g = get_or_none(rewards_g, i)
+        ith_re_t = get_or_none(rewards_t, i)
+
+        if ith_re_g != None:
+            rewards.append(ith_re_g)
+
+        if ith_re_t != None:
+            rewards.append(ith_re_t)
+
+    if rotate_board:
+        return [x for x in rewards for _ in range(7)]
+    else:
+        return rewards
+
+
+def play_game(
+    exploration=True, only_record=None, record_explorations=False, rotate_board=True
+):
     states = []
     y_preds = []
 
@@ -200,44 +249,109 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=5, rotate_board=True
+            possible_moves, mode=6, rotate_board=True
         )
 
         turn = 1 if i % 2 == 0 else -1
 
-        best_move_index, pred_y = get_best_move(
+        best_vector_index, pred_y = get_best_move(
             input_vectors, exploration=exploration, agent=turn
         )
 
-        states.append(input_vectors[best_move_index])
-        y_preds.append(pred_y)
+        if rotate_board:
+            best_move_index = best_vector_index // 7
 
-        if pred_y or record_explorations:
-            if only_record == -1 and i % 2 == 1:
-                pass
-            elif only_record == 1 and i % 2 == 0:
-                pass
-            else:
-                moves_to_exclude.append(i)
+            states.append(input_vectors[best_move_index * 7 + 0])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 1])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 2])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 3])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 4])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 5])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 6])
+            y_preds.append(pred_y)
+
         else:
-            moves_to_exclude.append(i)
+            best_move_index = best_vector_index
+            states.append(input_vectors[best_move_index])
+            y_preds.append(pred_y)
 
         bagchal = possible_moves[best_move_index].resulting_state
 
         if bagchal.game_status_check().decided:
             break
 
-    rewards = reward_transformer(
-        bagchal.move_reward_goat(), bagchal.move_reward_tiger(), states, y_preds
+    nr_rewards = reward_transformer(
+        bagchal.move_reward_goat(),
+        bagchal.move_reward_tiger(),
+        False,
     )
 
-    for superindex, index in enumerate(moves_to_exclude):
-        rewards.pop(index - superindex)
-        states.pop(index - superindex)
-        y_preds.pop(index - superindex)
+    rewards = td_reward_transformer(
+        bagchal.move_reward_goat(),
+        bagchal.move_reward_tiger(),
+        states,
+        y_preds,
+        rotate_board,
+    )
 
-    sar_pair = list(zip(states, rewards))
-    random.shuffle(sar_pair)
+    print(f"Rewards: {len(rewards)}")
+    print(f"States: {len(states)}")
+
+    print(f"Before Trans:")
+    print(f"{bagchal.move_reward_goat()}")
+    print(f"{bagchal.move_reward_tiger()}")
+    print(f"Rotated:")
+    print(f"{rewards}")
+    print(f"Not Rotated:")
+    print(f"{nr_rewards}")
+
+    # filtered_state = states
+    # filtered_reward = rewards
+    # filtered_y_pred = y_preds
+
+    turn_filtered_state = []
+    turn_filtered_reward = []
+    turn_filtered_y_pred = []
+
+    for index in range(len(states)):
+        reward = rewards[index]
+        state = states[index]
+        y_pred = y_preds[index]
+
+        is_goat = index % (7 * 2) < 7
+
+        if (only_record == -1 and not is_goat) or (only_record == 1 and is_goat):
+            turn_filtered_reward.append(reward)
+            turn_filtered_y_pred.append(y_pred)
+            turn_filtered_state.append(state)
+
+    if not record_explorations:
+        filtered_state = []
+        filtered_reward = []
+        filtered_y_pred = []
+
+        for index in range(len(turn_filtered_state)):
+            reward = turn_filtered_reward[index]
+            state = turn_filtered_state[index]
+            y_pred = turn_filtered_y_pred[index]
+
+            if y_pred != None:
+                filtered_reward.append(reward)
+                filtered_y_pred.append(y_pred)
+                filtered_state.append(state)
+    else:
+        filtered_state = turn_filtered_state
+        filtered_reward = turn_filtered_reward
+        filtered_y_pred = turn_filtered_y_pred
+
+    sar_pair = list(zip(filtered_state, filtered_reward))
+    # random.shuffle(sar_pair)
 
     return (sar_pair, y_preds, bagchal)
 
@@ -283,6 +397,11 @@ def training_step(
         else:
             draws += 1
 
+        f = open("sarpar.py", "a")
+        f.write(str(sar_pair))
+        f.close()
+        exit()
+        # print(f"SAR PAIR LENGTH: {}")
         sar_pairs += sar_pair
 
     positions_count = len(sar_pairs)

@@ -21,22 +21,22 @@ pub struct BaghchalRS {
     pub trapped_tiger: i8,
 
     // For tiger
-    pub t_goat_capture: f32,
-    pub t_got_trapped: f32,
-    pub t_trap_escape: f32,
-    pub t_win: f32,
-    pub t_lose: f32,
-    pub t_draw: f32,
-    pub t_move: f32,
+    pub t_goat_capture: Option<f32>,
+    pub t_got_trapped: Option<f32>,
+    pub t_trap_escape: Option<f32>,
+    pub t_win: Option<f32>,
+    pub t_lose: Option<f32>,
+    pub t_draw: Option<f32>,
+    pub t_move: Option<f32>,
 
     // For Goat
-    pub g_goat_captured: f32,
-    pub g_tiger_trap: f32,
-    pub g_tiger_escape: f32,
-    pub g_win: f32,
-    pub g_lose: f32,
-    pub g_draw: f32,
-    pub g_move: f32,
+    pub g_goat_captured: Option<f32>,
+    pub g_tiger_trap: Option<f32>,
+    pub g_tiger_escape: Option<f32>,
+    pub g_win: Option<f32>,
+    pub g_lose: Option<f32>,
+    pub g_draw: Option<f32>,
+    pub g_move: Option<f32>,
 }
 
 impl Default for BaghchalRS {
@@ -52,20 +52,20 @@ impl Default for BaghchalRS {
             move_reward_tiger: [].to_vec(),
             move_reward_goat: [].to_vec(),
             trapped_tiger: 0,
-            t_goat_capture: 0.0,
-            t_got_trapped: 0.0,
-            t_trap_escape: 0.0,
-            t_win: 0.0,
-            t_lose: 0.0,
-            t_draw: 0.0,
-            t_move: 0.0,
-            g_goat_captured: 0.0,
-            g_tiger_trap: 0.0,
-            g_tiger_escape: 0.0,
-            g_win: 0.0,
-            g_lose: 0.0,
-            g_draw: 0.0,
-            g_move: 0.0,
+            t_goat_capture: Some(0.0),
+            t_got_trapped: Some(0.0),
+            t_trap_escape: Some(0.0),
+            t_win: Some(0.0),
+            t_lose: Some(0.0),
+            t_draw: Some(0.0),
+            t_move: Some(0.0),
+            g_goat_captured: Some(0.0),
+            g_tiger_trap: Some(0.0),
+            g_tiger_escape: Some(0.0),
+            g_win: Some(0.0),
+            g_lose: Some(0.0),
+            g_draw: Some(0.0),
+            g_move: Some(0.0),
         }
     }
 }
@@ -102,20 +102,20 @@ impl BaghchalRS {
         g_draw: f32,
         g_move: f32,
     ) {
-        self.t_goat_capture = t_goat_capture;
-        self.t_got_trapped = t_got_trapped;
-        self.t_trap_escape = t_trap_escape;
-        self.t_win = t_win;
-        self.t_lose = t_lose;
-        self.t_draw = t_draw;
-        self.t_move = t_move;
-        self.g_goat_captured = g_goat_captured;
-        self.g_tiger_trap = g_tiger_trap;
-        self.g_tiger_escape = g_tiger_escape;
-        self.g_win = g_win;
-        self.g_lose = g_lose;
-        self.g_draw = g_draw;
-        self.g_move = g_move;
+        self.t_goat_capture = Some(t_goat_capture);
+        self.t_got_trapped = Some(t_got_trapped);
+        self.t_trap_escape = Some(t_trap_escape);
+        self.t_win = Some(t_win);
+        self.t_lose = Some(t_lose);
+        self.t_draw = Some(t_draw);
+        self.t_move = Some(t_move);
+        self.g_goat_captured = Some(g_goat_captured);
+        self.g_tiger_trap = Some(g_tiger_trap);
+        self.g_tiger_escape = Some(g_tiger_escape);
+        self.g_win = Some(g_win);
+        self.g_lose = Some(g_lose);
+        self.g_draw = Some(g_draw);
+        self.g_move = Some(g_move);
     }
 
     pub fn cord_to_char(num: i8) -> char {
@@ -1147,17 +1147,17 @@ impl BaghchalRS {
 
         // Goats captured check
         if prev_captured != self.goat_captured {
-            *self.move_reward_goat.last_mut().unwrap() += self.g_goat_captured;
-            *self.move_reward_tiger.last_mut().unwrap() += self.t_goat_capture;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_goat_captured.unwrap();
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_goat_capture.unwrap();
         }
 
         // Trapped tiger check
         if prev_trapped < self.trapped_tiger {
-            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_trap;
-            *self.move_reward_tiger.last_mut().unwrap() += self.t_got_trapped;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_trap.unwrap();
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_got_trapped.unwrap();
         } else if prev_trapped > self.trapped_tiger {
-            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_escape;
-            *self.move_reward_tiger.last_mut().unwrap() += self.t_trap_escape;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_tiger_escape.unwrap();
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_trap_escape.unwrap();
         }
 
         // Has game been decided check
@@ -1167,18 +1167,18 @@ impl BaghchalRS {
             match status_after_move.won_by {
                 -1 => {
                     self.game_state = GameStatus::TigerWon;
-                    *self.move_reward_tiger.last_mut().unwrap() += self.t_win;
-                    *self.move_reward_goat.last_mut().unwrap() += self.g_lose;
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_win.unwrap();
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_lose.unwrap();
                 }
                 1 => {
                     self.game_state = GameStatus::GoatWon;
-                    *self.move_reward_goat.last_mut().unwrap() += self.g_win;
-                    *self.move_reward_tiger.last_mut().unwrap() += self.t_lose;
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_win.unwrap();
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_lose.unwrap();
                 }
                 _ => {
                     self.game_state = GameStatus::Draw;
-                    *self.move_reward_goat.last_mut().unwrap() += self.g_draw;
-                    *self.move_reward_tiger.last_mut().unwrap() += self.t_draw;
+                    *self.move_reward_goat.last_mut().unwrap() += self.g_draw.unwrap();
+                    *self.move_reward_tiger.last_mut().unwrap() += self.t_draw.unwrap();
                 }
             }
         }
@@ -1186,9 +1186,9 @@ impl BaghchalRS {
         // Move Cost
         // Note: turn is already changed so inverted
         if self.turn == -1 {
-            *self.move_reward_goat.last_mut().unwrap() += self.g_move;
+            *self.move_reward_goat.last_mut().unwrap() += self.g_move.unwrap();
         } else {
-            *self.move_reward_tiger.last_mut().unwrap() += self.t_move;
+            *self.move_reward_tiger.last_mut().unwrap() += self.t_move.unwrap();
         }
 
         return move_eval;
@@ -1546,25 +1546,25 @@ mod tests {
     fn test_default() {
         let mut test = BaghchalRS::default();
         // XXA3-A1A2-XXA4-A2A1-XXC3-A5B4-XXD2-B4B3-XXD3-B3B2-XXD4-E5E4-XXC5-E4C4-XXC2-B2D4-XXB3
-        test.make_move_pgn("XXA3".to_string());
-        test.make_move_pgn("A1A2".to_string());
-        test.make_move_pgn("XXA4".to_string());
-        test.make_move_pgn("A2A1".to_string());
-        test.make_move_pgn("XXC3".to_string());
-        test.make_move_pgn("A5B4".to_string());
-        test.make_move_pgn("XXD2".to_string());
-        test.make_move_pgn("B4B3".to_string());
-        test.make_move_pgn("XXD3".to_string());
-        test.make_move_pgn("B3B2".to_string());
-        test.make_move_pgn("XXD4".to_string());
-        test.make_move_pgn("E5E4".to_string());
-        test.make_move_pgn("XXC5".to_string());
-        test.make_move_pgn("E4C4".to_string());
-        test.make_move_pgn("XXC2".to_string());
-        test.make_move_pgn("B2D4".to_string());
-        test.make_move_pgn("XXB3".to_string());
-        test.load_game("XXA3-A5B5-XXA4-B5C5-XXB5-C5A5-XXA2-A5B5-XXA5-B5C5-XXB5-C5C4-XXC5-C4C3-XXB4-C3C2-XXB3-C2C1-XXB2-C1B1-XXC2-B1C1-XXC3-C1B1-XXC4-B1C1-XXD5-E5E4-XXE5-E4E3-XXD4-E3E2-XXE4-E2D2-XXD3-D2D1-XXE3-C1B1-XXD2".to_string());
+        // test.make_move_pgn("XXA3".to_string());
+        // test.make_move_pgn("A1A2".to_string());
+        // test.make_move_pgn("XXA4".to_string());
+        // test.make_move_pgn("A2A1".to_string());
+        // test.make_move_pgn("XXC3".to_string());
+        // test.make_move_pgn("A5B4".to_string());
+        // test.make_move_pgn("XXD2".to_string());
+        // test.make_move_pgn("B4B3".to_string());
+        // test.make_move_pgn("XXD3".to_string());
+        // test.make_move_pgn("B3B2".to_string());
+        // test.make_move_pgn("XXD4".to_string());
+        // test.make_move_pgn("E5E4".to_string());
+        // test.make_move_pgn("XXC5".to_string());
+        // test.make_move_pgn("E4C4".to_string());
+        // test.make_move_pgn("XXC2".to_string());
+        // test.make_move_pgn("B2D4".to_string());
+        // test.make_move_pgn("XXB3".to_string());
+        // test.load_game("XXA3-A5B5-XXA4-B5C5-XXB5-C5A5-XXA2-A5B5-XXA5-B5C5-XXB5-C5C4-XXC5-C4C3-XXB4-C3C2-XXB3-C2C1-XXB2-C1B1-XXC2-B1C1-XXC3-C1B1-XXC4-B1C1-XXD5-E5E4-XXE5-E4E3-XXD4-E3E2-XXE4-E2D2-XXD3-D2D1-XXE3-C1B1-XXD2".to_string());
 
-        println!("{:?}", test.state_as_inputs_mode_6(None, false).len());
+        println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
     }
 }
