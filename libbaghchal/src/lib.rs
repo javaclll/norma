@@ -9,7 +9,6 @@ use pythonize::{depythonize, pythonize};
 use serde::{Deserialize, Serialize};
 use types::*;
 
-
 #[pyclass]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Baghchal {
@@ -104,11 +103,11 @@ impl Baghchal {
     }
 
     #[staticmethod]
-    pub fn coord_to_png_unit(source: Option<[i8; 2]>, destination: [i8; 2]) -> String {
+    pub fn coord_to_png_unit(destination: [i8; 2], source: Option<[i8; 2]>) -> String {
         return BaghchalRS::coord_to_png_unit(source, destination);
     }
 
-    pub fn copy(&self) -> Baghchal{
+    pub fn copy(&self) -> Baghchal {
         return self.clone();
     }
 
@@ -209,7 +208,9 @@ impl Baghchal {
         mode: Option<i8>,
         rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
-        return self.inner.state_as_inputs(possible_moves_pre, mode, rotate_board);
+        return self
+            .inner
+            .state_as_inputs(possible_moves_pre, mode, rotate_board);
     }
 
     pub fn clear_game(&mut self) {
@@ -226,8 +227,8 @@ impl Baghchal {
 
     pub fn make_move(
         &mut self,
-        source: Option<[i8; 2]>,
         target: [i8; 2],
+        source: Option<[i8; 2]>,
         eval_res: Option<MoveCheckResult>,
     ) -> PyObject {
         Python::with_gil(|py| {

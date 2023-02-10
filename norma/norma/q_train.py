@@ -185,7 +185,7 @@ def reward_transformer(rewards_g, rewards_t, rotate_board=True):
 
 
 def play_game(
-    exploration=True, only_record=None, record_explorations=False, rotate_board=True
+    exploration=True, only_record=None, record_explorations=True, rotate_board=True
 ):
     states = []
     y_preds = []
