@@ -10,7 +10,7 @@ GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
 DISCOUNT_FACTOR = 0.90
 TDN = 2
-SAMPLE_RATE = 0.90
+SAMPLE_RATE = 0.25
 
 
 def get_best_move(
@@ -190,8 +190,6 @@ def play_game(
     states = []
     y_preds = []
 
-    moves_to_exclude = []
-
     bagchal = libbaghchal.Baghchal.default()
 
     bagchal.set_rewards(
@@ -286,30 +284,11 @@ def play_game(
         if bagchal.game_status_check().decided:
             break
 
-    nr_rewards = reward_transformer(
+    rewards = reward_transformer(
         bagchal.move_reward_goat(),
         bagchal.move_reward_tiger(),
-        False,
-    )
-
-    rewards = td_reward_transformer(
-        bagchal.move_reward_goat(),
-        bagchal.move_reward_tiger(),
-        states,
-        y_preds,
         rotate_board,
     )
-
-    print(f"Rewards: {len(rewards)}")
-    print(f"States: {len(states)}")
-
-    print(f"Before Trans:")
-    print(f"{bagchal.move_reward_goat()}")
-    print(f"{bagchal.move_reward_tiger()}")
-    print(f"Rotated:")
-    print(f"{rewards}")
-    print(f"Not Rotated:")
-    print(f"{nr_rewards}")
 
     # filtered_state = states
     # filtered_reward = rewards
@@ -351,7 +330,7 @@ def play_game(
         filtered_y_pred = turn_filtered_y_pred
 
     sar_pair = list(zip(filtered_state, filtered_reward))
-    # random.shuffle(sar_pair)
+    random.shuffle(sar_pair)
 
     return (sar_pair, y_preds, bagchal)
 
@@ -382,8 +361,8 @@ def training_step(
     goat_wons = 0
     draws = 0
 
-    while len(sar_pairs) < 512:
-        print(f"Training Step: {len(sar_pairs)}/512")
+    while len(sar_pairs) < 2048:
+        print(f"Game Generation Step: {len(sar_pairs)}/2048")
         (sar_pair, _, game_obj,) = play_game(
             exploration=exploration,
             only_record=train_on,
@@ -397,10 +376,10 @@ def training_step(
         else:
             draws += 1
 
-        f = open("sarpar.py", "a")
-        f.write(str(sar_pair))
-        f.close()
-        exit()
+        # f = open("sarpar.py", "a")
+        # f.write(str(sar_pair))
+        # f.close()
+        # exit()
         # print(f"SAR PAIR LENGTH: {}")
         sar_pairs += sar_pair
 
@@ -458,7 +437,7 @@ def training_loop(model_name="magma"):
         before_game_counter = game_counter
 
         # Goat Training
-        for _ in range(3):
+        for _ in range(1):
             (
                 played_positions,
                 trained_positions,
