@@ -9,50 +9,33 @@ import tensorflow as tf
 def build_model():
     inputs = tf.keras.Input(shape=(131,))
 
-    tiger_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, :25])  # type: ignore
-    goat_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 25:50])  # type: ignore
-    blank_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 50:75])  # type: ignore
-    source_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 75:100])  # type: ignore
-    destination_board = tf.keras.layers.Reshape((5, 5, 1))(inputs[:, 100:125])  # type: ignore
+    board = tf.keras.layers.Reshape((5, 5, 3))(inputs[:, :75])  # type: ignore
+    move = tf.keras.layers.Reshape((5, 5, 2))(inputs[:, 75:125])  # type: ignore
     scalar = tf.keras.layers.Reshape((6,))(inputs[:, 125:])  # type: ignore
 
-    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(goat_board)
-    conv_goat_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_goat_board)
-    conv_goat_board = layers.Flatten()(conv_goat_board)
+    conv_board = layers.Conv2D(64, (3, 3))(board)
+    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
+    conv_board = layers.Activation("leaky_relu")(conv_board)
 
-    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(tiger_board)
-    conv_tiger_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_tiger_board)
-    conv_tiger_board = layers.Flatten()(conv_tiger_board)
+    conv_board = layers.Conv2D(64, (2, 2))(conv_board)
+    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
+    conv_board = layers.Activation("leaky_relu")(conv_board)
 
-    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(blank_board)
-    conv_blank_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_blank_board)
-    conv_blank_board = layers.Flatten()(conv_blank_board)
+    conv_board = layers.Flatten()(conv_board)
 
-    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(source_board)
-    conv_source_board = layers.Conv2D(32, (3, 3), activation="relu")(conv_source_board)
-    conv_source_board = layers.Flatten()(conv_source_board)
 
-    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
-        destination_board
-    )
-    conv_destination_board = layers.Conv2D(32, (3, 3), activation="relu")(
-        conv_destination_board
-    )
-    conv_destination_board = layers.Flatten()(conv_destination_board)
+    conv_move = layers.Conv2D(64, (3, 3), activation="leaky_relu")(move)
+    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
+    conv_board = layers.Activation("leaky_relu")(conv_board)
 
-    concat = layers.concatenate(
-        [
-            conv_goat_board,
-            conv_tiger_board,
-            conv_blank_board,
-            conv_source_board,
-            conv_destination_board,
-            scalar,
-        ]
-    )
+    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
+    conv_board = layers.Activation("leaky_relu")(conv_board)
+    conv_move = layers.Flatten()(conv_move)
 
-    fc1 = layers.Dense(128, activation="relu")(concat)
-    fc2 = layers.Dense(64, activation="relu")(fc1)
+    concat = layers.concatenate([conv_board, conv_move, scalar])
+
+    fc1 = layers.Dense(128, activation="leaky_relu")(concat)
+    fc2 = layers.Dense(64, activation="leaky_relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
     return tf.keras.Model(inputs=inputs, outputs=output)

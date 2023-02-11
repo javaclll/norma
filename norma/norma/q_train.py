@@ -8,21 +8,29 @@ from .model import goat_model, tiger_model
 
 GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
+OPPONENT_EXPLORATION_FACTOR = 1.0
+
+
 DISCOUNT_FACTOR = 0.90
 TDN = 2
-SAMPLE_RATE = 0.25
+SAMPLE_RATE = 1.0
+# SAMPLE_RATE = 0.50
 
 
 def get_best_move(
     input_vectors,
     agent,
+    training_for,
     exploration=True,
 ) -> Tuple[int, Optional[float]]:
     if agent == -1:
         inputs = numpy.asarray(input_vectors)
 
         if exploration:
-            EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
+            if training_for == -1:
+                EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
+            else:
+                EXPLORATION_FACTOR = OPPONENT_EXPLORATION_FACTOR
 
             if random.uniform(0, 1) < EXPLORATION_FACTOR:
                 index = random.randint(0, len(input_vectors) - 1)
@@ -36,7 +44,10 @@ def get_best_move(
         inputs = numpy.asarray(input_vectors)
 
         if exploration:
-            EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
+            if training_for == 1:
+                EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
+            else:
+                EXPLORATION_FACTOR = OPPONENT_EXPLORATION_FACTOR
 
             if random.uniform(0, 1) < EXPLORATION_FACTOR:
                 index = random.randint(0, len(input_vectors) - 1)
@@ -253,7 +264,7 @@ def play_game(
         turn = 1 if i % 2 == 0 else -1
 
         best_vector_index, pred_y = get_best_move(
-            input_vectors, exploration=exploration, agent=turn
+            input_vectors, exploration=exploration, agent=turn, training_for=only_record,
         )
 
         if rotate_board:
@@ -361,7 +372,7 @@ def training_step(
     goat_wons = 0
     draws = 0
 
-    while len(sar_pairs) < 2048:
+    while len(sar_pairs) < 32768:
         print(f"Game Generation Step: {len(sar_pairs)}/2048")
         (sar_pair, _, game_obj,) = play_game(
             exploration=exploration,
@@ -455,22 +466,22 @@ def training_loop(model_name="magma"):
             draws += t_draws
 
         # Tiger Training
-        for _ in range(1):
-            (
-                played_positions,
-                trained_positions,
-                t_games,
-                t_goat_wons,
-                t_tiger_wons,
-                t_draws,
-            ) = training_step(train_on=-1)
-
-            positions_counter += played_positions
-            tiger_trained_states += trained_positions
-            game_counter += t_games
-            goat_wins += t_goat_wons
-            tiger_wins += t_tiger_wons
-            draws += t_draws
+        # for _ in range(1):
+        #     (
+        #         played_positions,
+        #         trained_positions,
+        #         t_games,
+        #         t_goat_wons,
+        #         t_tiger_wons,
+        #         t_draws,
+        #     ) = training_step(train_on=-1)
+        #
+        #     positions_counter += played_positions
+        #     tiger_trained_states += trained_positions
+        #     game_counter += t_games
+        #     goat_wins += t_goat_wons
+        #     tiger_wins += t_tiger_wons
+        #     draws += t_draws
 
         f = open(f"weights/{model_name}/train_stats.txt", "w")
         f.write(
