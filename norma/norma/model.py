@@ -8,35 +8,11 @@ import tensorflow as tf
 
 def build_model():
     inputs = tf.keras.Input(shape=(131,))
-
-    board = tf.keras.layers.Reshape((5, 5, 3))(inputs[:, :75])  # type: ignore
-    move = tf.keras.layers.Reshape((5, 5, 2))(inputs[:, 75:125])  # type: ignore
-    scalar = tf.keras.layers.Reshape((6,))(inputs[:, 125:])  # type: ignore
-
-    conv_board = layers.Conv2D(64, (3, 3))(board)
-    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
-    conv_board = layers.Activation("leaky_relu")(conv_board)
-
-    conv_board = layers.Conv2D(64, (2, 2))(conv_board)
-    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
-    conv_board = layers.Activation("leaky_relu")(conv_board)
-
-    conv_board = layers.Flatten()(conv_board)
-
-
-    conv_move = layers.Conv2D(64, (3, 3), activation="leaky_relu")(move)
-    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
-    conv_board = layers.Activation("leaky_relu")(conv_board)
-
-    conv_board = layers.BatchNormalization(momentum=0.9)(conv_board)
-    conv_board = layers.Activation("leaky_relu")(conv_board)
-    conv_move = layers.Flatten()(conv_move)
-
-    concat = layers.concatenate([conv_board, conv_move, scalar])
-
-    fc1 = layers.Dense(128, activation="leaky_relu")(concat)
-    fc2 = layers.Dense(64, activation="leaky_relu")(fc1)
-    output = layers.Dense(1, activation="linear")(fc2)
+    d1 = layers.Dense(256, activation="leaky_relu")(inputs)
+    d2 = layers.Dense(128, activation="leaky_relu")(d1)
+    d3 = layers.Dense(128, activation="leaky_relu")(d2)
+    d4 = layers.Dense(64, activation="leaky_relu")(d3)
+    output = layers.Dense(1, activation="linear")(d4)
 
     return tf.keras.Model(inputs=inputs, outputs=output)
 
