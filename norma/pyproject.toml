@@ -5,7 +5,7 @@ description = ""
 authors = ["Daze <dazehere@yandex.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.10"
+python = ">=3.9,<3.10"
 websocket-client = "^1.4.1"
 numpy = "^1.23.3"
 rel = "^0.4.7"
