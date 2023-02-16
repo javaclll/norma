@@ -64,5 +64,24 @@ RUN rm libbaghchal*.whl
 
 RUN rm requirements.txt
 
-COPY ./norma/ .
-CMD ["python","-m","norma","train","HPC"] 
+COPY ./keys/id_rsa /keys/id_rsa
+
+RUN apt update -y && apt upgrade -y
+RUN apt install autossh git openssh-server sudo -y
+
+RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 daze
+
+RUN  echo 'daze:daze' | chpasswd
+
+
+COPY ./keys/id_rsa /home/ubuntu/.ssh/
+COPY ./keys/id_rsa /root/.ssh/
+
+RUN service ssh start
+
+EXPOSE 22
+
+COPY ./start-script.sh /
+RUN chmod +x /start-script.sh
+
+CMD exec /start-script.sh
