@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 pub mod bagchal;
 pub mod constants;
 pub mod types;
+pub mod move_translator;
 
 use bagchal::BaghchalRS;
 use pythonize::{depythonize, pythonize};

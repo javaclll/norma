@@ -1634,27 +1634,120 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let mut test = BaghchalRS::default();
-        // XXA3-A1A2-XXA4-A2A1-XXC3-A5B4-XXD2-B4B3-XXD3-B3B2-XXD4-E5E4-XXC5-E4C4-XXC2-B2D4-XXB3
-        // test.make_move_pgn("XXA3".to_string());
-        // test.make_move_pgn("A1A2".to_string());
-        // test.make_move_pgn("XXA4".to_string());
-        // test.make_move_pgn("A2A1".to_string());
-        // test.make_move_pgn("XXC3".to_string());
-        // test.make_move_pgn("A5B4".to_string());
-        // test.make_move_pgn("XXD2".to_string());
-        // test.make_move_pgn("B4B3".to_string());
-        // test.make_move_pgn("XXD3".to_string());
-        // test.make_move_pgn("B3B2".to_string());
-        // test.make_move_pgn("XXD4".to_string());
-        // test.make_move_pgn("E5E4".to_string());
-        // test.make_move_pgn("XXC5".to_string());
-        // test.make_move_pgn("E4C4".to_string());
-        // test.make_move_pgn("XXC2".to_string());
-        // test.make_move_pgn("B2D4".to_string());
-        // test.make_move_pgn("XXB3".to_string());
-        // test.load_game("XXA3-A5B5-XXA4-B5C5-XXB5-C5A5-XXA2-A5B5-XXA5-B5C5-XXB5-C5C4-XXC5-C4C3-XXB4-C3C2-XXB3-C2C1-XXB2-C1B1-XXC2-B1C1-XXC3-C1B1-XXC4-B1C1-XXD5-E5E4-XXE5-E4E3-XXD4-E3E2-XXE4-E2D2-XXD3-D2D1-XXE3-C1B1-XXD2".to_string());
+        // let mut valids: Vec<String> = Vec::new();
+        let mut valids: Vec<Move> = Vec::new();
+        for m in 0..5 {
+            for n in 0..5 {
+                for i in 0..5 {
+                    for j in 0..5 {
+                        let mut game_state = GameStateInstance {
+                            board: [
+                                [0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0],
+                            ],
+                            goat_count: 20,
+                            goat_captured: 0,
+                        };
 
-        println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
+                        game_state.board[i][j] = -1;
+                        game_state.board[m][n] = 1;
+
+                        let mut test = BaghchalRS::default();
+                        test.goat_counter = 20;
+                        test.turn = -1;
+
+                        test.game_history = vec![game_state];
+
+                        for k in 0..5 {
+                            for l in 0..5 {
+                                let mut ns = test.clone();
+                                let res = ns.make_move(Some([i as i8, j as i8]), [k, l], None);
+
+                                if res.is_valid {
+                                    let move_cord = (Some([i as i8, j as i8]), [k, l]);
+                                    if !valids.contains(&move_cord) {
+                                        valids.push(move_cord);
+                                    }
+                                    // let move_pgn = BaghchalRS::coord_to_png_unit(
+                                    //     Some([i as i8, j as i8]),
+                                    //     [k, l],
+                                    // );
+                                    // if !valids.contains(&move_pgn) {
+                                    //     valids.push(move_pgn);
+                                    // }
+                                }
+                            }
+                        }
+
+                        // println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
+                    }
+                }
+            }
+        }
+
+        valids.iter().for_each(|item| {
+            // println!("{:?} => return 0,", item);
+            println!("0 => return {:?},", item);
+        });
+        println!("{:?}", valids.len());
     }
+
+    // #[test]
+    // fn test_default() {
+    //     let mut valids: Vec<Move> = Vec::new();
+    //     for i in 0..5 {
+    //         for j in 0..5 {
+    //             let mut game_state = GameStateInstance {
+    //                 board: [
+    //                     [0, 0, 0, 0, 0],
+    //                     [0, 0, 0, 0, 0],
+    //                     [0, 0, 0, 0, 0],
+    //                     [0, 0, 0, 0, 0],
+    //                     [0, 0, 0, 0, 0],
+    //                 ],
+    //                 goat_count: 20,
+    //                 goat_captured: 0,
+    //             };
+    //
+    //             game_state.board[i][j] = 1;
+    //
+    //             let mut test = BaghchalRS::default();
+    //             test.goat_counter = 20;
+    //
+    //             test.game_history = vec![game_state];
+    //
+    //             for k in 0..5 {
+    //                 for l in 0..5 {
+    //                     let mut ns = test.clone();
+    //                     let res = ns.make_move(Some([i as i8, j as i8]), [k, l], None);
+    //
+    //                     // if res.is_valid {
+    //                     //     let move_cord = (Some([i as i8, j as i8]), [k, l]);
+    //                     //     if !valids.contains(&move_cord) {
+    //                     //         valids.push(move_cord);
+    //                     //     }
+    //                     // }
+    //
+    //                     if res.is_valid {
+    //                         let move_cord = (None, [k, l]);
+    //                         if !valids.contains(&move_cord) {
+    //                             valids.push(move_cord);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //
+    //             // println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
+    //         }
+    //     }
+    //
+    //     valids.iter().for_each(|item| {
+    //         println!("{:?} => return 0,", item);
+    //         // println!("0 => return {:?},", item);
+    //     });
+    //     println!("{:?}", valids.len());
+    // }
 }
