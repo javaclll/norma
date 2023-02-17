@@ -1,6 +1,8 @@
 import random
 from typing import Optional, Tuple
 
+import numpy as np
+
 import numpy
 import libbaghchal
 
@@ -203,7 +205,8 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
             possible_moves, mode=4, rotate_board=True
         )
 
-        turn = 1 if i % 2 == 0 else -1
+        # turn1 = bagchal.turn()
+        turn = -1 if i % 2 == 0 else 1
 
         best_move_index, pred_y = get_best_move(
             input_vectors, exploration=exploration, agent=turn
@@ -290,6 +293,12 @@ def training_step(
     number_of_pairs_to_choose = int(len(sar_pairs) * SAMPLE_RATE)
     sar_pairs = random.sample(sar_pairs, number_of_pairs_to_choose)
 
+    # states = np.array([], dtype=np.int8)
+    # rewards = np.array([], dtype=np.float32)
+    # for item in sar_pairs:
+    #     np.append(states, np.array(item[0]))
+    #     np.append(rewards, np.array(item[1]))
+
     states = []
     rewards = []
     for item in sar_pairs:
@@ -297,10 +306,10 @@ def training_step(
         rewards.append(item[1])
 
     model.fit(
-        states,
-        rewards,
+        np.array(states, dtype=np.int8),
+        np.array(rewards, dtype=np.float32),
         use_multiprocessing=True,
-        batch_size=8,
+        batch_size=2,
     )
 
     return (positions_count, len(sar_pairs), games_played, goat_wons, tiger_wons, draws)

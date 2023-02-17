@@ -4,6 +4,6 @@ autossh -M 0 -i /keys/id_rsa -o PubkeyAuthentication=yes -o PasswordAuthenticati
 
 export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
 
-cd /home/ubuntu && git clone git@github.com:arpandaze/norma.git && cd /home/ubuntu/norma/norma && python -m norma train $MODEL_NAME &
+cd /home/ubuntu && git clone git@github.com:arpandaze/norma.git && cd /home/ubuntu/norma/norma && git checkout hpc && python -m norma train $MODEL_NAME &
 
 tail -f /dev/null
