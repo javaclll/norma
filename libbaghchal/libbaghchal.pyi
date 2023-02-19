@@ -1,6 +1,5 @@
 from _typeshed import Self
-from typing import Optional, List, Any, Tuple, Dict
-import json
+from typing import Optional, List, Any, Tuple
 
 
 class Baghchal:
@@ -33,6 +32,33 @@ class Baghchal:
 
     @staticmethod
     def coord_to_png_unit(destination: List[int], source: Optional[List[int]]) -> str:
+        ...
+
+    @staticmethod
+    def i2m_goat(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def i2m_placement(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def i2m_tiger(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def m2i_goat(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    @staticmethod
+    def m2i_placement(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    @staticmethod
+    def m2i_tiger(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    def index_to_input(self, index: int) -> List[List[int]]:
         ...
 
     def set_rewards(
@@ -105,6 +131,14 @@ class Baghchal:
         mode: Optional[int] = None,
         rotate_board: Optional[bool] = False,
     ) -> List[List[int]]:
+        ...
+
+    def state_as_input_actor(
+        self,
+        possible_moves_pre: Optional[List[PossibleMove]],
+        mode: Optional[int] = None,
+        rotate_board: Optional[bool] = False,
+    ) -> List[int]:
         ...
 
     def clear_game(self) -> None:

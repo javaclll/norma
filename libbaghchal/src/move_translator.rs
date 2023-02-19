@@ -2,7 +2,7 @@ use crate::types::Move;
 use crate::BaghchalRS;
 
 impl BaghchalRS {
-    fn i2m_goat(index: usize) -> Move {
+    pub fn i2m_goat(index: usize) -> Move {
         match index {
             0 => return (Some([0, 0]), [0, 1]),
             1 => return (Some([0, 0]), [1, 0]),
@@ -120,7 +120,7 @@ impl BaghchalRS {
         }
     }
 
-    fn i2m_placement(index: usize) -> Move {
+    pub fn i2m_placement(index: usize) -> Move {
         match index {
             0 => return (None, [0, 1]),
             1 => return (None, [1, 0]),
@@ -150,7 +150,7 @@ impl BaghchalRS {
             _ => panic!("Invalid value to `i2m_placement`"),
         }
     }
-    fn i2m_tiger(index: usize) -> Move {
+    pub fn i2m_tiger(index: usize) -> Move {
         match index {
             0 => return (Some([0, 1]), [0, 2]),
             1 => return (Some([0, 1]), [1, 1]),
@@ -348,7 +348,7 @@ impl BaghchalRS {
         }
     }
 
-    fn m2i_goat(move_: Move) -> usize {
+    pub fn m2i_goat(move_: Move) -> usize {
         match move_ {
             (Some([0, 0]), [0, 1]) => return 0,
             (Some([0, 0]), [1, 0]) => return 1,
@@ -466,7 +466,7 @@ impl BaghchalRS {
         }
     }
 
-    fn m2i_placement(move_: Move) -> usize {
+    pub fn m2i_placement(move_: Move) -> usize {
         match move_ {
             (None, [0, 1]) => return 0,
             (None, [1, 0]) => return 1,
@@ -496,7 +496,7 @@ impl BaghchalRS {
             _ => panic!("Invalid value to `m2i_placement`"),
         };
     }
-    fn m2i_tiger(move_: Move) -> usize {
+    pub fn m2i_tiger(move_: Move) -> usize {
         match move_ {
             (Some([0, 1]), [0, 2]) => return 0,
             (Some([0, 1]), [1, 1]) => return 1,

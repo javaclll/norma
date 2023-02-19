@@ -361,6 +361,7 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: Option<bool>,
+        one: bool,
     ) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -428,6 +429,10 @@ impl BaghchalRS {
             };
 
             vector_list.push(input);
+
+            if one {
+                return vector_list;
+            }
         }
 
         return vector_list;
@@ -447,6 +452,7 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: Option<bool>,
+        one: bool,
     ) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -518,6 +524,10 @@ impl BaghchalRS {
             input.push(0);
 
             vector_list.push(input);
+
+            if one {
+                return vector_list;
+            }
         }
 
         return vector_list;
@@ -537,6 +547,7 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: Option<bool>,
+        one: bool,
     ) -> Vec<Vec<i8>> {
         let possible_moves: Vec<PossibleMove>;
 
@@ -629,6 +640,13 @@ impl BaghchalRS {
                 _ => {}
             }
             vector_list.push(input);
+
+            if one {
+                return vector_list
+                    .iter()
+                    .map(|item| item.iter().flatten().cloned().collect::<Vec<i8>>())
+                    .collect();
+            }
         }
 
         return vector_list
@@ -641,6 +659,7 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: Option<bool>,
+        one: bool,
     ) -> Vec<Vec<i8>> {
         // Board Map (75) = [
         //     [0,0,1], [0,0,1], [0,0,1], [0,0,1], [0,0,1],
@@ -735,6 +754,10 @@ impl BaghchalRS {
             };
 
             vector_list.push(input);
+
+            if one {
+                return vector_list;
+            }
         }
 
         return vector_list;
@@ -744,6 +767,7 @@ impl BaghchalRS {
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: Option<bool>,
+        one: bool,
     ) -> Vec<Vec<i8>> {
         // Board Map (125) = [
         //     [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0], [0,0,1,0,0],
@@ -825,12 +849,15 @@ impl BaghchalRS {
             };
 
             vector_list.push(input);
+
+            if one {
+                return vector_list;
+            }
         }
 
         return vector_list;
     }
-
-    pub fn state_as_inputs_mode_6(
+    pub fn state_as_inputs_mode_6_old(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: bool,
@@ -946,26 +973,57 @@ impl BaghchalRS {
         return vector_list;
     }
 
-    pub fn state_as_inputs_mode_7(
+    pub fn state_as_inputs_mode_6(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
         rotate_board: bool,
+        one: bool,
     ) -> Vec<Vec<i8>> {
-        // Tiger = Normal(1), Source(3), Destination(5)
-        // Goat = Normal(11), Source(13), Destination(17), Placement(19)
-        // Board = [
-        //      [1, 3, 3, 0, 1],
-        //      [0, 0, 3, 0, 0],
-        //      [3, 0, 3, 0, 3],
-        //      [0, 0, 0, 0, 0],
-        //      [1, 0, 0, 0, 1]
+        // Tiger Map (25) = [
+        //      1, 0, 0, 0, 1,
+        //      0, 0, 0, 0, 0,
+        //      0, 0, 0, 0, 0,
+        //      0, 0, 0, 1, 0,
+        //      1, 0, 0, 0, 0,
+        // ]
+        //
+        // Goat Map (25) = [
+        //      0, 0, 0, 1, 0,
+        //      1, 0, 0, 0, 0,
+        //      1, 1, 1, 0, 1,
+        //      0, 0, 0, 0, 1,
+        //      0, 1, 0, 1 0,
+        // ]
+        //
+        // Blank map (25) = [
+        //      0, 1, 1, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 01 0,
+        // ]
+        //
+        // Destination map (25) = [
+        //      0, 1, 1, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 01 0,
+        // ]
+        //
+        // Source map (25) = [
+        //      0, 1, 1, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 0, 0,
+        //      0, 0, 0, 0, 1,
+        //      0, 0, 0, 01 0,
         // ]
         //
         // Goat Placement Complete: 1
         // Goats Captured: 4
         // Turn: 1
         // ---------------------------------------------------------------
-        // Total: 31
+        // Total: 131
 
         let possible_moves: Vec<PossibleMove>;
 
@@ -978,58 +1036,87 @@ impl BaghchalRS {
         let mut vector_list = Vec::<Vec<i8>>::new();
 
         for neighbours in possible_moves {
-            let move_ = neighbours.r#move;
+            let mut vecs =
+                self.coord_to_input(neighbours.r#move.0, neighbours.r#move.1, rotate_board);
+            vector_list.append(&mut vecs);
 
-            // Source and Destination
-            let (source_orig, dest_orig) = BaghchalRS::action_to_vector_25(move_.0, move_.1);
-
-            let boards;
-            if rotate_board {
-                boards =
-                    Self::get_transformed_boards(self.board(), source_orig, dest_orig).to_vec();
-            } else {
-                boards = [(self.board(), source_orig, dest_orig)].to_vec();
-            }
-
-            for (board, source_map, destination_map) in boards {
-                let mut vector_map: [i8; 131] = [0; 131];
-
-                // Board Positions
-                for i in 0usize..5 {
-                    for j in 0usize..5 {
-                        match board[i as usize][j as usize] {
-                            1 => vector_map[i * 5 + j] = 1,
-                            -1 => vector_map[25 + i * 5 + j] = 1,
-                            _ => vector_map[50 + i * 5 + j] = 1,
-                        };
-                    }
-                }
-
-                for i in 0usize..25 {
-                    vector_map[75 + i] = source_map[i / 5][i % 5];
-                    vector_map[100 + i] = destination_map[i / 5][i % 5];
-                }
-
-                // Goat placement complete
-                if self.goat_counter >= 20 {
-                    vector_map[125] = 1;
-                };
-
-                // Number of goats captured
-                if self.goat_captured != 0 {
-                    vector_map[126 + self.goat_captured as usize - 1] = 1;
-                }
-
-                // Turn
-                if self.turn == -1 {
-                    vector_map[130] = 1;
-                }
-
-                vector_list.push(vector_map.to_vec());
+            if one {
+                return vector_list;
             }
         }
 
         return vector_list;
+    }
+
+    pub fn coord_to_input(
+        &self,
+        source: Option<[i8; 2]>,
+        destination: [i8; 2],
+        rotate_board: bool,
+    ) -> Vec<Vec<i8>> {
+        let mut vector_list = Vec::<Vec<i8>>::new();
+
+        // Source and Destination
+        let (source_orig, dest_orig) = BaghchalRS::action_to_vector_25(source, destination);
+
+        let boards;
+        if rotate_board {
+            boards = Self::get_transformed_boards(self.board(), source_orig, dest_orig).to_vec();
+        } else {
+            boards = [(self.board(), source_orig, dest_orig)].to_vec();
+        }
+
+        for (board, source_map, destination_map) in boards {
+            let mut vector_map: [i8; 131] = [0; 131];
+
+            // Board Positions
+            for i in 0usize..5 {
+                for j in 0usize..5 {
+                    match board[i as usize][j as usize] {
+                        1 => vector_map[i * 5 + j] = 1,
+                        -1 => vector_map[25 + i * 5 + j] = 1,
+                        _ => vector_map[50 + i * 5 + j] = 1,
+                    };
+                }
+            }
+
+            for i in 0usize..25 {
+                vector_map[75 + i] = source_map[i / 5][i % 5];
+                vector_map[100 + i] = destination_map[i / 5][i % 5];
+            }
+
+            // Goat placement complete
+            if self.goat_counter >= 20 {
+                vector_map[125] = 1;
+            };
+
+            // Number of goats captured
+            if self.goat_captured != 0 {
+                vector_map[126 + self.goat_captured as usize - 1] = 1;
+            }
+
+            // Turn
+            if self.turn == -1 {
+                vector_map[130] = 1;
+            }
+
+            vector_list.push(vector_map.to_vec());
+        }
+
+        return vector_list;
+    }
+
+    pub fn index_to_input(&self, index: usize) -> Vec<Vec<i8>> {
+        let move_: Move;
+        if self.turn == -1 {
+            move_ = Self::i2m_tiger(index);
+        } else if self.turn == 1 && self.goat_counter < 20 {
+            move_ = Self::i2m_placement(index);
+        } else {
+            move_ = Self::i2m_goat(index);
+        }
+
+        return self.coord_to_input(move_.0, move_.1, true);
     }
 
     pub fn state_as_inputs(
@@ -1039,21 +1126,41 @@ impl BaghchalRS {
         rotate_board: Option<bool>,
     ) -> Vec<Vec<i8>> {
         match mode {
-            Some(1) => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
-            Some(2) => return self.state_as_inputs_mode_2(possible_moves_pre, rotate_board),
-            Some(3) => return self.state_as_inputs_mode_3(possible_moves_pre, rotate_board),
-            Some(4) => return self.state_as_inputs_mode_4(possible_moves_pre, rotate_board),
-            Some(5) => return self.state_as_inputs_mode_5(possible_moves_pre, rotate_board),
+            Some(1) => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board, false),
+            Some(2) => return self.state_as_inputs_mode_2(possible_moves_pre, rotate_board, false),
+            Some(3) => return self.state_as_inputs_mode_3(possible_moves_pre, rotate_board, false),
+            Some(4) => return self.state_as_inputs_mode_4(possible_moves_pre, rotate_board, false),
+            Some(5) => return self.state_as_inputs_mode_5(possible_moves_pre, rotate_board, false),
             Some(6) => {
-                return self
-                    .state_as_inputs_mode_6(possible_moves_pre, rotate_board.unwrap_or(false))
+                return self.state_as_inputs_mode_6(
+                    possible_moves_pre,
+                    rotate_board.unwrap_or(false),
+                    false,
+                )
             }
-            Some(7) => {
-                return self
-                    .state_as_inputs_mode_7(possible_moves_pre, rotate_board.unwrap_or(false))
-            }
-            _ => return self.state_as_inputs_mode_1(possible_moves_pre, rotate_board),
+            _ => panic!("Invalid inputs mode!"),
         }
+    }
+
+    pub fn state_as_input_actor(
+        &self,
+        possible_moves_pre: Option<Vec<PossibleMove>>,
+        mode: Option<i8>,
+        rotate_board: Option<bool>,
+    ) -> Vec<i8> {
+        let state = match mode {
+            Some(1) => self.state_as_inputs_mode_1(possible_moves_pre, rotate_board, true),
+            Some(2) => self.state_as_inputs_mode_2(possible_moves_pre, rotate_board, true),
+            Some(3) => self.state_as_inputs_mode_3(possible_moves_pre, rotate_board, true),
+            Some(4) => self.state_as_inputs_mode_4(possible_moves_pre, rotate_board, true),
+            Some(5) => self.state_as_inputs_mode_5(possible_moves_pre, rotate_board, true),
+            Some(6) => {
+                self.state_as_inputs_mode_6(possible_moves_pre, rotate_board.unwrap_or(false), true)
+            }
+            _ => panic!("Invalid inputs mode!"),
+        };
+
+        return state.first().unwrap().to_vec();
     }
 
     pub fn pgn_unit_to_coord(pgn: String) -> Move {
@@ -1634,120 +1741,13 @@ mod tests {
 
     #[test]
     fn test_default() {
-        // let mut valids: Vec<String> = Vec::new();
-        let mut valids: Vec<Move> = Vec::new();
-        for m in 0..5 {
-            for n in 0..5 {
-                for i in 0..5 {
-                    for j in 0..5 {
-                        let mut game_state = GameStateInstance {
-                            board: [
-                                [0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0],
-                            ],
-                            goat_count: 20,
-                            goat_captured: 0,
-                        };
+        let mut test = BaghchalRS::default();
+        test.make_move_pgn("XXB2".to_string());
+        test.make_move_pgn("A1B1".to_string());
 
-                        game_state.board[i][j] = -1;
-                        game_state.board[m][n] = 1;
-
-                        let mut test = BaghchalRS::default();
-                        test.goat_counter = 20;
-                        test.turn = -1;
-
-                        test.game_history = vec![game_state];
-
-                        for k in 0..5 {
-                            for l in 0..5 {
-                                let mut ns = test.clone();
-                                let res = ns.make_move(Some([i as i8, j as i8]), [k, l], None);
-
-                                if res.is_valid {
-                                    let move_cord = (Some([i as i8, j as i8]), [k, l]);
-                                    if !valids.contains(&move_cord) {
-                                        valids.push(move_cord);
-                                    }
-                                    // let move_pgn = BaghchalRS::coord_to_png_unit(
-                                    //     Some([i as i8, j as i8]),
-                                    //     [k, l],
-                                    // );
-                                    // if !valids.contains(&move_pgn) {
-                                    //     valids.push(move_pgn);
-                                    // }
-                                }
-                            }
-                        }
-
-                        // println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
-                    }
-                }
-            }
-        }
-
-        valids.iter().for_each(|item| {
-            // println!("{:?} => return 0,", item);
-            println!("0 => return {:?},", item);
-        });
-        println!("{:?}", valids.len());
+        assert!(
+            test.state_as_inputs_mode_6(None, true, false)
+                == test.state_as_inputs_mode_6_old(None, true)
+        );
     }
-
-    // #[test]
-    // fn test_default() {
-    //     let mut valids: Vec<Move> = Vec::new();
-    //     for i in 0..5 {
-    //         for j in 0..5 {
-    //             let mut game_state = GameStateInstance {
-    //                 board: [
-    //                     [0, 0, 0, 0, 0],
-    //                     [0, 0, 0, 0, 0],
-    //                     [0, 0, 0, 0, 0],
-    //                     [0, 0, 0, 0, 0],
-    //                     [0, 0, 0, 0, 0],
-    //                 ],
-    //                 goat_count: 20,
-    //                 goat_captured: 0,
-    //             };
-    //
-    //             game_state.board[i][j] = 1;
-    //
-    //             let mut test = BaghchalRS::default();
-    //             test.goat_counter = 20;
-    //
-    //             test.game_history = vec![game_state];
-    //
-    //             for k in 0..5 {
-    //                 for l in 0..5 {
-    //                     let mut ns = test.clone();
-    //                     let res = ns.make_move(Some([i as i8, j as i8]), [k, l], None);
-    //
-    //                     // if res.is_valid {
-    //                     //     let move_cord = (Some([i as i8, j as i8]), [k, l]);
-    //                     //     if !valids.contains(&move_cord) {
-    //                     //         valids.push(move_cord);
-    //                     //     }
-    //                     // }
-    //
-    //                     if res.is_valid {
-    //                         let move_cord = (None, [k, l]);
-    //                         if !valids.contains(&move_cord) {
-    //                             valids.push(move_cord);
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //
-    //             // println!("{:?}", test.state_as_inputs_mode_6(None, true)[0]);
-    //         }
-    //     }
-    //
-    //     valids.iter().for_each(|item| {
-    //         println!("{:?} => return 0,", item);
-    //         // println!("0 => return {:?},", item);
-    //     });
-    //     println!("{:?}", valids.len());
-    // }
 }

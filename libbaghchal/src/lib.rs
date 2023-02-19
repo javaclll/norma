@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 
 pub mod bagchal;
 pub mod constants;
-pub mod types;
 pub mod move_translator;
+pub mod types;
 
 use bagchal::BaghchalRS;
 use pythonize::{depythonize, pythonize};
@@ -106,6 +106,31 @@ impl Baghchal {
     #[staticmethod]
     pub fn coord_to_png_unit(destination: [i8; 2], source: Option<[i8; 2]>) -> String {
         return BaghchalRS::coord_to_png_unit(source, destination);
+    }
+
+    #[staticmethod]
+    pub fn i2m_goat(index: usize) -> Move {
+        return BaghchalRS::i2m_goat(index);
+    }
+    #[staticmethod]
+    pub fn i2m_placement(index: usize) -> Move {
+        return BaghchalRS::i2m_placement(index);
+    }
+    #[staticmethod]
+    pub fn i2m_tiger(index: usize) -> Move {
+        return BaghchalRS::i2m_tiger(index);
+    }
+    #[staticmethod]
+    pub fn m2i_goat(__move__: Move) -> usize {
+        return BaghchalRS::m2i_goat(__move__);
+    }
+    #[staticmethod]
+    pub fn m2i_placement(__move__: Move) -> usize {
+        return BaghchalRS::m2i_placement(__move__);
+    }
+    #[staticmethod]
+    pub fn m2i_tiger(__move__: Move) -> usize {
+        return BaghchalRS::m2i_tiger(__move__);
     }
 
     pub fn copy(&self) -> Baghchal {
@@ -212,6 +237,21 @@ impl Baghchal {
         return self
             .inner
             .state_as_inputs(possible_moves_pre, mode, rotate_board);
+    }
+
+    pub fn state_as_input_actor(
+        &self,
+        possible_moves_pre: Option<Vec<PossibleMove>>,
+        mode: Option<i8>,
+        rotate_board: Option<bool>,
+    ) -> Vec<i8> {
+        return self
+            .inner
+            .state_as_input_actor(possible_moves_pre, mode, rotate_board);
+    }
+
+    pub fn index_to_input(&self, index: usize) -> Vec<Vec<i8>> {
+        return self.inner.index_to_input(index);
     }
 
     pub fn clear_game(&mut self) {

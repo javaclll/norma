@@ -1,119 +1,43 @@
+from .tiger_model import (
+    tiger_actor_model,
+    tiger_critic_model,
+    tiger_optimizer,
+    tiger_actor_loss,
+    tiger_critic_loss,
+)
+
+from .goat_model import (
+    goat_actor_model,
+    goat_critic_model,
+    placement_actor_model,
+    placement_critic_model,
+    goat_optimizer,
+    goat_actor_loss,
+    goat_critic_loss,
+)
+
+import libbaghchal
+import tensorflow as tf
+import numpy as np
 import random
-from copy import deepcopy
-from typing import Any, List, Optional, Tuple, TypeVar
 
-import numpy
-from libbaghchal import Baghchal, GameStatus
-from livelossplot import PlotLossesKeras
-
-from .model import tiger_model, goat_model
-
-GOAT_EXPLORATION_FACTOR = 0.5
-TIGER_EXPLORATION_FACTOR = 0.5
-DISCOUNT_FACTOR = 0.50
-
-### TODO
-# TEMPORAL DIFFERENCE
-# Randomize training data
+from .stats import Stats
+from typing import Tuple, List
 
 
-def get_best_move(
-    input_vectors,
-    agent,
-    exploration=True,
-) -> Tuple[int, Optional[float]]:
-    if agent == -1:
-        inputs = numpy.asarray(input_vectors)
+def get_move(vectors: List, model: tf.keras.Model):
+    pred = model.predict(np.array([vectors], dtype=np.int8))
+    action = np.random.choice(np.arange(pred.size), p=pred[0])
 
-        if exploration:
-            EXPLORATION_FACTOR = TIGER_EXPLORATION_FACTOR
-
-            if random.uniform(0, 1) < EXPLORATION_FACTOR:
-                index = random.randint(0, len(input_vectors) - 1)
-                return (index, None)
-
-        predication = tiger_model.predict_on_batch(inputs)
-        max_index = predication.argmax()
-        return (max_index, predication[max_index][0])
-
-    elif agent == 1:
-        inputs = numpy.asarray(input_vectors)
-
-        if exploration:
-            EXPLORATION_FACTOR = GOAT_EXPLORATION_FACTOR
-
-            if random.uniform(0, 1) < EXPLORATION_FACTOR:
-                index = random.randint(0, len(input_vectors) - 1)
-                return (index, None)
-
-        predication = goat_model.predict_on_batch(inputs)
-        max_index = predication.argmax()
-        return (max_index, predication[max_index][0])
-
-    else:
-        raise Exception("`agent` parameter for `get_best_move()` must be `-1` or `1`")
+    return (action, pred)
 
 
-def reward_discounter(rewards):
-    n = len(rewards)
-
-    for (index, value) in enumerate(rewards[::-1]):
-        for i in range(n - index - 1):
-            rewards[n - i - 2 - index] += value * pow(1 - DISCOUNT_FACTOR, i + 1)
-
-    return rewards
-
-
-def get_or_none(alist, index):
-    try:
-        return alist[index]
-    except:
-        return None
-
-
-def two_in_one_merge(items):
-    merged_list = []
-    for i in range(int(len(items) / 2) + 1):
-        item1 = get_or_none(items, 2 * i)
-        item2 = get_or_none(items, 2 * i + 1)
-
-        if not (item1 == None and item2 == None):
-            merged_list.append((item1 or 0) + (item2 or 0))
-
-    return merged_list
-
-
-def reward_transformer(rewards_g, rewards_t):
-    rewards_t.pop(0)
-
-    rewards_g = two_in_one_merge(rewards_g)
-    rewards_t = two_in_one_merge(rewards_t)
-
-    rewards_g = reward_discounter(rewards_g)
-    rewards_t = reward_discounter(rewards_t)
-
-    rewards = []
-
-    for i in range(len(rewards_g)):
-        ith_re_g = get_or_none(rewards_g, i)
-        ith_re_t = get_or_none(rewards_t, i)
-
-        if ith_re_g != None:
-            rewards.append(ith_re_g)
-
-        if ith_re_t != None:
-            rewards.append(ith_re_t)
-
-    return rewards
-
-
-def play_game(exploration=True, only_record=None, record_explorations=True):
+def play_game():
     states = []
-    y_preds = []
+    preds = []
 
-    moves_to_exclude = []
+    bagchal = libbaghchal.Baghchal.default()
 
-    bagchal = Baghchal.default()
     bagchal.set_rewards(
         t_goat_capture=6.0,
         t_got_trapped=-4.0,
@@ -123,7 +47,7 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         t_draw=-2.5,
         t_move=-0.15,
         g_goat_captured=-6.0,
-        g_tiger_trap=4.0,
+        g_tiger_trap=6.0,
         g_tiger_escape=-3.0,
         g_win=10.0,
         g_lose=-10.0,
@@ -131,198 +55,85 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         g_move=-0.15,
     )
 
-    for i in range(100):
-        possible_moves = bagchal.get_possible_moves()
-
-        input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=4, rotate_board=True
-        )
-
-        turn = 1 if i % 2 == 0 else -1
-
-        best_move_index, pred_y = get_best_move(
-            input_vectors, exploration=exploration, agent=turn
-        )
-
-        if pred_y or record_explorations:
-            if not only_record:
-                states.append(input_vectors[best_move_index])
-                y_preds.append(pred_y)
-            else:
-                if only_record == -1 and i % 2 == 1:
-                    states.append(input_vectors[best_move_index])
-                    y_preds.append(pred_y)
-                elif only_record == 1 and i % 2 == 0:
-                    states.append(input_vectors[best_move_index])
-                    y_preds.append(pred_y)
-                else:
-                    moves_to_exclude.append(i)
+    for _ in range(100):
+        if bagchal.turn() == -1:
+            model = tiger_actor_model
+            i2m = libbaghchal.Baghchal.i2m_tiger
+        elif bagchal.turn() == 1 and bagchal.goat_counter() < 20:
+            model = placement_actor_model
+            i2m = libbaghchal.Baghchal.i2m_placement
         else:
-            moves_to_exclude.append(i)
+            model = goat_actor_model
+            i2m = libbaghchal.Baghchal.i2m_goat
 
-        bagchal = possible_moves[best_move_index].resulting_state
+        input_vector = bagchal.state_as_input_actor(None, mode=6, rotate_board=True)
+
+        index, pred = get_move(vectors=input_vector, model=model)
+
+        source, destination = i2m(index)
+
+        states.append(bagchal.index_to_input(index))
+        preds.append(pred)
+
+        bagchal.make_move(source=source, target=destination, eval_res=None)
 
         if bagchal.game_status_check().decided:
             break
 
-    rewards = reward_transformer(
-        bagchal.move_reward_goat(), bagchal.move_reward_tiger()
-    )
 
-    for superindex, index in enumerate(moves_to_exclude):
-        rewards.pop(index - superindex)
-
-    return (states, y_preds, rewards, bagchal)
+def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:
+    play_game()
 
 
-def test():
-    from libbaghchal import Baghchal
-
-    a = Baghchal.default()
-    a.load_game("XXA3-A1A2-XXA4-A5B5-XXA5-B5C5-XXA1")
-
-    print(f"{a.state_as_inputs(mode=4, possible_moves_pre=None)[0]}")
-
-
-def training_step(exploration=True, train_on=None):
-    if train_on == -1:
-        model = tiger_model
-    elif train_on == 1:
-        model = goat_model
-    else:
-        raise Exception("Must provide `train_on` parameter to `training_step()`")
-
-    (states, _, actual_rewards, bagchal,) = play_game(
-        exploration=exploration,
-        only_record=train_on,
-    )
-
-    positions_count = bagchal.move_count()
-
-    game_state = bagchal.game_state()
-
-    if game_state == GameStatus.GoatWon:
-        print(f"Hello sir! GOAT WON!")
-        print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
-        game_state = 1
-    elif game_state == GameStatus.TigerWon:
-        game_state = -1
-    else:
-        print(f"Draw!!!")
-        game_state = 0
-
-    model.fit(
-        states,
-        actual_rewards,
-        use_multiprocessing=True,
-        batch_size=4,
-    )
-
-    return (game_state, positions_count, len(states))
-
-
-def training_loop(model_name="magma"):
-    game_counter = 0
-    positions_counter = 0
-    goat_trained_states = 0
-    tiger_trained_states = 0
-
-    goat_wins = 0
-    tiger_wins = 0
-    draws = 0
-
-    try:
-        f = open(f"weights/{model_name}/train_stats.txt", "r")
-
-        train_stats = f.read().split(",")
-
-        game_counter = int(train_stats[0])
-        positions_counter = int(train_stats[1])
-        goat_wins = int(train_stats[2])
-        tiger_wins = int(train_stats[3])
-        draws = int(train_stats[4])
-        goat_trained_states = int(train_stats[5])
-        tiger_trained_states = int(train_stats[6])
-
-    except:
-        pass
+def training_loop(model_name="new_model"):
+    stats = Stats(model_name)
 
     while True:
-        before_goat_wins = goat_wins
-        before_tiger_wins = tiger_wins
-        before_draws = draws
-        before_game_counter = game_counter
+        (
+            played_positions,
+            trained_positions,
+            t_games,
+            t_goat_wons,
+            t_tiger_wons,
+            t_draws,
+        ) = training_step(train_on=1)
 
-        # Goat Training
-        for _ in range(1):
-            (won_by, played_positions, trained_positions) = training_step(train_on=1)
-
-            if won_by == 1:
-                goat_wins += 1
-            elif won_by == -1:
-                tiger_wins += 1
-            else:
-                draws += 1
-
-            game_counter += 1
-            positions_counter += played_positions
-            goat_trained_states += trained_positions
+        stats.add(
+            game_counter=t_games,
+            positions_counter=played_positions,
+            goat_wins=t_goat_wons,
+            tiger_wins=t_tiger_wons,
+            draws=t_draws,
+            goat_trained_states=trained_positions,
+            tiger_trained_states=0,
+            loss=1,
+        )
 
         # Tiger Training
         for _ in range(1):
-            (won_by, played_positions, trained_positions) = training_step(train_on=-1)
+            (
+                played_positions,
+                trained_positions,
+                t_games,
+                t_goat_wons,
+                t_tiger_wons,
+                t_draws,
+            ) = training_step(train_on=-1)
 
-            if won_by == 1:
-                goat_wins += 1
-            elif won_by == -1:
-                tiger_wins += 1
-            else:
-                draws += 1
+            stats.add(
+                game_counter=t_games,
+                positions_counter=played_positions,
+                goat_wins=t_goat_wons,
+                tiger_wins=t_tiger_wons,
+                draws=t_draws,
+                tiger_trained_states=trained_positions,
+                goat_trained_states=0,
+                loss=1,
+            )
 
-            game_counter += 1
-            positions_counter += played_positions
-            tiger_trained_states += trained_positions
-
-        f = open(f"weights/{model_name}/train_stats.txt", "w")
-        f.write(
-            f"{game_counter},{positions_counter},{goat_wins},{tiger_wins},{draws},{goat_trained_states},{tiger_trained_states}"
-        )
-        f.close()
-        tiger_model.save_weights(f"weights/{model_name}/tiger")
-        goat_model.save_weights(f"weights/{model_name}/goat")
-
-        cw_goat_wins = goat_wins - before_goat_wins
-        cw_tiger_wins = tiger_wins - before_tiger_wins
-        cw_draws = draws - before_draws
-        cw_game_counter = game_counter - before_game_counter
-
-        print(f"---------------------------------------------------")
-        print(f"OVERALL GAME STATS:")
-        print(f"---------------------------------------------------")
-        print(f"Goat: {goat_wins} ({((goat_wins/game_counter)*100):.2f} %)")
-        print(f"Tiger: {tiger_wins} ({((tiger_wins/game_counter)*100):.2f} %)")
-        print(f"Draws: {draws} ({((draws/game_counter)*100):.2f} %)")
-        print(f"---------------------------------------------------")
-        print(f"TRAINING STATS:")
-        print(f"---------------------------------------------------")
-        print(f"Games Played: {game_counter}")
-        print(f"Positions Generated: {positions_counter}")
-        print(f"Goat Trained States: {goat_trained_states}")
-        print(f"Tiger Trained States: {tiger_trained_states}")
-        print(f"Avg moves per game: {(positions_counter/game_counter):.2f}")
-        print(f"---------------------------------------------------")
-        print(f"CURRENT WINDOW GAME STATS:")
-        print(f"---------------------------------------------------")
-        print(f"Goat: {cw_goat_wins} ({((cw_goat_wins/cw_game_counter)*100):.2f} %)")
-        print(f"Tiger: {cw_tiger_wins} ({((cw_tiger_wins/cw_game_counter)*100):.2f} %)")
-        print(f"Draws: {cw_draws} ({((cw_draws/cw_game_counter)*100):.2f} %)")
-
-        (_, _, _, bagchal,) = play_game(
-            exploration=False,
-        )
-
-        print(f"---------------------------------------------------")
-        print(f"SAMPLE GAME:")
-        print(f"---------------------------------------------------")
-        print(f"http://localhost:3000/analysis?pgn={bagchal.pgn()}")
-        print(f"---------------------------------------------------")
+        goat_actor_model.save_weights(f"weights/{model_name}/goat_actor")
+        goat_critic_model.save_weights(f"weights/{model_name}/goat_critic")
+        tiger_actor_model.save_weights(f"weights/{model_name}/tiger_actor")
+        tiger_critic_model.save_weights(f"weights/{model_name}/tiger_critic")
+        placement_critic_model.save_weights(f"weights/{model_name}/placement_actor")
+        placement_actor_model.save_weights(f"weights/{model_name}/placement_critic")
