@@ -1,9 +1,9 @@
 import os
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-from keras import layers
 import tensorflow as tf
+from keras import layers
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def build_actor_model():
@@ -100,9 +100,9 @@ goat_actor_model = build_actor_model()
 # )
 
 
-print(f"\n-----------------------------------")
-print(f"Goat Actor Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Goat Actor Model:")
+print("-----------------------------------")
 goat_actor_model.summary()
 
 
@@ -113,9 +113,9 @@ goat_critic_model = build_critic_model()
 #     loss="mean_squared_error",
 # )
 
-print(f"\n-----------------------------------")
-print(f"Goat Critic Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Goat Critic Model:")
+print("-----------------------------------")
 goat_critic_model.summary()
 
 placement_actor_model = build_placement_actor_model()
@@ -126,9 +126,9 @@ placement_actor_model = build_placement_actor_model()
 # )
 
 
-print(f"\n-----------------------------------")
-print(f"Placement Actor Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Placement Actor Model:")
+print("-----------------------------------")
 placement_actor_model.summary()
 
 
@@ -139,9 +139,9 @@ placement_critic_model = build_placement_critic_model()
 #     loss="mean_squared_error",
 # )
 
-print(f"\n-----------------------------------")
-print(f"Placement Critic Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Placement Critic Model:")
+print("-----------------------------------")
 placement_critic_model.summary()
 
 goat_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)

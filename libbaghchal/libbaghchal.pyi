@@ -58,7 +58,7 @@ class Baghchal:
     def m2i_tiger(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
         ...
 
-    def index_to_input(self, index: int) -> List[List[int]]:
+    def index_to_input(self, index: int, symmetry: int) -> List[List[int]]:
         ...
 
     def set_rewards(
@@ -155,6 +155,14 @@ class Baghchal:
         target: List[int],
         source: Optional[List[int]],
         eval_res: Optional[MoveCheckResult],
+    ):
+        ...
+
+    def make_move_with_symmetry(
+        self,
+        target: List[int],
+        source: Optional[List[int]],
+        symmetry: int,
     ):
         ...
 

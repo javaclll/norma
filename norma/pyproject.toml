@@ -14,8 +14,6 @@ tensorflow = {version = "^2.10.0", platform = "linux"}
 tensorflow-metal = {version = "^0.6.0", platform = "darwin"}
 jupyterlab = "^3.4.8"
 
-[tool.poetry.dev-dependencies]
-
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

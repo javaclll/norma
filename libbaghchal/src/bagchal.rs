@@ -151,22 +151,28 @@ impl BaghchalRS {
         }
     }
 
-    fn rotate_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
-        let mut mat: [[i8; 5]; 5] = [
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0],
-        ];
+    fn rotate_matrix(matrix: [[i8; 5]; 5], times: i8) -> [[i8; 5]; 5] {
+        let mut ret_board = matrix;
 
-        for i in 0..5 {
-            for j in 0..5 {
-                mat[j][4 - i] = matrix[i][j];
+        for _ in 0..times {
+            let mut mat: [[i8; 5]; 5] = [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ];
+
+            for i in 0..5 {
+                for j in 0..5 {
+                    mat[j][4 - i] = ret_board[i][j];
+                }
             }
+
+            ret_board = mat;
         }
 
-        return mat;
+        return ret_board;
     }
 
     fn y_reflect_matrix(matrix: [[i8; 5]; 5]) -> [[i8; 5]; 5] {
@@ -231,19 +237,19 @@ impl BaghchalRS {
         return [
             (matrix, source_map, destination_map),
             (
-                Self::rotate_matrix(matrix),
-                Self::rotate_matrix(source_map),
-                Self::rotate_matrix(destination_map),
+                Self::rotate_matrix(matrix, 1),
+                Self::rotate_matrix(source_map, 1),
+                Self::rotate_matrix(destination_map, 1),
             ),
             (
-                Self::rotate_matrix(Self::rotate_matrix(matrix)),
-                Self::rotate_matrix(Self::rotate_matrix(source_map)),
-                Self::rotate_matrix(Self::rotate_matrix(destination_map)),
+                Self::rotate_matrix(matrix, 2),
+                Self::rotate_matrix(source_map, 2),
+                Self::rotate_matrix(destination_map, 2),
             ),
             (
-                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(matrix))),
-                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(source_map))),
-                Self::rotate_matrix(Self::rotate_matrix(Self::rotate_matrix(destination_map))),
+                Self::rotate_matrix(matrix, 3),
+                Self::rotate_matrix(source_map, 3),
+                Self::rotate_matrix(destination_map, 3),
             ),
             (
                 Self::x_reflect_matrix(matrix),
@@ -261,6 +267,53 @@ impl BaghchalRS {
                 Self::origin_reflect_matrix(destination_map),
             ),
         ];
+    }
+
+    fn undo_symmetry(
+        source_map: [[i8; 5]; 5],
+        dest_map: [[i8; 5]; 5],
+        symmetry: i8,
+    ) -> ([[i8; 5]; 5], [[i8; 5]; 5]) {
+        match symmetry {
+            0 => return (source_map, dest_map),
+            1 => {
+                return (
+                    Self::rotate_matrix(source_map, 3),
+                    Self::rotate_matrix(dest_map, 3),
+                )
+            }
+            2 => {
+                return (
+                    Self::rotate_matrix(source_map, 2),
+                    Self::rotate_matrix(dest_map, 2),
+                )
+            }
+            3 => {
+                return (
+                    Self::rotate_matrix(source_map, 1),
+                    Self::rotate_matrix(dest_map, 1),
+                )
+            }
+            4 => {
+                return (
+                    Self::x_reflect_matrix(source_map),
+                    Self::x_reflect_matrix(dest_map),
+                )
+            }
+            5 => {
+                return (
+                    Self::y_reflect_matrix(source_map),
+                    Self::y_reflect_matrix(dest_map),
+                )
+            }
+            6 => {
+                return (
+                    Self::origin_reflect_matrix(source_map),
+                    Self::origin_reflect_matrix(dest_map),
+                )
+            }
+            _ => panic!("Invalid symmetry!"),
+        };
     }
 
     pub fn action_to_vector(source: Option<[i8; 2]>, destination: [i8; 2]) -> Vec<i8> {
@@ -307,6 +360,27 @@ impl BaghchalRS {
         vector[d1][d2][1] = 1;
 
         return vector;
+    }
+
+    pub fn vector_25_to_action(vector: ([[i8; 5]; 5], [[i8; 5]; 5])) -> Move {
+        let source_vector = vector.0;
+        let dest_vector = vector.1;
+
+        let mut source: Option<[i8; 2]> = None;
+        let mut dest: Option<[i8; 2]> = None;
+
+        for i in 0..5i8 {
+            for j in 0..5i8 {
+                if source_vector[i as usize][j as usize] == 1 {
+                    source = Some([i, j])
+                }
+                if dest_vector[i as usize][j as usize] == 1 {
+                    dest = Some([i, j])
+                }
+            }
+        }
+
+        return (source, dest.expect("Dest can't be `None`!"));
     }
 
     pub fn action_to_vector_25(
@@ -382,9 +456,7 @@ impl BaghchalRS {
             if rotate_board == Some(true) {
                 let no_of_rotations = rand::thread_rng().gen_range(0..4);
 
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
+                board = Self::rotate_matrix(board, no_of_rotations);
             }
 
             // Board positions
@@ -473,9 +545,7 @@ impl BaghchalRS {
             if rotate_board == Some(true) {
                 let no_of_rotations = rand::thread_rng().gen_range(0..4);
 
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
+                board = Self::rotate_matrix(board, no_of_rotations);
             }
 
             // Goat positions
@@ -579,9 +649,7 @@ impl BaghchalRS {
             if rotate_board == Some(true) {
                 let no_of_rotations = rand::thread_rng().gen_range(0..4);
 
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
+                board = Self::rotate_matrix(board, no_of_rotations);
             }
 
             // Board Positions
@@ -703,9 +771,7 @@ impl BaghchalRS {
             if rotate_board == Some(true) {
                 let no_of_rotations = rand::thread_rng().gen_range(0..4);
 
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
+                board = Self::rotate_matrix(board, no_of_rotations);
             }
 
             // Board Positions
@@ -802,9 +868,7 @@ impl BaghchalRS {
             if rotate_board == Some(true) {
                 let no_of_rotations = rand::thread_rng().gen_range(0..4);
 
-                for _ in 0..no_of_rotations {
-                    board = Self::rotate_matrix(board);
-                }
+                board = Self::rotate_matrix(board, no_of_rotations);
             }
 
             let move_ = neighbours.r#move;
@@ -1106,7 +1170,7 @@ impl BaghchalRS {
         return vector_list;
     }
 
-    pub fn index_to_input(&self, index: usize) -> Vec<Vec<i8>> {
+    pub fn index_to_input(&self, index: usize, symmetry: i8) -> Vec<Vec<i8>> {
         let move_: Move;
         if self.turn == -1 {
             move_ = Self::i2m_tiger(index);
@@ -1116,7 +1180,15 @@ impl BaghchalRS {
             move_ = Self::i2m_goat(index);
         }
 
-        return self.coord_to_input(move_.0, move_.1, true);
+        let (source_map, dest_map) = Self::action_to_vector_25(move_.0, move_.1);
+
+        let (normal_source_map, normal_dest_map) =
+            Self::undo_symmetry(source_map, dest_map, symmetry);
+
+        let (normal_source, normal_dest) =
+            Self::vector_25_to_action((normal_source_map, normal_dest_map));
+
+        return self.coord_to_input(normal_source, normal_dest, true);
     }
 
     pub fn state_as_inputs(
@@ -1147,7 +1219,7 @@ impl BaghchalRS {
         possible_moves_pre: Option<Vec<PossibleMove>>,
         mode: Option<i8>,
         rotate_board: Option<bool>,
-    ) -> Vec<i8> {
+    ) -> Vec<Vec<i8>> {
         let state = match mode {
             Some(1) => self.state_as_inputs_mode_1(possible_moves_pre, rotate_board, true),
             Some(2) => self.state_as_inputs_mode_2(possible_moves_pre, rotate_board, true),
@@ -1155,12 +1227,12 @@ impl BaghchalRS {
             Some(4) => self.state_as_inputs_mode_4(possible_moves_pre, rotate_board, true),
             Some(5) => self.state_as_inputs_mode_5(possible_moves_pre, rotate_board, true),
             Some(6) => {
-                self.state_as_inputs_mode_6(possible_moves_pre, rotate_board.unwrap_or(false), true)
+                self.state_as_inputs_mode_6(possible_moves_pre, rotate_board.unwrap_or(true), true)
             }
             _ => panic!("Invalid inputs mode!"),
         };
 
-        return state.first().unwrap().to_vec();
+        return state;
     }
 
     pub fn pgn_unit_to_coord(pgn: String) -> Move {
@@ -1280,6 +1352,23 @@ impl BaghchalRS {
     pub fn make_move_pgn(&mut self, pgn: String) -> MoveCheckResult {
         let (source, target) = BaghchalRS::pgn_unit_to_coord(pgn);
         return self.make_move(source, target, None);
+    }
+
+    pub fn make_move_with_symmetry(
+        &mut self,
+        source: Option<[i8; 2]>,
+        target: [i8; 2],
+        symmetry: i8,
+    ) -> MoveCheckResult {
+        let (source_map, dest_map) = Self::action_to_vector_25(source, target);
+
+        let (normal_source_map, normal_dest_map) =
+            Self::undo_symmetry(source_map, dest_map, symmetry);
+
+        let (normal_source, normal_dest) =
+            Self::vector_25_to_action((normal_source_map, normal_dest_map));
+
+        return self.make_move(normal_source, normal_dest, None);
     }
 
     pub fn make_move(
@@ -1741,13 +1830,24 @@ mod tests {
 
     #[test]
     fn test_default() {
-        let mut test = BaghchalRS::default();
-        test.make_move_pgn("XXB2".to_string());
-        test.make_move_pgn("A1B1".to_string());
+        // let mut test = [
+        //     [-1, 0, 1, 0, -1],
+        //     [0, 0, 0, 0, 0],
+        //     [0, 0, 0, 0, 0],
+        //     [0, 0, 0, 0, 0],
+        //     [-1, 0, 0, 0, -1],
+        // ];
 
-        assert!(
-            test.state_as_inputs_mode_6(None, true, false)
-                == test.state_as_inputs_mode_6_old(None, true)
+        let (source, dest) = (None, [2, 1]);
+
+        assert_eq!(
+            (source, dest),
+            BaghchalRS::vector_25_to_action(BaghchalRS::action_to_vector_25(source, dest))
         );
+
+        // println!(
+        //     "{:?}",
+        //     BaghchalRS::vector_25_to_action(BaghchalRS::action_to_vector_25(source, dest)),
+        // );
     }
 }

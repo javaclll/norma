@@ -1,40 +1,33 @@
-from .tiger_model import (
-    tiger_actor_model,
-    tiger_critic_model,
-    tiger_optimizer,
-    tiger_actor_loss,
-    tiger_critic_loss,
-)
+import random
+from typing import List, Tuple
+
+import libbaghchal
+import numpy as np
+import tensorflow as tf
 
 from .goat_model import (
     goat_actor_model,
     goat_critic_model,
     placement_actor_model,
     placement_critic_model,
-    goat_optimizer,
-    goat_actor_loss,
-    goat_critic_loss,
 )
-
-import libbaghchal
-import tensorflow as tf
-import numpy as np
-import random
-
+from .reward import reward_transformer
 from .stats import Stats
-from typing import Tuple, List
+from .tiger_model import tiger_actor_model, tiger_critic_model
 
 
-def get_move(vectors: List, model: tf.keras.Model):
-    pred = model.predict(np.array([vectors], dtype=np.int8))
-    action = np.random.choice(np.arange(pred.size), p=pred[0])
+def get_move(vectors: List, model: tf.keras.Model) -> Tuple[int, List, int]:
+    symmetry_chosen = np.random.random_integers(0, 6)
+    pred = model.predict(np.array(vectors, dtype=np.int8))
+    action = np.random.choice(np.arange(pred[0].size), p=pred[symmetry_chosen])
 
-    return (action, pred)
+    return (action, pred, symmetry_chosen)
 
 
-def play_game():
+def play_game() -> Tuple[List, List, int]:
     states = []
     preds = []
+    won_by = 0
 
     bagchal = libbaghchal.Baghchal.default()
 
@@ -68,21 +61,63 @@ def play_game():
 
         input_vector = bagchal.state_as_input_actor(None, mode=6, rotate_board=True)
 
-        index, pred = get_move(vectors=input_vector, model=model)
+        index, pred, symmetry_choosen = get_move(vectors=input_vector, model=model)
 
         source, destination = i2m(index)
 
-        states.append(bagchal.index_to_input(index))
+        states.append(bagchal.index_to_input(index, symmetry=symmetry_choosen))
         preds.append(pred)
 
-        bagchal.make_move(source=source, target=destination, eval_res=None)
+        bagchal.make_move_with_symmetry(
+            source=source, target=destination, symmetry=symmetry_choosen
+        )
 
-        if bagchal.game_status_check().decided:
+        game_status = bagchal.game_status_check()
+        if game_status.decided:
+            won_by = game_status.won_by
             break
 
+    rewards = reward_transformer(
+        bagchal.move_reward_goat(), bagchal.move_reward_tiger(), states, y_preds
+    )
 
-def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:
-    play_game()
+    sar_pair = list(zip(states, rewards))
+    random.shuffle(sar_pair)
+
+    return (sar_pair, preds, won_by)
+
+
+def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:  # type: ignore
+    played_positions = 0
+    trained_positions = 0
+    t_games = 0
+    t_goat_wons = 0
+    t_tiger_wons = 0
+    t_draws = 0
+
+    for _ in range(50):
+        (states, preds, won_by) = play_game()
+        print("Hello")
+
+        played_positions += len(states) * 7
+        t_games += 1
+        if won_by == 1:
+            t_goat_wons += 1
+        elif won_by == -1:
+            t_tiger_wons += 1
+        else:
+            t_draws += 1
+
+    trained_positions = played_positions
+
+    return (
+        played_positions,
+        trained_positions,
+        t_games,
+        t_goat_wons,
+        t_tiger_wons,
+        t_draws,
+    )
 
 
 def training_loop(model_name="new_model"):

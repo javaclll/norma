@@ -1,9 +1,9 @@
 import os
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-from keras import layers
 import tensorflow as tf
+from keras import layers
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def build_actor_model():
@@ -49,17 +49,17 @@ def build_critic_model():
 tiger_actor_model = build_actor_model()
 
 
-print(f"\n-----------------------------------")
-print(f"Tiger Actor Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Tiger Actor Model:")
+print("-----------------------------------")
 tiger_actor_model.summary()
 
 
 tiger_critic_model = build_critic_model()
 
-print(f"\n-----------------------------------")
-print(f"Goat Critic Model:")
-print(f"-----------------------------------")
+print("\n-----------------------------------")
+print("Goat Critic Model:")
+print("-----------------------------------")
 tiger_critic_model.summary()
 
 

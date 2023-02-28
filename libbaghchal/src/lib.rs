@@ -244,14 +244,14 @@ impl Baghchal {
         possible_moves_pre: Option<Vec<PossibleMove>>,
         mode: Option<i8>,
         rotate_board: Option<bool>,
-    ) -> Vec<i8> {
+    ) -> Vec<Vec<i8>> {
         return self
             .inner
             .state_as_input_actor(possible_moves_pre, mode, rotate_board);
     }
 
-    pub fn index_to_input(&self, index: usize) -> Vec<Vec<i8>> {
-        return self.inner.index_to_input(index);
+    pub fn index_to_input(&self, index: usize, symmetry: i8) -> Vec<Vec<i8>> {
+        return self.inner.index_to_input(index, symmetry);
     }
 
     pub fn clear_game(&mut self) {
@@ -274,6 +274,21 @@ impl Baghchal {
     ) -> PyObject {
         Python::with_gil(|py| {
             return pythonize(py, &self.inner.make_move(source, target, eval_res)).unwrap();
+        })
+    }
+
+    pub fn make_move_with_symmetry(
+        &mut self,
+        symmetry: i8,
+        target: [i8; 2],
+        source: Option<[i8; 2]>,
+    ) -> PyObject {
+        Python::with_gil(|py| {
+            return pythonize(
+                py,
+                &self.inner.make_move_with_symmetry(source, target, symmetry),
+            )
+            .unwrap();
         })
     }
 
