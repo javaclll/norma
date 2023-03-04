@@ -23,7 +23,7 @@ def build_actor_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(112, activation="softmax")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="TigerActor", inputs=inputs, outputs=output)
 
 
 def build_critic_model():
@@ -43,10 +43,13 @@ def build_critic_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="TigerCritic", inputs=inputs, outputs=output)
 
 
 tiger_actor_model = build_actor_model()
+tiger_actor_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+)
 
 
 print("\n-----------------------------------")
@@ -57,24 +60,16 @@ tiger_actor_model.summary()
 
 tiger_critic_model = build_critic_model()
 
+tiger_critic_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+)
+
 print("\n-----------------------------------")
 print("Goat Critic Model:")
 print("-----------------------------------")
 tiger_critic_model.summary()
 
 
-tiger_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-tiger_actor_loss = tf.keras.losses.CategoricalCrossentropy()
-tiger_critic_loss = tf.keras.losses.MeanSquaredError()
-
-
-def load_model(name="magma"):
-    if os.path.exists(f"weights/{name}/tiger_actor.index"):
-        tiger_actor_model.load_weights(f"weights/{name}/tiger_actor")
-    else:
-        tiger_actor_model.save_weights(f"weights/{name}/tiger_actor")
-
-    if os.path.exists(f"weights/{name}/tiger_critic.index"):
-        tiger_critic_model.load_weights(f"weights/{name}/tiger_critic")
-    else:
-        tiger_critic_model.save_weights(f"weights/{name}/tiger_critic")
+@tf.function
+def train_step(data):
+    pass

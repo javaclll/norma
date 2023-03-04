@@ -77,6 +77,7 @@ class Baghchal:
         g_lose,
         g_draw,
         g_move,
+       gt_invalid_move,
     ):
         ...
 
@@ -84,6 +85,9 @@ class Baghchal:
         ...
 
     def to_str(self) -> str:
+        ...
+
+    def set_game_over_on_invalid(self, state: bool):
         ...
 
     def board(self) -> List[List[int]]:
@@ -155,7 +159,7 @@ class Baghchal:
         target: List[int],
         source: Optional[List[int]],
         eval_res: Optional[MoveCheckResult],
-    ):
+    ) -> MoveCheckResult:
         ...
 
     def make_move_with_symmetry(
@@ -163,7 +167,7 @@ class Baghchal:
         target: List[int],
         source: Optional[List[int]],
         symmetry: int,
-    ):
+    ) -> MoveCheckResult:
         ...
 
     def get_possible_moves(self) -> List[PossibleMove]:

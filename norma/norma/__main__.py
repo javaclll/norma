@@ -1,4 +1,5 @@
 import sys
+from os import name
 
 # from .connector import launch_executor
 
@@ -10,30 +11,26 @@ if len(sys.argv) == 1:
 
 if sys.argv[1] == "train":
     if len(sys.argv) == 3:
+        from .models import models
         from .train import training_loop
-        from .tiger_model import load_model
-        from .goat_model import load_model
 
-        load_model(name=sys.argv[2])
+        models.load_models(name=sys.argv[2])
         training_loop(model_name=sys.argv[2])
     else:
+        from .models import models
         from .train import training_loop
-        from .tiger_model import load_model
-        from .goat_model import load_model
 
-        load_model()
+        models.load_models(name=sys.argv[2])
+
         training_loop()
 
 elif sys.argv[1] == "serve":
     if len(sys.argv) == 3:
-        from .tiger_model import load_model
-        from .goat_model import load_model
+        from models import models
 
-        load_model(name=sys.argv[2])
+        models.load_models(name=sys.argv[2])
         # launch_executor()
     else:
-        from .tiger_model import load_model
-        from .goat_model import load_model
+        from models import models
 
-        load_model()
-        # launch_executor()
+        models.load_models(name=sys.argv[2])

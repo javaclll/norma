@@ -19,6 +19,7 @@ pub struct BaghchalRS {
     pub move_reward_tiger: Vec<f32>,
     pub move_reward_goat: Vec<f32>,
     pub trapped_tiger: i8,
+    pub game_over_on_invalid: bool,
 
     // For tiger
     pub t_goat_capture: Option<f32>,
@@ -37,6 +38,9 @@ pub struct BaghchalRS {
     pub g_lose: Option<f32>,
     pub g_draw: Option<f32>,
     pub g_move: Option<f32>,
+
+    // Common
+    pub gt_invalid_move: Option<f32>,
 }
 
 impl Default for BaghchalRS {
@@ -48,6 +52,7 @@ impl Default for BaghchalRS {
             game_state: GameStatus::NotDecided,
             game_history: [GameStateInstance::default()].to_vec(),
             pgn: "".to_string(),
+            game_over_on_invalid: false,
             prev_move: None,
             move_reward_tiger: [].to_vec(),
             move_reward_goat: [].to_vec(),
@@ -66,6 +71,7 @@ impl Default for BaghchalRS {
             g_lose: Some(0.0),
             g_draw: Some(0.0),
             g_move: Some(0.0),
+            gt_invalid_move: Some(0.0),
         }
     }
 }
@@ -85,6 +91,10 @@ impl BaghchalRS {
         return (self.game_history.len() - 1) as i8;
     }
 
+    pub fn set_game_over_on_invalid(&mut self, state: bool) {
+        self.game_over_on_invalid = state;
+    }
+
     pub fn set_rewards(
         &mut self,
         t_goat_capture: f32,
@@ -101,6 +111,7 @@ impl BaghchalRS {
         g_lose: f32,
         g_draw: f32,
         g_move: f32,
+        gt_invalid_move: f32,
     ) {
         self.t_goat_capture = Some(t_goat_capture);
         self.t_got_trapped = Some(t_got_trapped);
@@ -116,6 +127,7 @@ impl BaghchalRS {
         self.g_lose = Some(g_lose);
         self.g_draw = Some(g_draw);
         self.g_move = Some(g_move);
+        self.gt_invalid_move = Some(gt_invalid_move);
     }
 
     pub fn cord_to_char(num: i8) -> char {
@@ -1388,6 +1400,26 @@ impl BaghchalRS {
         }
 
         if !move_eval.is_valid {
+            if self.game_over_on_invalid {
+                self.move_reward_goat.push(0f32);
+                self.move_reward_tiger.push(0f32);
+
+                match self.turn {
+                    -1 => {
+                        self.game_state = GameStatus::GoatWon;
+                        *self.move_reward_goat.last_mut().unwrap() += self.g_win.unwrap();
+                        *self.move_reward_tiger.last_mut().unwrap() +=
+                            self.gt_invalid_move.unwrap();
+                    }
+                    1 => {
+                        self.game_state = GameStatus::TigerWon;
+                        *self.move_reward_tiger.last_mut().unwrap() += self.t_win.unwrap();
+                        *self.move_reward_goat.last_mut().unwrap() += self.gt_invalid_move.unwrap();
+                    }
+                    _ => {}
+                }
+            }
+
             return move_eval;
         }
 

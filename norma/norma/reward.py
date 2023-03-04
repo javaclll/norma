@@ -1,5 +1,9 @@
+from random import random
+
+from h5py._hl.group import numpy
+
 from norma.models import Models
-from norma.utils import get_or_none, two_in_one_merge
+from norma.utils import get_or_none, get_or_zero, two_in_one_merge
 
 GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
@@ -18,7 +22,7 @@ def reward_discounter(rewards, states):
     return rewards
 
 
-def reward_transformer(rewards_g, rewards_t, states, y_preds, models: Models):
+def advantage_calculator(rewards_g, rewards_t, states, models: Models):
     rewards_t.pop(0)
 
     rewards_g = two_in_one_merge(rewards_g)
@@ -36,17 +40,32 @@ def reward_transformer(rewards_g, rewards_t, states, y_preds, models: Models):
         if ith_re_t is not None:
             rewards.append(ith_re_t)
 
-    td_rewards = []
-    td_error = []
-    for observed_rewards, index in enumerate(rewards):
-        if index  % 2 != 0:
+    td_errors = []
+    for index, observed_rewards in enumerate(rewards):
+        if index % 2 != 0:
             model = models.tiger_critic_model
-        elif index > 20:
-            model = models.placement_critic_model
+        elif index >= 20:
+            model = models.goat_critic_model
         else:
-            model = models.goat_citic_model
+            model = models.placement_critic_model
 
+        original_state = states[index]
+        resulting_state = get_or_none(states, index + 2)
 
-        td_reward = rewards + DISCOUNT_FACTOR * 
+        symmetry_choosen = numpy.random.randint(0, 6)
 
-    return rewards
+        if resulting_state:
+            resulting_state = resulting_state[symmetry_choosen]
+            original_state = original_state[symmetry_choosen]
+            error = (
+                observed_rewards
+                + DISCOUNT_FACTOR * model.predict([resulting_state])  # type: ignore
+                - model.predict([original_state])
+            )
+            td_errors.append(error)
+        else:
+            td_errors.append(
+                observed_rewards - model.predict([original_state[symmetry_choosen]])
+            )
+
+    return td_errors

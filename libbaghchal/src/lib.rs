@@ -6,7 +6,7 @@ pub mod move_translator;
 pub mod types;
 
 use bagchal::BaghchalRS;
-use pythonize::{depythonize, pythonize};
+use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
 use types::*;
 
@@ -153,6 +153,7 @@ impl Baghchal {
         g_lose: f32,
         g_draw: f32,
         g_move: f32,
+        gt_invalid_move: f32,
     ) {
         return self.inner.set_rewards(
             t_goat_capture,
@@ -169,6 +170,7 @@ impl Baghchal {
             g_lose,
             g_draw,
             g_move,
+            gt_invalid_move,
         );
     }
 
@@ -266,15 +268,17 @@ impl Baghchal {
         return self.inner.load_game(pgn);
     }
 
+    pub fn set_game_over_on_invalid(&mut self, state: bool) {
+        return self.inner.set_game_over_on_invalid(state);
+    }
+
     pub fn make_move(
         &mut self,
         target: [i8; 2],
         source: Option<[i8; 2]>,
         eval_res: Option<MoveCheckResult>,
-    ) -> PyObject {
-        Python::with_gil(|py| {
-            return pythonize(py, &self.inner.make_move(source, target, eval_res)).unwrap();
-        })
+    ) -> MoveCheckResult {
+        return self.inner.make_move(source, target, eval_res);
     }
 
     pub fn make_move_with_symmetry(
@@ -282,14 +286,8 @@ impl Baghchal {
         symmetry: i8,
         target: [i8; 2],
         source: Option<[i8; 2]>,
-    ) -> PyObject {
-        Python::with_gil(|py| {
-            return pythonize(
-                py,
-                &self.inner.make_move_with_symmetry(source, target, symmetry),
-            )
-            .unwrap();
-        })
+    ) -> MoveCheckResult {
+        return self.inner.make_move_with_symmetry(source, target, symmetry);
     }
 
     pub fn get_possible_moves(&self) -> Vec<PossibleMove> {

@@ -13,6 +13,7 @@ tensorflow-macos = {version = "^2.10.0", platform = "darwin"}
 tensorflow = {version = "^2.10.0", platform = "linux"}
 tensorflow-metal = {version = "^0.6.0", platform = "darwin"}
 jupyterlab = "^3.4.8"
+tensorflow-probability = "^0.18.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

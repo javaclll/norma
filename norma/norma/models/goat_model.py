@@ -23,7 +23,7 @@ def build_actor_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(112, activation="softmax")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="GoatActor", inputs=inputs, outputs=output)
 
 
 def build_critic_model():
@@ -43,7 +43,7 @@ def build_critic_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="GoatCritic", inputs=inputs, outputs=output)
 
 
 def build_placement_actor_model():
@@ -63,7 +63,7 @@ def build_placement_actor_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(25, activation="softmax")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="PlacementActor", inputs=inputs, outputs=output)
 
 
 def build_placement_critic_model():
@@ -89,15 +89,14 @@ def build_placement_critic_model():
     fc2 = layers.Dense(64, activation="relu")(fc1)
     output = layers.Dense(1, activation="linear")(fc2)
 
-    return tf.keras.Model(inputs=inputs, outputs=output)
+    return tf.keras.Model(name="PlacementCritic", inputs=inputs, outputs=output)
 
 
 goat_actor_model = build_actor_model()
 
-# goat_actor_model.compile(
-#     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-#     loss="mean_squared_error",
-# )
+goat_actor_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+)
 
 
 print("\n-----------------------------------")
@@ -108,10 +107,10 @@ goat_actor_model.summary()
 
 goat_critic_model = build_critic_model()
 
-# goat_critic_model.compile(
-#     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-#     loss="mean_squared_error",
-# )
+goat_critic_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    # loss=tf.keras.losses.CategoricalCrossentropy(),
+)
 
 print("\n-----------------------------------")
 print("Goat Critic Model:")
@@ -120,10 +119,9 @@ goat_critic_model.summary()
 
 placement_actor_model = build_placement_actor_model()
 
-# placement_actor_model.compile(
-#     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-#     loss="mean_squared_error",
-# )
+placement_actor_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+)
 
 
 print("\n-----------------------------------")
@@ -134,38 +132,11 @@ placement_actor_model.summary()
 
 placement_critic_model = build_placement_critic_model()
 
-# placement_critic_model.compile(
-#     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-#     loss="mean_squared_error",
-# )
+placement_critic_model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+)
 
 print("\n-----------------------------------")
 print("Placement Critic Model:")
 print("-----------------------------------")
 placement_critic_model.summary()
-
-goat_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-goat_actor_loss = tf.keras.losses.CategoricalCrossentropy()
-goat_critic_loss = tf.keras.losses.MeanSquaredError()
-
-
-def load_model(name="magma"):
-    if os.path.exists(f"weights/{name}/goat_actor.index"):
-        goat_actor_model.load_weights(f"weights/{name}/goat_actor")
-    else:
-        goat_actor_model.save_weights(f"weights/{name}/goat_actor")
-
-    if os.path.exists(f"weights/{name}/goat_critic.index"):
-        goat_critic_model.load_weights(f"weights/{name}/goat_critic")
-    else:
-        goat_critic_model.save_weights(f"weights/{name}/goat_critic")
-
-    if os.path.exists(f"weights/{name}/placement_actor.index"):
-        goat_critic_model.load_weights(f"weights/{name}/placement_actor")
-    else:
-        goat_critic_model.save_weights(f"weights/{name}/placement_actor")
-
-    if os.path.exists(f"weights/{name}/placement_critic.index"):
-        goat_critic_model.load_weights(f"weights/{name}/placement_critic")
-    else:
-        goat_critic_model.save_weights(f"weights/{name}/placement_critic")
