@@ -2,6 +2,8 @@ import bagchal
 
 def movestoAction(source, target):
 
+    addition = 0
+
     x, y = target
 
     if source == None:
@@ -29,37 +31,57 @@ def movestoAction(source, target):
     maxY = max([y, n])
 
     if abs(delX) == 1 and abs(delY) == 1:
-        return singleDiag + 4 * minX + maxY
+        
+        if delX < 0:
+            addition = 96
+
+        return singleDiag + 4 * minX + maxY + addition
 
     elif abs(delX) == 2 and abs(delY) == 2:
 
-        slope = delY/delX 
+        slope = delY/delX
 
         if slope == 1:
-            if minX == 1:
+            if m == 1:
                 return 49
+            elif m == 3:
+                return 145
             action = 2
         else:
-            if minX == 1:
+            if m == 1:
                 return 50
+            elif m == 3:
+                return 146
             action = 1
 
-        action = action + doubleDiag + 4 * int(minX / 2) + minY
+        if delX < 0:
+            addition = 96
+
+        action = action + doubleDiag + 4 * int(minX / 2) + minY + addition
         return action
 
     elif (abs(delX) == 1 and abs(delY) == 0) or (abs(delY) == 1 and abs(delX) == 0):
         
         if abs(delX) == 0:
-            return singleStHori + 4 * minX + maxY
+            if delY < 0:
+                addition = 96
+            return singleStHori + 4 * minX + maxY + addition
+        
         elif abs(delY) == 0:
-            return singleStVert + 4 * minY + maxX
+            if delX < 0:
+                addition = 96
+            return singleStVert + 4 * minY + maxX + addition
 
     elif (abs(delX) == 2 and abs(delY) == 0) or (abs(delY) == 2 and abs(delX) == 0):
         
         if abs(delX) == 0:
-            return doubleStHori + 3 * minX + minY + 1
+            if delY < 0:
+                addition = 96
+            return doubleStHori + 3 * minX + minY + 1 + addition
         elif abs(delY) == 0:
-            return doubleStVert + 3 * minY + minX + 1
+            if delX < 0:
+                addition = 96
+            return doubleStVert + 3 * minY + minX + 1 + addition
 
     else:
         print("Not Valid Move")
