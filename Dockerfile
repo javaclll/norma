@@ -81,6 +81,8 @@ RUN service ssh start
 
 EXPOSE 22
 
+RUN pip3 install tensorflow_probability=0.19.0
+
 COPY ./start-script.sh /
 RUN chmod +x /start-script.sh
 

@@ -1,4 +1,3 @@
-import random
 from typing import List, Tuple
 
 import libbaghchal
@@ -13,16 +12,31 @@ from .stats import Stats
 
 def get_move(vectors: List, model: tf.keras.Model) -> Tuple[int, List, int]:
     symmetry_chosen = np.random.random_integers(0, 6)
+    # symmetry_chosen = 0
     vector = vectors[symmetry_chosen]
+    print(f"{vector}")
     pred = model.predict([vector])
-    action = np.random.choice(np.arange(pred[0].size), p=pred[0])
+    norm = np.linalg.norm(pred)
 
-    return (action, pred, symmetry_chosen)
+    pred = pred / norm
+
+    print(f"{pred}")
+    p = tf.nn.softmax(pred[0])
+    print(f"{p}")
+    p = np.array(p)
+    print(f"{p}")
+
+    # p = tf.divide(p, p.sum())
+
+    action = np.random.choice(np.arange(pred[0].size), p=p)
+
+    return action, pred, symmetry_chosen
 
 
-def play_game(models: Models) -> Tuple[List, List, List, List, int]:
+def play_game(models: Models) -> Tuple[List, List, List, List, List, int, str]:
     states = []
     stages = []
+    actions = []
     preds = []
     won_by = 0
 
@@ -70,16 +84,22 @@ def play_game(models: Models) -> Tuple[List, List, List, List, int]:
 
         states.append(bagchal.index_to_input(index, symmetry=symmetry_choosen))
         stages.append(stage)
+        actions.append(index)
 
         preds.append(pred)
 
-        bagchal.make_move_with_symmetry(
+        move_result = bagchal.make_move_with_symmetry(
             source=source, target=destination, symmetry=symmetry_choosen
         )
 
         game_status = bagchal.game_status_check()
 
+        if not move_result.is_valid:
+            print(f"Invalid move!")
+            print(f"Decided: {game_status.decided}")
+
         if game_status.decided:
+            print(f"Game deciced!")
             won_by = game_status.won_by
             break
 
@@ -90,69 +110,114 @@ def play_game(models: Models) -> Tuple[List, List, List, List, int]:
     # saa_pair = list(zip(states, advantages))
     # random.shuffle(saa_pair)
 
-    return (states, stages, advantages, preds, won_by)
+    return (states, actions, stages, advantages, preds, won_by, bagchal.pgn())
 
 
-def train_step(
-    states,
-    stages,
-    advantages,
-    y_preds,
-):
-    """
-    Train the Actor and Critic models using the Advantage.
-
-    Args:
-    - actor_model: The Actor model.
-    - critic_model: The Critic model.
-    - states: The batch of states.
-    - actions: The batch of actions.
-    - rewards: The batch of rewards.
-    - next_states: The batch of next states.
-    - done: The batch of done flags.
-    - optimizer: The optimizer to use for training.
-    - gamma: The discount factor.
-
-    Returns:
-    - actor_loss: The loss of the Actor model.
-    - critic_loss: The loss of the Critic model.
-    """
-
-    # Compute the advantage for each sample in the batch
-    # values = critic_model(states)
-    # next_values = critic_model(next_states)
-    # advantages = rewards + gamma * next_values * (1 - done) - values
-    if stages == 0:
-        actor_model = models.tiger_actor_model
-        critic_model = models.tiger_critic_model
-    elif stages == 1:
-        actor_model = models.placement_actor_model
-        critic_model = models.placement_critic_model
+def index_to_action_vector(index: int, stage: int):
+    if stage == 0:
+        vec = np.zeros(192)
+    elif stage == 1:
+        vec = np.zeros(25)
+    elif stage == 2:
+        vec = np.zeros(112)
     else:
-        actor_model = models.goat_actor_model
-        critic_model = models.goat_critic_model
+        raise Exception("Invalid action index!")
 
-    # Compute the actor loss and apply the gradients
-    with tf.GradientTape() as tape:
-        # logits = actor_model(states)
-        # dist = tfp.distributions.Categorical(logits=y_preds)
-        # log_probs = dist.log_prob(actions)
-        actor_loss = -tf.reduce_mean(y_preds * advantages)
+    vec[index] = 1
 
-    actor_gradients = tape.gradient(actor_loss, actor_model.trainable_variables)
-    actor_model.apply_gradients(actor_gradients)
-    # optimizer.apply_gradients(zip(actor_gradients, actor_model.trainable_variables))
-
-    # Compute the critic loss and apply the gradients
-    with tf.GradientTape() as tape:
-        critic_loss = tf.reduce_mean(tf.square(advantages))
-    critic_gradients = tape.gradient(critic_loss, critic_model.trainable_variables)
-    critic_model.apply_gradients(critic_gradients)
-
-    return actor_loss, critic_loss
+    return vec
 
 
-def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:  # type: ignore
+def train_step(states, actions, stages, advantages, y_preds, pgn):
+    print("Train Step!")
+    print(f"States: {len(states)}")
+    print(f"Stages: {len(stages)}")
+    print(f"Advantages: {len(advantages)}")
+    print(f"Y Preds: {len(y_preds)}")
+    print(f"PGN: {pgn}")
+
+    actor_losses = []
+    critic_losses = []
+
+    for i in range(len(states)):
+        state = states[i]
+        stage = stages[i]
+        advantage = advantages[i]
+        action = actions[i]
+
+        if stage == 0:
+            actor_model = models.tiger_actor_model
+            critic_model = models.tiger_critic_model
+        elif stage == 1:
+            actor_model = models.placement_actor_model
+            critic_model = models.placement_critic_model
+        else:
+            actor_model = models.goat_actor_model
+            critic_model = models.goat_critic_model
+
+        inp_tensor = tf.convert_to_tensor([state[0]])
+
+        with tf.GradientTape() as tape:
+            values = critic_model(inp_tensor, training=True)
+            huber_loss = tf.keras.losses.Huber()
+            critic_loss = huber_loss(values, advantage)
+
+        critic_grads = tape.gradient(
+            critic_loss,
+            critic_model.trainable_variables,
+        )
+
+        critic_model.optimizer.apply_gradients(
+            zip(
+                critic_grads,
+                critic_model.trainable_variables,
+            )
+        )
+
+        with tf.GradientTape() as tape:
+            actor_logits = actor_model(inp_tensor, training=True)
+
+            norm = np.linalg.norm(actor_logits)  # type: ignore
+            normalized_actor_logits = actor_logits / norm
+            action_probabilities = tf.nn.softmax(normalized_actor_logits)
+
+            actions_one_hot = index_to_action_vector(action, stage)
+            # print(f"Probs: {action_probabilities}")
+            # print(f"OneHot: {actions_one_hot}")
+            chosen_action_probabilities = tf.reduce_sum(
+                actions_one_hot * action_probabilities, axis=1
+            )
+
+            log_probs = tf.math.log(chosen_action_probabilities)
+            # print(f"ERRR: {chosen_action_probabilities}")
+            # print(f"ERRR: {log_probs}")
+            # print(f"ERRR: {advantage}")
+            # print(f"ERRR: {-tf.reduce_mean(log_probs * advantage)}")
+            actor_loss = -tf.reduce_mean(log_probs * advantage)
+
+        print(f"Actor Loss: {actor_loss}")
+        actor_grads = tape.gradient(
+            actor_loss,
+            actor_model.trainable_variables,
+        )
+
+        actor_model.optimizer.apply_gradients(
+            zip(
+                actor_grads,
+                actor_model.trainable_variables,
+            )
+        )
+
+        actor_losses.append(float(actor_loss))
+        critic_losses.append(float(critic_loss))
+
+    print("Losses:")
+    print(f"Actor: {actor_losses}")
+    print(f"Critic: {critic_losses}")
+    return (actor_losses, critic_losses)
+
+
+def training_step() -> Tuple[int, int, int, int, int, int]:  # type: ignore
     played_positions = 0
     trained_positions = 0
     t_games = 0
@@ -160,17 +225,18 @@ def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:  # type
     t_tiger_wons = 0
     t_draws = 0
 
-    trainable_states = []
-    trainable_stages = []
-    trainable_advantages = []
-    trainable_y_preds = []
-    while len(trainable_states) < 512:
-        (states, stages, advatages, y_preds, won_by) = play_game(models)
+    # for _ in range(512):
+    for _ in range(1):
+        (states, actions, stages, advatages, y_preds, won_by, pgn) = play_game(models)
 
-        trainable_states += states
-        trainable_stages += stages
-        trainable_y_preds += y_preds
-        trainable_advantages += advatages
+        train_step(
+            states=states,
+            actions=actions,
+            advantages=advatages,
+            stages=stages,
+            y_preds=y_preds,
+            pgn=pgn,
+        )
 
         played_positions += len(states) * 7
         t_games += 1
@@ -180,13 +246,6 @@ def training_step(train_on: int) -> Tuple[int, int, int, int, int, int]:  # type
             t_tiger_wons += 1
         else:
             t_draws += 1
-
-    train_step(
-        states=trainable_states,
-        advatages=trainable_advantages,
-        stages=trainable_stages,
-        y_preds=trainable_y_preds,
-    )
 
     trained_positions = played_positions
 
@@ -211,7 +270,7 @@ def training_loop(model_name="new_model"):
             t_goat_wons,
             t_tiger_wons,
             t_draws,
-        ) = training_step(train_on=1)
+        ) = training_step()
 
         stats.add(
             game_counter=t_games,
@@ -223,27 +282,27 @@ def training_loop(model_name="new_model"):
             tiger_trained_states=0,
             loss=1,
         )
-
-        # Tiger Training
-        for _ in range(1):
-            (
-                played_positions,
-                trained_positions,
-                t_games,
-                t_goat_wons,
-                t_tiger_wons,
-                t_draws,
-            ) = training_step(train_on=-1)
-
-            stats.add(
-                game_counter=t_games,
-                positions_counter=played_positions,
-                goat_wins=t_goat_wons,
-                tiger_wins=t_tiger_wons,
-                draws=t_draws,
-                tiger_trained_states=trained_positions,
-                goat_trained_states=0,
-                loss=1,
-            )
+        #
+        # # Tiger Training
+        # for _ in range(1):
+        #     (
+        #         played_positions,
+        #         trained_positions,
+        #         t_games,
+        #         t_goat_wons,
+        #         t_tiger_wons,
+        #         t_draws,
+        #     ) = training_step()
+        #
+        #     stats.add(
+        #         game_counter=t_games,
+        #         positions_counter=played_positions,
+        #         goat_wins=t_goat_wons,
+        #         tiger_wins=t_tiger_wons,
+        #         draws=t_draws,
+        #         tiger_trained_states=trained_positions,
+        #         goat_trained_states=0,
+        #         loss=1,
+        #     )
 
         models.save_models()

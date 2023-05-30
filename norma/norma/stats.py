@@ -30,7 +30,7 @@ class Stats:
 
         self.try_load()
 
-    def save(self):
+    def save_stats(self):
         try:
             stats_file = open(f"weights/{self.model_name}/training_stats.json", "w")
             json.dump(
@@ -65,7 +65,8 @@ class Stats:
             self.windows = data["windows"]
 
         except Exception as e:
-            print(f"Didn't find stats file. Creating a new one!")
+            print("Didn't find stats file. Creating a new one!")
+            self.save_stats()
 
     def add(
         self,
@@ -88,23 +89,24 @@ class Stats:
 
         self.windows.append(
             {
-                {
-                    "game_counter": game_counter,
-                    "positions_counter": positions_counter,
-                    "goat_wins": goat_wins,
-                    "tiger_wins": tiger_wins,
-                    "draws": draws,
-                    "goat_trained_states": goat_trained_states,
-                    "tiger_trained_states": tiger_trained_states,
-                    "loss": loss,
-                },
-            }
+                "game_counter": game_counter,
+                "positions_counter": positions_counter,
+                "goat_wins": goat_wins,
+                "tiger_wins": tiger_wins,
+                "draws": draws,
+                "goat_trained_states": goat_trained_states,
+                "tiger_trained_states": tiger_trained_states,
+                "loss": loss,
+            },
         )
 
+        print("Saving stats!")
+        self.save_stats()
+
     def print(self):
-        print(f"---------------------------------------------------")
-        print(f"OVERALL GAME STATS:")
-        print(f"---------------------------------------------------")
+        print("---------------------------------------------------")
+        print("OVERALL GAME STATS:")
+        print("---------------------------------------------------")
         print(
             f"Goat: {self.goat_wins} ({((self.goat_wins/self.game_counter)*100):.2f} %)"
         )
@@ -112,9 +114,9 @@ class Stats:
             f"Tiger: {self.tiger_wins} ({((self.tiger_wins/self.game_counter)*100):.2f} %)"
         )
         print(f"Draws: {self.draws} ({((self.draws/self.game_counter)*100):.2f} %)")
-        print(f"---------------------------------------------------")
-        print(f"TRAINING STATS:")
-        print(f"---------------------------------------------------")
+        print("---------------------------------------------------")
+        print("TRAINING STATS:")
+        print("---------------------------------------------------")
         print(f"Games Played: {self.game_counter}")
         print(f"Positions Generated: {self.positions_counter}")
         print(f"Goat Trained States: {self.goat_trained_states}")
@@ -125,9 +127,9 @@ class Stats:
         cw_tiger_wins = self.windows[-1]["tiger_wins"]
         cw_game_counter = self.windows[-1]["game_counter"]
         cw_draws = self.windows[-1]["draws"]
-        print(f"---------------------------------------------------")
-        print(f"CURRENT WINDOW GAME STATS:")
-        print(f"---------------------------------------------------")
+        print("---------------------------------------------------")
+        print("CURRENT WINDOW GAME STATS:")
+        print("---------------------------------------------------")
         print(f"Goat: {cw_goat_wins} ({((cw_goat_wins/cw_game_counter)*100):.2f} %)")
         print(f"Tiger: {cw_tiger_wins} ({((cw_tiger_wins/cw_game_counter)*100):.2f} %)")
         print(f"Draws: {cw_draws} ({((cw_draws/cw_game_counter)*100):.2f} %)")

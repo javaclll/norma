@@ -1416,7 +1416,9 @@ impl BaghchalRS {
                         *self.move_reward_tiger.last_mut().unwrap() += self.t_win.unwrap();
                         *self.move_reward_goat.last_mut().unwrap() += self.gt_invalid_move.unwrap();
                     }
-                    _ => {}
+                    _ => {
+                        panic!("Invalid turn value");
+                    }
                 }
             }
 
@@ -1764,7 +1766,25 @@ impl BaghchalRS {
     }
 
     pub fn game_status_check(&self) -> GameStatusCheckResult {
-        if self.goat_captured >= 5 {
+        if self.game_state != GameStatus::NotDecided {
+            match self.game_state {
+                GameStatus::TigerWon => {
+                    return GameStatusCheckResult {
+                        decided: true,
+                        won_by: -1,
+                    }
+                }
+                GameStatus::GoatWon => {
+                    return GameStatusCheckResult {
+                        decided: true,
+                        won_by: 1,
+                    }
+                }
+                _ => {
+                    panic!("Invalid game state")
+                }
+            }
+        } else if self.goat_captured >= 5 {
             return GameStatusCheckResult {
                 decided: true,
                 won_by: -1,

@@ -3,9 +3,9 @@ services:
     build: .
     environment:
       - MODEL_NAME=hpc-feb-2023
-    # volumes:
-      # - ./norma/:/app
-      # - ./norma/weights/:/app/norma/weights
+    volumes:
+      - ./norma/:/app
+      - ./norma/weights/:/app/norma/weights
     deploy:
       resources:
         reservations:

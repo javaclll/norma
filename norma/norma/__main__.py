@@ -1,5 +1,5 @@
 import sys
-from os import name
+# from os import name
 
 # from .connector import launch_executor
 
@@ -17,12 +17,8 @@ if sys.argv[1] == "train":
         models.load_models(name=sys.argv[2])
         training_loop(model_name=sys.argv[2])
     else:
-        from .models import models
-        from .train import training_loop
-
-        models.load_models(name=sys.argv[2])
-
-        training_loop()
+        print(f"Missing model name!")
+        exit()
 
 elif sys.argv[1] == "serve":
     if len(sys.argv) == 3:
