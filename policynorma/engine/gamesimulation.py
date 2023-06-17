@@ -99,12 +99,10 @@ class Simulator:
         return action, indivReward
 
     def simulate(self, noOfSims = NUMSIMS, simStart = 0):
-        with open('gameplayrecord.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
+        with open("gameplayrecord.csv", 'w') as file:
+            writer = csv.writer(file)           
             field = ["Norma Agent", "Wins", "Loss", "Draw", "Total Games Played", "Predicted Invalid Moves"]
-            
             writer.writerow(field)
-            file.close()
 
         maxEpsilon = 1
         minEpsilon = 0.01
@@ -217,7 +215,7 @@ class Simulator:
                         tigerLoss = 0
                         invalidMovePredictedTiger = 0
 
-                        for _ in range(20):
+                        for i in range(20):
                             randomGamePlay = Bagchal.new()
 
                             randomDone = False
@@ -306,11 +304,11 @@ class Simulator:
                                         goatDraw += 1
                                     
                                     randomDone = True
-                            
-                            with open('gameplayrecord.csv', 'a', newline='') as file:
-                                writer.writerow([-1, tigerWin, tigerLoss, tigerDraw, 20, invalidMovePredictedTiger])
-                                writer.writerow([1, goatWin, goatLoss, goatDraw, 20, invalidMovePredictedGoat])
-                                file.close()
+                            print(i)
+                        with open("gameplayrecord.csv", 'a+') as file:
+                            writer = csv.writer(file)
+                            writer.writerow([-1, tigerWin, tigerLoss, tigerDraw, 20, invalidMovePredictedTiger])
+                            writer.writerow([1, goatWin, goatLoss, goatDraw, 20, invalidMovePredictedGoat])
                         break
             
             self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * (simNo + 1))

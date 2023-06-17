@@ -22,7 +22,7 @@ class Model:
             self.model = savedModel
         else:
 
-            optimizer = keras.optimizers.Adam(learning_rate=0.001)
+            optimizer = keras.optimizers.legacy.Adam(learning_rate=0.001)
             initializer = keras.initializers.HeUniform()
 
 
@@ -200,6 +200,3 @@ class Model:
         
         mainModel.model.fit(trainX, trainY, batch_size = batchSize, verbose = 2, shuffle = True)
 
-
-
-newmodel =  Model()  

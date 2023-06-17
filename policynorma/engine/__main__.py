@@ -1,5 +1,5 @@
 import sys
-
+import absl.logging
 from model import Model
 from connector import launch_executor
 from gamesimulation import Simulator
@@ -7,6 +7,7 @@ import os
 from constants import GOATMODELPATH, TARGETMODELPATH, TIGERMODELPATH 
 from bagchal import Bagchal
 import tensorflow
+absl.logging.set_verbosity(absl.logging.ERROR)
 
 if len(sys.argv) == 1:
     print("Missing arguments!")
