@@ -101,7 +101,7 @@ class Simulator:
     def simulate(self, noOfSims = NUMSIMS, simStart = 0):
         with open("gameplayrecord.csv", 'w') as file:
             writer = csv.writer(file)           
-            field = ["Norma Agent", "Wins", "Loss", "Draw", "Total Games Played", "Predicted Invalid Moves"]
+            field = ["Norma Agent", "Wins", "Loss", "Draw", "Total Games Played", "Predicted Invalid Moves", "Turns"]
             writer.writerow(field)
 
         maxEpsilon = 1
@@ -208,18 +208,24 @@ class Simulator:
                         goatDraw = 0
                         goatWin = 0
                         goatLoss = 0
-                        invalidMovePredictedGoat = 0
+                        invalidMovesPredictedGoat = []
+                        gameGoatTurns = []
 
                         tigerDraw = 0
                         tigerWin = 0
                         tigerLoss = 0
-                        invalidMovePredictedTiger = 0
+                        invalidMovesPredictedTiger = []
+                        gameTigerTurns = []
+                        
 
-                        for i in range(20):
+
+                        for _ in range(20):
                             randomGamePlay = Bagchal.new()
 
                             randomDone = False
+                            turns = 0
                             while not randomDone:
+                                turns += 1
                                 possibleMoves = randomGamePlay.get_possible_moves()
 
                                 if(randomGamePlay.turn == -1):
@@ -232,12 +238,14 @@ class Simulator:
                                     
                                     action = np.argmax(prediction)
                                     
+                                    print(np.shape(prediction)) 
+                                    invalidMovePredictedTiger = 0
                                     while action not in actions:
                                         invalidMovePredictedTiger += 1
-                                        prediction[action] = - math.inf
+                                        prediction[action] = -math.inf
                                         action = np.argmax(prediction)
-
                                     moveIndex = actions.index(action)
+                                    invalidMovesPredictedTiger.append(invalidMovePredictedTiger)
                                     
                                     move = possibleMoves[moveIndex]
                                 else:
@@ -260,11 +268,14 @@ class Simulator:
 
                                     randomDone = True
                             
+                            gameTigerTurns.append(turns)
 
                             randomGamePlay = Bagchal.new()
 
                             randomDone = False
+                            turns = 0
                             while not randomDone:
+                                turns += 1
                                 possibleMoves = randomGamePlay.get_possible_moves()
 
                                 if(randomGamePlay.turn == 1):
@@ -276,11 +287,14 @@ class Simulator:
                                         prediction = self.mainGoatModel.predict(randomGamePlay)[0]
                                     
                                     action = np.argmax(prediction)
+                                    invalidMovePredictedGoat= 0
                                     
                                     while action not in actions:
                                         invalidMovePredictedGoat += 1
-                                        prediction[action] = - math.inf
+                                        prediction[action] = -math.inf
                                         action = np.argmax(prediction)
+                                    
+                                    invalidMovesPredictedGoat.append(invalidMovePredictedGoat)
 
                                     moveIndex = actions.index(action)
                                     
@@ -304,11 +318,15 @@ class Simulator:
                                         goatDraw += 1
                                     
                                     randomDone = True
-                            print(i)
+                            gameGoatTurns.append(turns)
+                            
+                        print(invalidMovesPredictedTiger)
+                        print(invalidMovesPredictedGoat)
+
                         with open("gameplayrecord.csv", 'a+') as file:
                             writer = csv.writer(file)
-                            writer.writerow([-1, tigerWin, tigerLoss, tigerDraw, 20, invalidMovePredictedTiger])
-                            writer.writerow([1, goatWin, goatLoss, goatDraw, 20, invalidMovePredictedGoat])
+                            writer.writerow([-1, tigerWin, tigerLoss, tigerDraw, 20, invalidMovesPredictedTiger, gameTigerTurns])
+                            writer.writerow([1, goatWin, goatLoss, goatDraw, 20, invalidMovesPredictedGoat, gameGoatTurns])
                         break
             
             self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * (simNo + 1))
