@@ -1,10 +1,10 @@
 import sys
 
 from model import Model
-from .connector import launch_executor
-from .gamesimulation import Simulator
+from connector import launch_executor
+from gamesimulation import Simulator
 import os
-from .constants import GOATMODELPATH, TARGETMODELPATH, TIGERMODELPATH 
+from constants import GOATMODELPATH, TARGETMODELPATH, TIGERMODELPATH 
 from bagchal import Bagchal
 import tensorflow
 

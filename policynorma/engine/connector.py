@@ -1,7 +1,7 @@
-from .helpers import movestoAction
-from .constants import GOATMODELPATH, MODELPATH, TARGETMODELPATH, TIGERMODELPATH
-from .model import Model
-from .gamesimulation import Simulator
+from helpers import movestoAction
+from constants import GOATMODELPATH, MODELPATH, TARGETMODELPATH, TIGERMODELPATH
+from model import Model
+from gamesimulation import Simulator
 import json
 import rel
 import websocket

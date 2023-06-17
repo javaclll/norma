@@ -1,12 +1,12 @@
 import re
 from bagchal import GameState, Bagchal
-from .model import Model
-from .constants import GOATMODELPATH, MODELPATH, NUMSIMS, TIGERMODELPATH, TARGETMODELPATH
+from model import Model
+from constants import GOATMODELPATH, MODELPATH, NUMSIMS, TIGERMODELPATH, TARGETMODELPATH
 from random import random, randint
 from functools import reduce
 import numpy as np
 from collections import deque
-from .helpers import movestoAction
+from helpers import movestoAction
 import math
 import csv
 
