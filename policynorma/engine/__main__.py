@@ -1,6 +1,6 @@
 import sys
 
-from .model import Model
+from model import Model
 from .connector import launch_executor
 from .gamesimulation import Simulator
 import os

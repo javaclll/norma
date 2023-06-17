@@ -162,7 +162,7 @@ class MM:
 
     def best_bagh_move(self, board):
         assert not board.game_status_check().decided
-        return self.tigerMax(board, depth=4, maximizing_player=True)
+        return self.tigerMax(board, self.depth, maximizing_player=True)
 
     def best_goat_move(self, board):
         assert not board.game_status_check().decided

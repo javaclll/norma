@@ -8,9 +8,11 @@ import numpy as np
 from collections import deque
 from .helpers import movestoAction
 import math
+import csv
 
 #Length for DeQue
 MAXLEN = 25000
+
 # For Tiger
 T_GOAT_CAPTURED = 5
 T_GOT_TRAPPED = -5
@@ -28,7 +30,6 @@ T_LOSE = -10
 G_LOSE = -10
 
 DRAW = -5
-
 
 class Simulator:
     def __init__(self, targetGoatModel = Model(), mainGoatModel = Model(), targetTigerModel = Model(), mainTigerModel = Model()):
@@ -98,6 +99,12 @@ class Simulator:
         return action, indivReward
 
     def simulate(self, noOfSims = NUMSIMS, simStart = 0):
+        with open('gameplayrecord.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            field = ["Norma Agent", "Wins", "Loss", "Draw", "Total Games Played", "Predicted Invalid Moves"]
+            
+            writer.writerow(field)
+            file.close()
 
         maxEpsilon = 1
         minEpsilon = 0.01
@@ -195,11 +202,116 @@ class Simulator:
                         
                         self.targetGoatModel.model.save(GOATMODELPATH)
                         self.targetTigerModel.model.save(TIGERMODELPATH)
-                        
                         print(f"Target Models Saved at {targetUpdate} targets and {simNo + 1} sims")
 
                         targetUpdate = 0
-                    break
+                        ## Play a Game with Random Opponent and Save the Data:
+
+                        goatDraw = 0
+                        goatWin = 0
+                        goatLoss = 0
+                        invalidMovePredictedGoat = 0
+
+                        tigerDraw = 0
+                        tigerWin = 0
+                        tigerLoss = 0
+                        invalidMovePredictedTiger = 0
+
+                        for _ in range(20):
+                            randomGamePlay = Bagchal.new()
+
+                            randomDone = False
+                            while not randomDone:
+                                possibleMoves = randomGamePlay.get_possible_moves()
+
+                                if(randomGamePlay.turn == -1):
+                                    actions = []
+
+                                    for move in possibleMoves:
+                                        actions.append(movestoAction(move["move"][0], move["move"][1]))
+
+                                        prediction = self.mainTigerModel.predict(randomGamePlay)[0]
+                                    
+                                    action = np.argmax(prediction)
+                                    
+                                    while action not in actions:
+                                        invalidMovePredictedTiger += 1
+                                        prediction[action] = - math.inf
+                                        action = np.argmax(prediction)
+
+                                    moveIndex = actions.index(action)
+                                    
+                                    move = possibleMoves[moveIndex]
+                                else:
+                                    maxMoves = len(possibleMoves) - 1
+
+                                    move = possibleMoves[randint(0, maxMoves)]
+
+                                    action = movestoAction(move["move"][0], move["move"][1])
+
+                                randomGamePlay.move(move["move"][0], move["move"][1])
+                                
+                                if randomGamePlay.game_status_check()["decided"] or len(randomGamePlay.game_history) > 100:
+                                    
+                                    if(randomGamePlay.game_state == GameState.TIGER_WON.value):
+                                        tigerWin += 1
+                                    elif(randomGamePlay.game_state == GameState.GOAT_WON.value):
+                                        tigerLoss += 1
+                                    else:
+                                        tigerDraw += 1
+
+                                    randomDone = True
+                            
+
+                            randomGamePlay = Bagchal.new()
+
+                            randomDone = False
+                            while not randomDone:
+                                possibleMoves = randomGamePlay.get_possible_moves()
+
+                                if(randomGamePlay.turn == 1):
+                                    actions = []
+
+                                    for move in possibleMoves:
+                                        actions.append(movestoAction(move["move"][0], move["move"][1]))
+
+                                        prediction = self.mainGoatModel.predict(randomGamePlay)[0]
+                                    
+                                    action = np.argmax(prediction)
+                                    
+                                    while action not in actions:
+                                        invalidMovePredictedGoat += 1
+                                        prediction[action] = - math.inf
+                                        action = np.argmax(prediction)
+
+                                    moveIndex = actions.index(action)
+                                    
+                                    move = possibleMoves[moveIndex]
+                                else:
+                                    maxMoves = len(possibleMoves) - 1
+
+                                    move = possibleMoves[randint(0, maxMoves)]
+
+                                    action = movestoAction(move["move"][0], move["move"][1])
+
+                                randomGamePlay.move(move["move"][0], move["move"][1])
+                                
+                                if randomGamePlay.game_status_check()["decided"] or len(randomGamePlay.game_history) > 100:
+                                    
+                                    if(randomGamePlay.game_state == GameState.GOAT_WON.value):
+                                        goatWin += 1
+                                    elif(randomGamePlay.game_state == GameState.TIGER_WON.value):
+                                        goatLoss += 1
+                                    else:
+                                        goatDraw += 1
+                                    
+                                    randomDone = True
+                            
+                            with open('gameplayrecord.csv', 'a', newline='') as file:
+                                writer.writerow([-1, tigerWin, tigerLoss, tigerDraw, 20, invalidMovePredictedTiger])
+                                writer.writerow([1, goatWin, goatLoss, goatDraw, 20, invalidMovePredictedGoat])
+                                file.close()
+                        break
             
             self.goatEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-goatDecay * (simNo + 1))
             self.tigerEpsilon = minEpsilon + (maxEpsilon - minEpsilon) * np.exp(-tigerDecay * (simNo + 1))
@@ -207,9 +319,9 @@ class Simulator:
     def moveState(self):
            
         possibleMoves = self.game.get_possible_moves()
-        
+    
         randNumber = random()
-        
+
         if (randNumber < self.goatEpsilon and self.game.turn == 1) or (randNumber < self.tigerEpsilon and self.game.turn == -1):
 
             maxMoves = len(possibleMoves) - 1
@@ -240,8 +352,9 @@ class Simulator:
             move = possibleMoves[moveIndex]
         
         return move, action
+    
 
-        #find the predicted values for the moves ....
+    #find the predicted values for the moves ....
         #get the next board state from the current board state
         #use policy network to find the next move
     
