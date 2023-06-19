@@ -7,6 +7,7 @@ import numpy as np
 import tensorflow as tf 
 from tensorflow import keras
 from functools import reduce
+from sklearn import preprocessing
 import os
 from constants import DISCOUNTFACTOR, OBSERVATIONSPACE, ACTIONSPACE
 
@@ -82,6 +83,8 @@ class Model:
             predictTensor = np.concatenate((goatBoard, tigerBoard, tigerTrap, goatCaptured, goatCounter), axis=None)
 
             predictedValue = self.model.predict(predictTensor.reshape(1,-1))
+            predictedValue = preprocessing.normalize(predictedValue, axis=1)
+            print(f"Predicted Value is: {predictedValue}")
             return predictedValue
 
     @abstractmethod
