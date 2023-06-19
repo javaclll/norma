@@ -225,10 +225,11 @@ class Simulator:
                             randomDone = False
                             turns = 0
                             while not randomDone:
-                                turns += 1
                                 possibleMoves = randomGamePlay.get_possible_moves()
 
                                 if(randomGamePlay.turn == -1):
+                                    turns += 1
+
                                     actions = []
 
                                     for move in possibleMoves:
@@ -275,10 +276,11 @@ class Simulator:
                             randomDone = False
                             turns = 0
                             while not randomDone:
-                                turns += 1
                                 possibleMoves = randomGamePlay.get_possible_moves()
 
                                 if(randomGamePlay.turn == 1):
+                                    turns += 1
+
                                     actions = []
 
                                     for move in possibleMoves:
