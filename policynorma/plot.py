@@ -1,4 +1,5 @@
 import csv
+from operator import indexOf
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
@@ -48,22 +49,27 @@ def plot_data_tiger():
     plt.rcParams["figure.autolayout"] = True
 
     data = pd.read_csv("tiger.csv")
+    data.pop("Predicted Invalid Moves")
+    data.pop("Turns")
 
-    wins = data["Wins"]
-    loss = data["Loss"]
-    draw = data["Draw"]
-    time = np.arange(len(data)) * 2
+    new_data = data[::5]
 
-    plt.plot(time, wins, label="Wins")
-    plt.plot(time, loss, label="Loss")
-    plt.plot(time, draw, label="Draw")
+    wins = new_data["Wins"]
+    loss = new_data["Loss"]
+    # draw = new_data["Draw"]
+    time = np.arange(len(new_data)) * 5
 
-    plt.xlabel("Time Interval")
+    plt.plot(time, wins, label="Wins", linewidth=0.5)
+    plt.plot(time, loss, label="Loss" ,linewidth=0.5)
+    # plt.plot(time, draw, label="Draw")
+
+    plt.xlabel("Number of Trainings")
     plt.ylabel("Number of Games")
-    plt.title("Tiger Wins, Loss and Draws Over Time")
+    plt.title("Tiger Wins, Loss Over Time")
     plt.legend()
 
     plt.savefig("tiger.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
 
 def plot_data_goat():
@@ -71,26 +77,77 @@ def plot_data_goat():
     plt.rcParams["figure.autolayout"] = True
 
     data = pd.read_csv("goat.csv")
+    data.pop("Predicted Invalid Moves")
+    data.pop("Turns")
+    new_data = data.rolling(8).min().iloc[::8]
 
-    wins = data["Wins"]
-    loss = data["Loss"]
-    draw = data["Draw"]
-    time = np.arange(len(data)) * 2
+    wins = new_data["Wins"]
+    loss = new_data["Loss"]
+    draw = new_data["Draw"]
+    time = np.arange(len(new_data)) * 8
 
-    plt.plot(time, wins, label="Wins")
-    plt.plot(time, loss, label="Loss")
-    plt.plot(time, draw, label="Draw")
+    plt.plot(time, wins, label="Wins",linewidth=0.5)
+    plt.plot(time, loss, label="Loss",linewidth=0.5)
+    plt.plot(time, draw, label="Draw",linewidth=0.5)
 
     plt.title("Goat Wins, Loss and Draws Over Time")
     plt.legend()
 
-    plt.xlabel("Time Interval")
+    plt.xlabel("Number of Trainings")
     plt.ylabel("Number of Games")
 
     plt.savefig("goat.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
+def plot_invalid_moves_goat():
+    print("Printing goat")
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("goat.csv")
+
+    invalid_moves = data["Predicted Invalid Moves"].apply(
+        lambda x: [int(i) for i in eval(x)]
+    )
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+    average_invalid_moves = []
+    for i in range(len(invalid_moves)):
+        average_invalid_moves.append(sum(invalid_moves[i])/sum(game_length[i]))
+
+    plt.plot(range(len(average_invalid_moves)), average_invalid_moves, label="Invalid Moves",linewidth=0.5)
+    plt.title("No of invalid moves predicted over time (Goat)")
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Invalid Moves Predicted")
+    plt.savefig("invalid_goat.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
+def plot_invalid_moves_tiger():
+    print("Printing goat")
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("tiger.csv")
+
+    invalid_moves = data["Predicted Invalid Moves"].apply(
+        lambda x: [int(i) for i in eval(x)]
+    )
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+    average_invalid_moves = []
+    for i in range(len(invalid_moves)):
+        average_invalid_moves.append(sum(invalid_moves[i])/sum(game_length[i]))
+
+    plt.plot(range(len(average_invalid_moves)), average_invalid_moves, label="Invalid Moves",linewidth=0.5)
+    plt.title("No of invalid moves predicted over time (Tiger)")
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Invalid Moves Predicted")
+    plt.savefig("invalid_tiger.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
 separate_data("gameplayrecord.csv")
 plot_data_tiger()
-plt.clf()
 plot_data_goat()
+plot_invalid_moves_goat()
+plot_invalid_moves_tiger()
+
