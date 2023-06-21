@@ -1,14 +1,21 @@
 use pyo3::prelude::*;
 
-pub mod bagchal;
-pub mod constants;
-pub mod move_translator;
-pub mod types;
+// pub mod bagchal;
+// pub mod constants;
+// pub mod move_translator;
+// pub mod types;
+// pub mod utils;
+// pub mod traits;
+pub mod game;
+pub mod helpers;
 
-use bagchal::BaghchalRS;
+use game::bagchal::BaghchalRS;
+use helpers::{
+    types::*,
+    utils::{coord_to_png_unit, pgn_unit_to_coord},
+};
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
-use types::*;
 
 #[pyclass]
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -100,12 +107,12 @@ impl Baghchal {
 
     #[staticmethod]
     pub fn pgn_unit_to_coord(pgn: String) -> Move {
-        return BaghchalRS::pgn_unit_to_coord(pgn);
+        return pgn_unit_to_coord(pgn);
     }
 
     #[staticmethod]
     pub fn coord_to_png_unit(destination: [i8; 2], source: Option<[i8; 2]>) -> String {
-        return BaghchalRS::coord_to_png_unit(source, destination);
+        return coord_to_png_unit(source, destination);
     }
 
     #[staticmethod]
@@ -171,6 +178,13 @@ impl Baghchal {
             g_draw,
             g_move,
             gt_invalid_move,
+        );
+    }
+
+    pub fn merged_rewards(&self) -> Vec<f32> {
+        return crate::helpers::utils::merge_rewards(
+            &self.inner.move_reward_goat,
+            &self.inner.move_reward_tiger,
         );
     }
 
@@ -241,6 +255,13 @@ impl Baghchal {
             .state_as_inputs(possible_moves_pre, mode, rotate_board);
     }
 
+    pub fn state_as_inputs_all_symmetry(
+        &self,
+        possible_moves_pre: Option<Vec<PossibleMove>>,
+    ) -> Vec<Vec<Vec<i8>>> {
+        return self.inner.state_as_inputs_all_symmetry(possible_moves_pre);
+    }
+
     pub fn state_as_input_actor(
         &self,
         possible_moves_pre: Option<Vec<PossibleMove>>,
@@ -272,13 +293,17 @@ impl Baghchal {
         return self.inner.set_game_over_on_invalid(state);
     }
 
+    pub fn transition_history(&self) -> Vec<TransitionHistoryInstance> {
+        return self.inner.transition_history.clone();
+    }
+
     pub fn make_move(
         &mut self,
         target: [i8; 2],
         source: Option<[i8; 2]>,
         eval_res: Option<MoveCheckResult>,
     ) -> MoveCheckResult {
-        return self.inner.make_move(source, target, eval_res);
+        return self.inner.make_move(source, target, eval_res, true);
     }
 
     pub fn make_move_with_symmetry(
@@ -290,6 +315,9 @@ impl Baghchal {
         return self.inner.make_move_with_symmetry(source, target, symmetry);
     }
 
+    pub fn make_move_index(&mut self, index: usize) -> Option<TransitionHistoryInstance> {
+        return self.inner.make_move_index(index).cloned();
+    }
     pub fn get_possible_moves(&self) -> Vec<PossibleMove> {
         return self.inner.get_possible_moves();
     }
@@ -303,5 +331,7 @@ fn libbaghchal(_py: Python, module: &PyModule) -> PyResult<()> {
     module.add_class::<GameStateInstance>()?;
     module.add_class::<GameStatusCheckResult>()?;
     module.add_class::<GameStatus>()?;
+    module.add_class::<TransitionHistoryInstance>()?;
+    module.add_class::<MoveType>()?;
     Ok(())
 }

@@ -77,8 +77,11 @@ class Baghchal:
         g_lose,
         g_draw,
         g_move,
-       gt_invalid_move,
+        gt_invalid_move,
     ):
+        ...
+
+    def merged_rewards(self) -> List[float]:
         ...
 
     def copy(self) -> Baghchal:
@@ -129,19 +132,31 @@ class Baghchal:
     def move_reward_goat(self) -> List[float]:
         ...
 
+    def make_move_index(self, index: int) -> Optional[TransitionHistoryInstance]:
+        ...
+
     def state_as_inputs(
         self,
-        possible_moves_pre: Optional[List[PossibleMove]],
-        mode: Optional[int] = None,
+        mode: int,
         rotate_board: Optional[bool] = False,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
     ) -> List[List[int]]:
+        ...
+
+    def state_as_inputs_all_symmetry(
+        self,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
+    ) -> List[List[List[int]]]:
+        ...
+
+    def transition_history(self) -> List[TransitionHistoryInstance]:
         ...
 
     def state_as_input_actor(
         self,
-        possible_moves_pre: Optional[List[PossibleMove]],
-        mode: Optional[int] = None,
+        mode: int,
         rotate_board: Optional[bool] = False,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
     ) -> List[int]:
         ...
 
@@ -222,3 +237,24 @@ class GameStateInstance:
 
     def to_str(self) -> str:
         ...
+
+
+class TransitionHistoryInstance:
+    move: Tuple[Optional[List[int]], List[int]]
+    state: List[List[List[int]]]
+    resulting_state: List[List[List[int]]]
+    move_reward: float
+    is_terminal: bool
+    transition_type: MoveType
+
+    def move_index(self) -> int:
+        ...
+
+    def move_vector(self) -> List[int]:
+        ...
+
+
+class MoveType:
+    TigerMove: Any
+    GoatMove: Any
+    GoatPlacement: Any

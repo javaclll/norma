@@ -1,4 +1,4 @@
-use crate::types::Move;
+use crate::helpers::types::Move;
 use crate::BaghchalRS;
 
 impl BaghchalRS {
