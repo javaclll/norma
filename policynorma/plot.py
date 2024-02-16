@@ -49,16 +49,31 @@ def plot_data_tiger():
 
     data = pd.read_csv("tiger.csv")
 
-    wins = data["Wins"]
-    loss = data["Loss"]
-    draw = data["Draw"]
-    time = np.arange(len(data)) * 2
+    wins = data["Wins"][::5]
+    loss = data["Loss"][::5]
+    draw = data["Draw"][::5]
+    time = np.arange(len(wins)) * 5
 
-    plt.plot(time, wins, label="Wins")
-    plt.plot(time, loss, label="Loss")
-    plt.plot(time, draw, label="Draw")
+    plt.plot(
+        time,
+        wins,
+        label="Wins",
+        color="grey",
+        linestyle="solid",
+        markersize=2,
+        linewidth=1,
+    )
+    plt.plot(
+        time,
+        loss,
+        label="Loss",
+        color="grey",
+        linestyle="dotted",
+        markersize=2,
+        linewidth=1,
+    )
 
-    plt.xlabel("Time Interval")
+    plt.xlabel("Number of Traninigs")
     plt.ylabel("Number of Games")
     plt.title("Tiger Wins, Loss and Draws Over Time")
     plt.legend()
@@ -71,20 +86,53 @@ def plot_data_goat():
     plt.rcParams["figure.autolayout"] = True
 
     data = pd.read_csv("goat.csv")
-
+    x = 12
     wins = data["Wins"]
-    loss = data["Loss"]
-    draw = data["Draw"]
-    time = np.arange(len(data)) * 2
+    wins = [wins[i : i + x] for i in range(0, len(wins), x)]
+    wins = [max(z) for z in wins]
 
-    plt.plot(time, wins, label="Wins")
-    plt.plot(time, loss, label="Loss")
-    plt.plot(time, draw, label="Draw")
+    loss = data["Loss"]
+    loss = [loss[i : i + x] for i in range(0, len(loss), x)]
+    loss = [min(z) for z in loss]
+
+    draw = data["Draw"]
+    draw = [draw[i : i + x] for i in range(0, len(draw), x)]
+    draw = [max(z) for z in draw]
+
+    time = np.arange(len(wins)) * x
+
+    plt.plot(
+        time,
+        wins,
+        label="Wins",
+        color="grey",
+        linestyle="solid",
+        markersize=2,
+        linewidth=1,
+    )
+    plt.plot(
+        time,
+        loss,
+        label="Loss",
+        color="grey",
+        linestyle="dotted",
+        markersize=2,
+        linewidth=1,
+    )
+    plt.plot(
+        time,
+        draw,
+        label="Draw",
+        color="grey",
+        linestyle="--",
+        markersize=2,
+        linewidth=1,
+    )
 
     plt.title("Goat Wins, Loss and Draws Over Time")
     plt.legend()
 
-    plt.xlabel("Time Interval")
+    plt.xlabel("Number of Traninigs")
     plt.ylabel("Number of Games")
 
     plt.savefig("goat.png", dpi=300, bbox_inches="tight")
