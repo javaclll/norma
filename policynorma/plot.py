@@ -1,4 +1,5 @@
 import csv
+from operator import indexOf
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
@@ -48,6 +49,8 @@ def plot_data_tiger():
     plt.rcParams["figure.autolayout"] = True
 
     data = pd.read_csv("tiger.csv")
+    data.pop("Predicted Invalid Moves")
+    data.pop("Turns")
 
     wins = data["Wins"][::5]
     loss = data["Loss"][::5]
@@ -75,10 +78,10 @@ def plot_data_tiger():
 
     plt.xlabel("Number of Traninigs")
     plt.ylabel("Number of Games")
-    plt.title("Tiger Wins, Loss and Draws Over Time")
     plt.legend()
 
     plt.savefig("tiger.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
 
 def plot_data_goat():
@@ -129,16 +132,140 @@ def plot_data_goat():
         linewidth=1,
     )
 
-    plt.title("Goat Wins, Loss and Draws Over Time")
     plt.legend()
 
     plt.xlabel("Number of Traninigs")
     plt.ylabel("Number of Games")
 
     plt.savefig("goat.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
+
+def plot_invalid_moves_goat():
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("goat.csv")
+
+    invalid_moves = data["Predicted Invalid Moves"].apply(
+        lambda x: [int(i) for i in eval(x)]
+    )
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+    average_invalid_moves = []
+    for i in range(len(invalid_moves)):
+        average_invalid_moves.append(sum(invalid_moves[i]) / sum(game_length[i]))
+
+    print(f"\nMax Average Invalid Moves (Goat): {max(average_invalid_moves)}")
+    print(f"Min Average Invalid Moves (Goat): {min(average_invalid_moves)}")
+
+    plt.plot(
+        range(len(average_invalid_moves)),
+        average_invalid_moves,
+        label="Invalid Moves",
+        linewidth=0.5,
+    )
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Invalid Moves Predicted")
+    plt.savefig("invalid_goat.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
+
+def plot_invalid_moves_tiger():
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("tiger.csv")
+
+    invalid_moves = data["Predicted Invalid Moves"].apply(
+        lambda x: [int(i) for i in eval(x)]
+    )
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+    average_invalid_moves = []
+    for i in range(len(invalid_moves)):
+        average_invalid_moves.append(sum(invalid_moves[i]) / sum(game_length[i]))
+
+    first_quarter = average_invalid_moves[5 : int(len(average_invalid_moves) / 4)]
+    print(f"\nMax Average Invalid Moves (Tiger) First Quarter: {max(first_quarter)}")
+    print(f"Min Average Invalid Moves (Tiger) First Quarter: {min(first_quarter)}")
+
+    last_half = average_invalid_moves[int(len(average_invalid_moves) / 2) :]
+    print(f"Average Invalid Moves (Tiger) Last Half: {sum(last_half)/len(last_half)}")
+
+    print(f"Max Average Invalid Moves (Tiger): {max(average_invalid_moves)}")
+    print(f"Min Average Invalid Moves (Tiger): {min(average_invalid_moves)}")
+
+    plt.plot(
+        range(len(average_invalid_moves)),
+        average_invalid_moves,
+        label="Invalid Moves",
+        linewidth=0.5,
+    )
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Invalid Moves Predicted")
+    plt.savefig("invalid_tiger.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
+
+def plot_average_turn_goat():
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("goat.csv")
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+
+    half_game = game_length[len(game_length) // 2 :]
+
+    half_avg = [sum(i) / 10 for i in half_game]
+
+    avg_turns = [sum(i) / 10 for i in game_length]
+
+    print(f"\nMax Average Turns Goat: {max(avg_turns)}")
+    print(f"Min Average Turns Goat: {min(avg_turns)}")
+
+    avg = sum(half_avg) / len(half_avg)
+    print(f"Half game average (Goat): {avg}")
+
+    plt.plot(range(len(avg_turns)), avg_turns, label="Average Turns", linewidth=0.5)
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Turns")
+    plt.savefig("average_turn_goat.png", dpi=300, bbox_inches="tight")
+    plt.clf()
+
+
+def plot_average_turn_tiger():
+    plt.rcParams["figure.figsize"] = [7.00, 3.50]
+    plt.rcParams["figure.autolayout"] = True
+
+    data = pd.read_csv("tiger.csv")
+    game_length = data["Turns"].apply(lambda x: [int(i) for i in eval(x)])
+
+    half_game = game_length[len(game_length) // 2 :]
+
+    half_avg = [sum(i) / 10 for i in half_game]
+
+    avg_turns = [sum(i) / 10 for i in game_length]
+
+    print(f"\nMax Average Turns(Tiger): {max(avg_turns)}")
+    print(f"Min Average Turns(Tiger): {min(avg_turns)}")
+
+    avg = sum(half_avg) / len(half_avg)
+    print(f"Half game average(Tiger): {avg}")
+
+    plt.plot(range(len(avg_turns)), avg_turns, label="Average Turns", linewidth=0.5)
+    plt.legend()
+    plt.xlabel("Number of Trainings")
+    plt.ylabel("Number of Turns")
+    plt.savefig("average_turn_tiger.png", dpi=300, bbox_inches="tight")
+    plt.clf()
 
 
 separate_data("gameplayrecord.csv")
 plot_data_tiger()
-plt.clf()
 plot_data_goat()
+plot_invalid_moves_goat()
+plot_invalid_moves_tiger()
+plot_average_turn_goat()
+plot_average_turn_tiger()
