@@ -4,7 +4,7 @@ from random import shuffle
 INF = 1e6
 
 
-class MM:
+class MiniMax:
     def __init__(self, depth=4):
         self.depth = depth
 
@@ -27,7 +27,6 @@ class MM:
                 return 0
 
     def goatMax(self, board: Baghchal, depth, maximizing_player=True):
-
         if depth == 0 or board.game_status_check().decided:
             # print(f'depth: {depth}, player: {maximizing_player}, result: Evaluating')
             return self.evaluation(board, goat_eval=True), None
@@ -94,7 +93,6 @@ class MM:
             return minValue, best_move
 
     def tigerMax(self, board: Baghchal, depth, maximizing_player=True):
-
         if depth == 0 or board.game_status_check().decided:
             return self.evaluation(board, goat_eval=False), None
 
@@ -121,7 +119,6 @@ class MM:
                 # print(f"results: {result}.")
                 # print(f"total reward: {reward} and maxValue: {maxValue}.")
                 if reward > maxValue:
-
                     maxValue = reward
                     best_move = i.move
 
