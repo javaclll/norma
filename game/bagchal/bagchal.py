@@ -142,19 +142,18 @@ class Bagchal:
 
     @staticmethod
     def cord_to_char(num):
-        match (num):
-            case 0:
-                return "A"
-            case 1:
-                return "B"
-            case 2:
-                return "C"
-            case 3:
-                return "D"
-            case 4:
-                return "E"
-            case _:
-                return "X"
+        if(num == 0):
+            return "A"
+        elif(num == 1):
+            return "B"
+        elif(num == 2):
+            return "C"
+        elif(num == 3):
+            return "D"
+        elif(num == 3):
+            return "E"
+        else:
+            return "X"
 
     @staticmethod
     def coord_to_png_unit(source, destination):
@@ -172,17 +171,17 @@ class Bagchal:
 
     @staticmethod
     def char_to_cord(char):
-        match (char):
-            case "A":
-                return 0
-            case "B":
-                return 1
-            case "C":
-                return 2
-            case "D":
-                return 3
-            case "E":
-                return 4
+
+        if(char == "A"):
+            return 0
+        elif(char == "B"):
+            return 1
+        elif(char == "C"):
+            return 2
+        elif(char == "D"):
+            return 3
+        elif(char == "E"):
+            return 4
 
     @staticmethod
     def pgn_unit_to_coord(pgn):
