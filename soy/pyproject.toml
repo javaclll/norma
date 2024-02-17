@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "soy"
+version = "0.1.0"
+description = ""
+authors = ["Daze <dazehere@yandex.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# torch = {version = "^2.0.1", allow-prereleases = true, source = "pytorch-nightly-macos", platform = "darwin"}
+torch = [
+  {version = "^2.0.1", allow-prereleases = true, source = "pytorch-nightly", platform = "linux"},
+  {version = "^2.0.1", allow-prereleases = true, source = "pytorch-nightly-macos", platform = "darwin"}
+]
+numpy = "^1.24.3"
+rel = "^0.4.9"
+websocket-client = "^1.5.2"
+
+[[tool.poetry.source]]
+name = "pytorch-nightly"
+url = "https://download.pytorch.org/whl/nightly/cu121"
+priority = "supplemental"
+
+[[tool.poetry.source]]
+name = "pytorch-nightly-macos"
+url = "https://download.pytorch.org/whl/nightly/cpu"
+priority = "supplemental"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

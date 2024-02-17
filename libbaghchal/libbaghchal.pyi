@@ -1,6 +1,5 @@
 from _typeshed import Self
-from typing import Optional, List, Any, Tuple, Dict
-import json
+from typing import Optional, List, Any, Tuple
 
 
 class Baghchal:
@@ -35,6 +34,33 @@ class Baghchal:
     def coord_to_png_unit(destination: List[int], source: Optional[List[int]]) -> str:
         ...
 
+    @staticmethod
+    def i2m_goat(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def i2m_placement(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def i2m_tiger(index: int) -> Tuple[Optional[List[int]], List[int]]:
+        ...
+
+    @staticmethod
+    def m2i_goat(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    @staticmethod
+    def m2i_placement(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    @staticmethod
+    def m2i_tiger(__move__: Tuple[Optional[List[int]], List[int]]) -> int:
+        ...
+
+    def index_to_input(self, index: int, symmetry: int) -> List[List[int]]:
+        ...
+
     def set_rewards(
         self,
         t_goat_capture,
@@ -51,13 +77,20 @@ class Baghchal:
         g_lose,
         g_draw,
         g_move,
+        gt_invalid_move,
     ):
+        ...
+
+    def merged_rewards(self) -> List[float]:
         ...
 
     def copy(self) -> Baghchal:
         ...
 
     def to_str(self) -> str:
+        ...
+
+    def set_game_over_on_invalid(self, state: bool):
         ...
 
     def board(self) -> List[List[int]]:
@@ -99,12 +132,32 @@ class Baghchal:
     def move_reward_goat(self) -> List[float]:
         ...
 
+    def make_move_index(self, index: int) -> Optional[TransitionHistoryInstance]:
+        ...
+
     def state_as_inputs(
         self,
-        possible_moves_pre: Optional[List[PossibleMove]],
-        mode: Optional[int] = None,
+        mode: int,
         rotate_board: Optional[bool] = False,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
     ) -> List[List[int]]:
+        ...
+
+    def state_as_inputs_all_symmetry(
+        self,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
+    ) -> List[List[List[int]]]:
+        ...
+
+    def transition_history(self) -> List[TransitionHistoryInstance]:
+        ...
+
+    def state_as_input_actor(
+        self,
+        mode: int,
+        rotate_board: Optional[bool] = False,
+        possible_moves_pre: Optional[List[PossibleMove]] = None,
+    ) -> List[int]:
         ...
 
     def clear_game(self) -> None:
@@ -121,7 +174,15 @@ class Baghchal:
         target: List[int],
         source: Optional[List[int]],
         eval_res: Optional[MoveCheckResult],
-    ):
+    ) -> MoveCheckResult:
+        ...
+
+    def make_move_with_symmetry(
+        self,
+        target: List[int],
+        source: Optional[List[int]],
+        symmetry: int,
+    ) -> MoveCheckResult:
         ...
 
     def get_possible_moves(self) -> List[PossibleMove]:
@@ -176,3 +237,24 @@ class GameStateInstance:
 
     def to_str(self) -> str:
         ...
+
+
+class TransitionHistoryInstance:
+    move: Tuple[Optional[List[int]], List[int]]
+    state: List[List[List[int]]]
+    resulting_state: List[List[List[int]]]
+    move_reward: float
+    is_terminal: bool
+    transition_type: MoveType
+
+    def move_index(self) -> int:
+        ...
+
+    def move_vector(self) -> List[int]:
+        ...
+
+
+class MoveType:
+    TigerMove: Any
+    GoatMove: Any
+    GoatPlacement: Any

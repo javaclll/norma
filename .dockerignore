@@ -1,6 +1,5 @@
 **/node_modules/
 **/dist
-.git
 npm-debug.log
 .coverage
 .coverage.*
@@ -19,5 +18,3 @@ __pycache__
 **/target
 Dockerfile
 .dockerignore
-.git
-.gitignore

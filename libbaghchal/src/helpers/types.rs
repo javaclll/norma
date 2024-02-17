@@ -1,5 +1,5 @@
-use crate::constants;
 use crate::Baghchal;
+use crate::{game::bagchal::BaghchalRS, helpers::constants};
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -40,6 +40,7 @@ pub type Move = (Option<[i8; 2]>, [i8; 2]);
 #[pyclass]
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct GameStateInstance {
+    // pub baghchal_instance: BaghchalRS,
     #[pyo3(get)]
     pub board: [[i8; 5]; 5],
 
@@ -53,6 +54,7 @@ pub struct GameStateInstance {
 impl Default for GameStateInstance {
     fn default() -> Self {
         Self {
+            // baghchal_instance: BaghchalRS::default(),
             board: constants::DEFAULT_GAME_LAYOUT,
             goat_count: 0,
             goat_captured: 0,
@@ -144,5 +146,58 @@ impl PossibleMove {
         Self: Serialize,
     {
         return serde_json::to_string(&self).unwrap();
+    }
+}
+
+#[pyclass]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+pub enum MoveType {
+    TigerMove,
+    GoatMove,
+    GoatPlacement,
+}
+
+#[pyclass]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransitionHistoryInstance {
+    #[pyo3(get)]
+    pub r#move: Move,
+
+    #[pyo3(get)]
+    pub state: Vec<Vec<Vec<i8>>>,
+
+    #[pyo3(get)]
+    pub resulting_state: Vec<Vec<Vec<i8>>>,
+
+    #[pyo3(get)]
+    pub move_reward: f32,
+
+    #[pyo3(get)]
+    pub is_terminal: bool,
+
+    #[pyo3(get)]
+    pub transition_type: MoveType,
+}
+
+#[pymethods]
+impl TransitionHistoryInstance {
+    pub fn move_index(&self) -> usize {
+        match self.transition_type {
+            MoveType::TigerMove => BaghchalRS::m2i_tiger(self.r#move),
+            MoveType::GoatMove => BaghchalRS::m2i_goat(self.r#move),
+            MoveType::GoatPlacement => BaghchalRS::m2i_placement(self.r#move),
+        }
+    }
+
+    pub fn move_vector(&self) -> Vec<i8> {
+        let mut move_vector = match self.transition_type {
+            MoveType::TigerMove => vec![0; 192],
+            MoveType::GoatMove => vec![0; 112],
+            MoveType::GoatPlacement => vec![0; 25],
+        };
+
+        move_vector[self.move_index()] = 1;
+
+        return move_vector;
     }
 }
