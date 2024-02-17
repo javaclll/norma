@@ -43,7 +43,8 @@
   color: #ffffff;
 }
 .select_image {
-  width: 60%;
+  width: 8vw;
+  padding: 2vw;
 }
 
 .player_label {

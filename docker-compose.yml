@@ -1,0 +1,13 @@
+services:
+  training-deploy:
+    build: .
+    command: python -m norma train HPC
+    volumes:
+      - ./norma/weights/:/app/norma/weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -107,7 +107,9 @@ def reward_transformer(rewards_g, rewards_t):
     return rewards
 
 
-def play_game(exploration=True, only_record=None, record_explorations=True):
+def play_game(
+    exploration=True, only_record=None, record_explorations=True, rotate_board=True
+):
     states = []
     y_preds = []
 
@@ -134,11 +136,22 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
     for i in range(100):
         possible_moves = bagchal.get_possible_moves()
 
-        input_vectors = bagchal.state_as_inputs(possible_moves, mode=3, rotate_board=True)
+        input_vectors = bagchal.state_as_inputs(
+            possible_moves,
+            mode=6,
+            rotate_board=rotate_board,
+        )
 
         turn = 1 if i % 2 == 0 else -1
 
-        best_move_index, pred_y = get_best_move(input_vectors, exploration=exploration, agent=turn)
+        best_move_index, pred_y = get_best_move(
+            input_vectors,
+            exploration=exploration,
+            agent=turn,
+        )
+
+        if rotate_board:
+            best_move_index = best_move_index // 7
 
         if pred_y or record_explorations:
             if not only_record:
@@ -172,17 +185,12 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
 
 
 def test():
-    (
-        states,
-        y_preds,
-        actual_rewards,
-        bagchal,
-    ) = play_game(exploration=True, only_record=1)
+    from libbaghchal import Baghchal
 
-    print(f"{states}")
-    print(f"{y_preds}")
-    print(f"{actual_rewards}")
-    print(f"{bagchal.pgn()}")
+    a = Baghchal.default()
+    a.load_game("XXA3-A1A2-XXA4-A5B5-XXA5-B5C5-XXA1")
+
+    print(f"{a.state_as_inputs(mode=4, possible_moves_pre=None)[0]}")
 
 
 def training_step(exploration=True, train_on=None):
@@ -256,9 +264,7 @@ def training_loop(model_name="magma"):
 
         # Goat Training
         for _ in range(1):
-            (won_by, played_positions, trained_positions) = training_step(
-                train_on=1
-            )
+            (won_by, played_positions, trained_positions) = training_step(train_on=1)
 
             if won_by == 1:
                 goat_wins += 1
@@ -273,9 +279,7 @@ def training_loop(model_name="magma"):
 
         # Tiger Training
         for _ in range(1):
-            (won_by, played_positions, trained_positions) = training_step(
-                train_on=-1
-            )
+            (won_by, played_positions, trained_positions) = training_step(train_on=-1)
 
             if won_by == 1:
                 goat_wins += 1

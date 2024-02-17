@@ -32,7 +32,7 @@ class Baghchal:
         ...
 
     @staticmethod
-    def coord_to_png_unit(source: Optional[List[int]], destination: List[int]) -> str:
+    def coord_to_png_unit(destination: List[int], source: Optional[List[int]]) -> str:
         ...
 
     def set_rewards(
@@ -118,8 +118,8 @@ class Baghchal:
 
     def make_move(
         self,
-        source: Optional[List[int]],
         target: List[int],
+        source: Optional[List[int]],
         eval_res: Optional[MoveCheckResult],
     ):
         ...

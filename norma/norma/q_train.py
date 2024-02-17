@@ -1,31 +1,16 @@
 import random
-from copy import deepcopy
-from typing import Any, List, Optional, Tuple, TypeVar
+from typing import Optional, Tuple
 
-import numpy
-from libbaghchal import Baghchal, GameStatus
-from livelossplot import PlotLossesKeras
 import libbaghchal
+import numpy
 
 from .model import goat_model, tiger_model
-import ray
 
 GOAT_EXPLORATION_FACTOR = 0.15
 TIGER_EXPLORATION_FACTOR = 0.15
-DISCOUNT_FACTOR = 0.50
+DISCOUNT_FACTOR = 0.90
 TDN = 2
-
-
-ray_env = {
-        
-        "py_modules": [libbaghchal]
-        }
-
-ray.init(num_cpus=8, ignore_reinit_error=True)
-
-### TODO
-# TEMPORAL DIFFERENCE
-# Randomize training data
+SAMPLE_RATE = 0.25
 
 
 def get_best_move(
@@ -65,7 +50,7 @@ def get_best_move(
         raise Exception("`agent` parameter for `get_best_move()` must be `-1` or `1`")
 
 
-def reward_discounter(rewards, states):
+def reward_discounter(rewards):
     n = len(rewards)
 
     for (index, value) in enumerate(rewards[::-1]):
@@ -101,7 +86,7 @@ def two_in_one_merge(items):
     return merged_list
 
 
-def reward_transformer(rewards_g, rewards_t, states, y_preds):
+def td_reward_transformer(rewards_g, rewards_t, states, y_preds, rotate_board=True):
     rewards_t.pop(0)
 
     rewards_g = two_in_one_merge(rewards_g)
@@ -149,17 +134,64 @@ def reward_transformer(rewards_g, rewards_t, states, y_preds):
         if ith_re_t != None:
             rewards.append(ith_re_t)
 
-    return rewards
+    if rotate_board:
+        return [x for x in rewards for _ in range(7)]
+    else:
+        return rewards
 
 
-@ray.remote
-def play_game(exploration=True, only_record=None, record_explorations=True):
+def reward_transformer(rewards_g, rewards_t, rotate_board=True):
+    rewards_t.pop(0)
+
+    rewards_g = two_in_one_merge(rewards_g)
+    rewards_t = two_in_one_merge(rewards_t)
+
+    for index in range(len(rewards_g)):
+        beyond_first = 0
+
+        for i in range(len(rewards_g)):
+            beyond_first += get_or_zero(rewards_g, index + i + 1) * pow(
+                DISCOUNT_FACTOR, i + 1
+            )
+
+        rewards_g[index] += beyond_first
+
+    for index in range(len(rewards_t)):
+        beyond_first = 0
+
+        for i in range(len(rewards_t)):
+            beyond_first += get_or_zero(rewards_t, index + i + 1) * pow(
+                DISCOUNT_FACTOR, i + 1
+            )
+
+        rewards_t[index] += beyond_first
+
+    rewards = []
+
+    for i in range(len(rewards_g)):
+        ith_re_g = get_or_none(rewards_g, i)
+        ith_re_t = get_or_none(rewards_t, i)
+
+        if ith_re_g != None:
+            rewards.append(ith_re_g)
+
+        if ith_re_t != None:
+            rewards.append(ith_re_t)
+
+    if rotate_board:
+        return [x for x in rewards for _ in range(7)]
+    else:
+        return rewards
+
+
+def play_game(
+    exploration=True, only_record=None, record_explorations=True, rotate_board=True
+):
     states = []
     y_preds = []
 
-    moves_to_exclude = []
-
     bagchal = libbaghchal.Baghchal.default()
+
     bagchal.set_rewards(
         t_goat_capture=6.0,
         t_got_trapped=-4.0,
@@ -169,7 +201,7 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         t_draw=-2.5,
         t_move=-0.15,
         g_goat_captured=-6.0,
-        g_tiger_trap=4.0,
+        g_tiger_trap=6.0,
         g_tiger_escape=-3.0,
         g_win=10.0,
         g_lose=-10.0,
@@ -177,31 +209,75 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
         g_move=-0.15,
     )
 
+    # bagchal.set_rewards(
+    #     t_goat_capture=6.0,
+    #     t_got_trapped=0.0,
+    #     t_trap_escape=0.0,
+    #     t_win=10.0,
+    #     t_lose=-10.0,
+    #     t_draw=-2.5,
+    #     t_move=-0.15,
+    #     g_goat_captured=-6.0,
+    #     g_tiger_trap=6.0,
+    #     g_tiger_escape=-3.0,
+    #     g_win=10.0,
+    #     g_lose=-10.0,
+    #     g_draw=-1.5,
+    #     g_move=-0.15,
+    # )
+
+    # bagchal.set_rewards(
+    #     t_goat_capture=10.0,
+    #     t_got_trapped=0,
+    #     t_trap_escape=0,
+    #     t_win=0,
+    #     t_lose=0,
+    #     t_draw=0,
+    #     t_move=0,
+    #     g_goat_captured=0,
+    #     g_tiger_trap=0,
+    #     g_tiger_escape=0,
+    #     g_win=0,
+    #     g_lose=0,
+    #     g_draw=0,
+    #     g_move=0,
+    # )
+
     for i in range(100):
         possible_moves = bagchal.get_possible_moves()
 
         input_vectors = bagchal.state_as_inputs(
-            possible_moves, mode=2, rotate_board=True
+            possible_moves, mode=6, rotate_board=True
         )
 
         turn = 1 if i % 2 == 0 else -1
 
-        best_move_index, pred_y = get_best_move(
+        best_vector_index, pred_y = get_best_move(
             input_vectors, exploration=exploration, agent=turn
         )
 
-        states.append(input_vectors[best_move_index])
-        y_preds.append(pred_y)
+        if rotate_board:
+            best_move_index = best_vector_index // 7
 
-        if pred_y or record_explorations:
-            if only_record == -1 and i % 2 == 1:
-                pass
-            elif only_record == 1 and i % 2 == 0:
-                pass
-            else:
-                moves_to_exclude.append(i)
+            states.append(input_vectors[best_move_index * 7 + 0])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 1])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 2])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 3])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 4])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 5])
+            y_preds.append(pred_y)
+            states.append(input_vectors[best_move_index * 7 + 6])
+            y_preds.append(pred_y)
+
         else:
-            moves_to_exclude.append(i)
+            best_move_index = best_vector_index
+            states.append(input_vectors[best_move_index])
+            y_preds.append(pred_y)
 
         bagchal = possible_moves[best_move_index].resulting_state
 
@@ -209,33 +285,68 @@ def play_game(exploration=True, only_record=None, record_explorations=True):
             break
 
     rewards = reward_transformer(
-        bagchal.move_reward_goat(), bagchal.move_reward_tiger(), states, y_preds
+        bagchal.move_reward_goat(),
+        bagchal.move_reward_tiger(),
+        rotate_board,
     )
 
-    for superindex, index in enumerate(moves_to_exclude):
-        rewards.pop(index - superindex)
-        states.pop(index - superindex)
-        y_preds.pop(index - superindex)
+    # filtered_state = states
+    # filtered_reward = rewards
+    # filtered_y_pred = y_preds
 
-    sar_pair = list(zip(states, rewards))
+    turn_filtered_state = []
+    turn_filtered_reward = []
+    turn_filtered_y_pred = []
+
+    for index in range(len(states)):
+        reward = rewards[index]
+        state = states[index]
+        y_pred = y_preds[index]
+
+        is_goat = index % (7 * 2) < 7
+
+        if (only_record == -1 and not is_goat) or (only_record == 1 and is_goat):
+            turn_filtered_reward.append(reward)
+            turn_filtered_y_pred.append(y_pred)
+            turn_filtered_state.append(state)
+
+    if not record_explorations:
+        filtered_state = []
+        filtered_reward = []
+        filtered_y_pred = []
+
+        for index in range(len(turn_filtered_state)):
+            reward = turn_filtered_reward[index]
+            state = turn_filtered_state[index]
+            y_pred = turn_filtered_y_pred[index]
+
+            if y_pred != None:
+                filtered_reward.append(reward)
+                filtered_y_pred.append(y_pred)
+                filtered_state.append(state)
+    else:
+        filtered_state = turn_filtered_state
+        filtered_reward = turn_filtered_reward
+        filtered_y_pred = turn_filtered_y_pred
+
+    sar_pair = list(zip(filtered_state, filtered_reward))
     random.shuffle(sar_pair)
 
     return (sar_pair, y_preds, bagchal)
 
 
-def test():
-    (
-        states,
-        y_preds,
-        bagchal,
-    ) = play_game(exploration=True, only_record=1)
-
-    print(f"{states}")
-    print(f"{y_preds}")
-    print(f"{bagchal.pgn()}")
-
-
-def training_step(exploration=True, train_on=None):
+# params: exploration, train_on
+# returns: (
+#   number_of_positions,
+#   number_of_trained_positions,
+#   games_played,
+#   goat_wons,
+#   tiger_wons,
+#   draws
+# )
+def training_step(
+    exploration=True, train_on=None
+) -> Tuple[int, int, int, int, int, int]:
     if train_on == -1:
         model = tiger_model
     elif train_on == 1:
@@ -243,23 +354,39 @@ def training_step(exploration=True, train_on=None):
     else:
         raise Exception("Must provide `train_on` parameter to `training_step()`")
 
-    # sar_pairs = []
+    sar_pairs = []
 
-    sar_pairs = ray.get([play_game.remote() for _ in range(100)])
+    games_played = 0
+    tiger_wons = 0
+    goat_wons = 0
+    draws = 0
 
-    print(f"{sar_pairs}")
+    while len(sar_pairs) < 2048:
+        print(f"Game Generation Step: {len(sar_pairs)}/2048")
+        (sar_pair, _, game_obj,) = play_game(
+            exploration=exploration,
+            only_record=train_on,
+        )
 
-    # while len(sar_pairs) < 2048:
-    #     (sar_pair, _, _,) = play_game(
-    #         exploration=exploration,
-    #         only_record=train_on,
-    #     )
-    #     sar_pairs += sar_pair
-    #     # sar_pairs.append(sar_pair)
-    #     print(f"{len(sar_pairs)}")
+        games_played += 1
+        if game_obj.game_state() == libbaghchal.GameStatus.GoatWon:
+            goat_wons += 1
+        elif game_obj.game_state() == libbaghchal.GameStatus.TigerWon:
+            tiger_wons += 1
+        else:
+            draws += 1
+
+        # f = open("sarpar.py", "a")
+        # f.write(str(sar_pair))
+        # f.close()
+        # exit()
+        # print(f"SAR PAIR LENGTH: {}")
+        sar_pairs += sar_pair
 
     positions_count = len(sar_pairs)
-    sar_pairs = random.sample(sar_pairs, 512)
+
+    number_of_pairs_to_choose = int(len(sar_pairs) * SAMPLE_RATE)
+    sar_pairs = random.sample(sar_pairs, number_of_pairs_to_choose)
 
     states = []
     rewards = []
@@ -274,7 +401,7 @@ def training_step(exploration=True, train_on=None):
         batch_size=8,
     )
 
-    return (positions_count, len(sar_pairs))
+    return (positions_count, len(sar_pairs), games_played, goat_wons, tiger_wons, draws)
 
 
 def training_loop(model_name="magma"):
@@ -310,20 +437,40 @@ def training_loop(model_name="magma"):
         before_game_counter = game_counter
 
         # Goat Training
-        for _ in range(2):
-            (played_positions, trained_positions) = training_step(train_on=1)
+        for _ in range(1):
+            (
+                played_positions,
+                trained_positions,
+                t_games,
+                t_goat_wons,
+                t_tiger_wons,
+                t_draws,
+            ) = training_step(train_on=1)
 
-            game_counter += 1
             positions_counter += played_positions
             goat_trained_states += trained_positions
+            game_counter += t_games
+            goat_wins += t_goat_wons
+            tiger_wins += t_tiger_wons
+            draws += t_draws
 
         # Tiger Training
         for _ in range(1):
-            (played_positions, trained_positions) = training_step(train_on=-1)
+            (
+                played_positions,
+                trained_positions,
+                t_games,
+                t_goat_wons,
+                t_tiger_wons,
+                t_draws,
+            ) = training_step(train_on=-1)
 
-            game_counter += 1
             positions_counter += played_positions
             tiger_trained_states += trained_positions
+            game_counter += t_games
+            goat_wins += t_goat_wons
+            tiger_wins += t_tiger_wons
+            draws += t_draws
 
         f = open(f"weights/{model_name}/train_stats.txt", "w")
         f.write(
@@ -359,7 +506,7 @@ def training_loop(model_name="magma"):
         print(f"Tiger: {cw_tiger_wins} ({((cw_tiger_wins/cw_game_counter)*100):.2f} %)")
         print(f"Draws: {cw_draws} ({((cw_draws/cw_game_counter)*100):.2f} %)")
 
-        (_, _, bagchal,) = play_game.remote(
+        (_, _, bagchal,) = play_game(
             exploration=False,
         )
 
