@@ -262,10 +262,11 @@ class GameConnectionManager:
 
         if message_type == 1:
             try:
+                print("movers")
                 move_result = await self.make_move(
                     game_id, ident, message["move"].replace(" ", "")
                 )
-
+              
                 self.save_to_redis()
 
                 game = move_result["game"]
@@ -426,11 +427,11 @@ class GameConnectionManager:
 
         source, destination = Baghchal.pgn_unit_to_coord(move)
 
-        move_result = game_instance.game.make_move(source, destination, None)
+        move_result = game_instance.game.make_move(source=source, target=destination, eval_res=None)
 
         print(move_result)
 
-        if not move_result["is_valid"]:
+        if not move_result.is_valid:
             raise ManagerException(message="Invalid move!")
 
         game_status = game_instance.game.game_status_check()
