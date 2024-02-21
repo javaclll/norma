@@ -5,7 +5,7 @@ from gamesimulation import Simulator
 import json
 import rel
 import websocket
-from bagchal import Bagchal
+from libbaghchal import Baghchal
 import os
 import numpy as np
 import math
@@ -22,11 +22,11 @@ def loadModel(path):
     print("Model Loaded")
     return savedModel
 
-def get_best_move_pgn(bagchal: Bagchal):
+def get_best_move_pgn(bagchal: Baghchal):
 
     possibleMoves = bagchal.get_possible_moves()
 
-    if bagchal.turn == 1:
+    if bagchal.turn() == 1:
         savedModel = loadModel(GOATMODELPATH)
     else:
         savedModel = loadModel(TIGERMODELPATH)
@@ -40,7 +40,7 @@ def get_best_move_pgn(bagchal: Bagchal):
     action = np.argmax(prediction)
 
     for move in possibleMoves:
-        actions.append(movestoAction(move["move"][0], move["move"][1]))
+        actions.append(movestoAction(move.move[0], move.move[1]))
             
     while action not in actions:
         prediction[action] = - math.inf
@@ -48,9 +48,9 @@ def get_best_move_pgn(bagchal: Bagchal):
 
     moveIndex = actions.index(action)
             
-    move = possibleMoves[moveIndex]["resulting_state"].prev_move
-
-    return Bagchal.coord_to_png_unit(*move)
+    move = possibleMoves[moveIndex].resulting_state.prev_move()
+    print(move)
+    return Baghchal.coord_to_png_unit(*(move[::-1]))
 
 
 def on_message(ws, msg):
@@ -58,15 +58,15 @@ def on_message(ws, msg):
 
     if message["type"] == 10:
         try:
-            game = Bagchal.new()
-            game.turn = message["game"]["turn"]
-            game.goat_counter = message["game"]["goat_counter"]
-            game.goat_captured = message["game"]["goat_captured"]
-            game.game_history = message["game"]["game_history"]
-            game.pgn = message["game"]["pgn"]
+            game = Baghchal(turn= message["game"]["turn"], goat_counter= message["game"]["goat_counter"], goat_captured= message["game"]["goat_captured"], game_history= message["game"]["game_history"], pgn= message["game"]["pgn"])
+            # game.turn = message["game"]["turn"]
+            # game.goat_counter = message["game"]["goat_counter"]
+            # game.goat_captured = message["game"]["goat_captured"]
+            # game.game_history = message["game"]["game_history"]
+            # game.pgn = message["game"]["pgn"]
 
             pgn_unit = get_best_move_pgn(game)
-
+            print(pgn_unit)
             ws.send(
                 json.dumps(
                     {
