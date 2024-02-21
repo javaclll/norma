@@ -66,19 +66,19 @@ class Model:
 
     def predict(self, game):
 
-            flattenBoard = np.array(reduce(lambda z, y :z + y, game.board))
+            flattenBoard = np.array(reduce(lambda z, y :z + y, game.board()))
             goatBoard = (flattenBoard == 1) * 1
             tigerBoard = (flattenBoard == -1) * 1
             
             goatCaptured = np.zeros(6)
             
-            goatCaptured[game.goat_captured] = 1
+            goatCaptured[game.goat_captured()] = 1
 
             goatCounter = np.zeros(21)
-            goatCounter[game.goat_counter] = 1
+            goatCounter[game.goat_counter()] = 1
 
             tigerTrap = np.zeros(5)
-            tigerTrap[game.trapped_tiger] = 1
+            tigerTrap[game.trapped_tiger()] = 1
 
             predictTensor = np.concatenate((goatBoard, tigerBoard, tigerTrap, goatCaptured, goatCounter), axis=None)
 
